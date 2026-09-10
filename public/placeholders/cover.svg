@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-label="Placeholder book cover">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#CBE0D8"/>
+      <stop offset="1" stop-color="#F7E7C4"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#sky)"/>
+  <rect x="24" y="24" width="752" height="752" fill="none" stroke="#26211C" stroke-width="6" stroke-dasharray="18 14" opacity="0.35"/>
+  <circle cx="620" cy="180" r="70" fill="#E4A93C" opacity="0.85"/>
+  <path d="M120 620 Q260 470 400 620 T680 620" fill="none" stroke="#2E6B5E" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="300" cy="430" r="90" fill="#C65D3B" opacity="0.9"/>
+  <circle cx="470" cy="470" r="60" fill="#2E6B5E" opacity="0.85"/>
+  <text x="400" y="130" text-anchor="middle" font-family="Georgia, serif" font-size="46" fill="#26211C" font-weight="700">BOOK 1 COVER</text>
+  <text x="400" y="720" text-anchor="middle" font-family="Georgia, serif" font-size="30" fill="#26211C" opacity="0.7">[ placeholder — swap in real cover art ]</text>
+</svg>

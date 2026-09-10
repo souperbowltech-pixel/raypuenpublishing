@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="700" viewBox="0 0 700 700" role="img" aria-label="Placeholder interior page 2">
+  <rect width="700" height="700" fill="#FCF8F1"/>
+  <rect x="16" y="16" width="668" height="668" fill="none" stroke="#26211C" stroke-width="4" opacity="0.25"/>
+  <path d="M250 480 L250 300 Q350 200 450 300 L450 480 Z" fill="none" stroke="#26211C" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M300 300 L280 230 L330 280 Z" fill="none" stroke="#26211C" stroke-width="5"/>
+  <path d="M400 300 L420 230 L370 280 Z" fill="none" stroke="#26211C" stroke-width="5"/>
+  <circle cx="320" cy="360" r="10" fill="#26211C"/>
+  <circle cx="380" cy="360" r="10" fill="#26211C"/>
+  <text x="350" y="80" text-anchor="middle" font-family="Georgia, serif" font-size="30" fill="#26211C">Interior Page 2</text>
+  <text x="350" y="640" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#26211C" opacity="0.55">[ placeholder — friendly fox ]</text>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="700" viewBox="0 0 700 700" role="img" aria-label="Placeholder interior page 1">
+  <rect width="700" height="700" fill="#FCF8F1"/>
+  <rect x="16" y="16" width="668" height="668" fill="none" stroke="#26211C" stroke-width="4" opacity="0.25"/>
+  <circle cx="350" cy="300" r="150" fill="none" stroke="#26211C" stroke-width="5"/>
+  <path d="M120 520 Q350 380 580 520" fill="none" stroke="#26211C" stroke-width="5"/>
+  <circle cx="300" cy="280" r="16" fill="#26211C"/>
+  <circle cx="400" cy="280" r="16" fill="#26211C"/>
+  <path d="M300 350 Q350 390 400 350" fill="none" stroke="#26211C" stroke-width="6" stroke-linecap="round"/>
+  <text x="350" y="80" text-anchor="middle" font-family="Georgia, serif" font-size="30" fill="#26211C">Interior Page 1</text>
+  <text x="350" y="640" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#26211C" opacity="0.55">[ placeholder — meadow scene ]</text>
+</svg>

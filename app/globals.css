@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+
+  /* Visible, on-brand focus outline for keyboard users. */
+  :focus-visible {
+    outline: 3px solid theme("colors.spruce.DEFAULT");
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-clay
+      px-7 py-3.5 text-base font-bold text-paper shadow-card transition
+      hover:bg-clay-dark focus-visible:outline-spruce
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border-2
+      border-ink/20 bg-transparent px-6 py-3 text-base font-semibold text-ink
+      transition hover:border-ink/40 hover:bg-ink/5;
+  }
+
+  .eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.18em] text-spruce;
+  }
+
+  .input {
+    @apply block w-full rounded-lg border border-ink/20 bg-paper px-3.5 py-2.5
+      text-base text-ink shadow-sm transition placeholder:text-ink-soft/60
+      focus:border-spruce focus:outline-none focus:ring-2 focus:ring-spruce/30;
+  }
+
+  .input-error {
+    @apply border-clay focus:border-clay focus:ring-clay/30;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

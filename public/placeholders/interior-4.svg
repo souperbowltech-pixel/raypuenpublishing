@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="700" viewBox="0 0 700 700" role="img" aria-label="Placeholder interior page 4">
+  <rect width="700" height="700" fill="#FCF8F1"/>
+  <rect x="16" y="16" width="668" height="668" fill="none" stroke="#26211C" stroke-width="4" opacity="0.25"/>
+  <circle cx="350" cy="290" r="120" fill="none" stroke="#26211C" stroke-width="5"/>
+  <path d="M300 400 L300 470 L400 470 L400 400" fill="none" stroke="#26211C" stroke-width="5"/>
+  <line x1="330" y1="470" x2="330" y2="540" stroke="#26211C" stroke-width="5"/>
+  <line x1="370" y1="470" x2="370" y2="540" stroke="#26211C" stroke-width="5"/>
+  <path d="M230 250 Q350 180 470 250" fill="none" stroke="#26211C" stroke-width="5"/>
+  <text x="350" y="80" text-anchor="middle" font-family="Georgia, serif" font-size="30" fill="#26211C">Interior Page 4</text>
+  <text x="350" y="640" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#26211C" opacity="0.55">[ placeholder — hot air balloon ]</text>
+</svg>
