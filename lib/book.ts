@@ -68,7 +68,7 @@ export const author = {
     alt: "Portrait of Ray Puen, Publisher",
   },
   bio:
-    "Puen Publishing is an independent literary house unshakably anchored in the scriptural truth of 2 Timothy 3:16—that all scripture is profitable for instruction in righteousness. Forged through real-world early childhood education on the mission fields of Thailand and Nepal, our unique gamified curriculum templates capture children's focus and transform behavior, helping early learners discover their true identity and noble character potential.",
+    "Puen Publishing is an independent literary house unshakably anchored in the scriptural truth of 2 Timothy 3:16—that all scripture is profitable for instruction in righteousness. Forged through real-world early childhood education on the mission fields of the Philippines, Thailand, and Nepal, our unique gamified curriculum templates capture children's focus and transform behavior, helping early learners discover their true identity and noble character potential.",
 };
 
 /** Shipping & returns copy. */
