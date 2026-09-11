@@ -1,12 +1,10 @@
 import Stripe from "stripe";
 
-const secretKey = process.env.STRIPE_SECRET_KEY;
+// Provide a safe fallback during Vercel build-time analysis if env is not yet configured
+const secretKey =
+  process.env.STRIPE_SECRET_KEY ||
+  "sk_test_placeholder_key_to_allow_nextjs_build_time_evaluation";
 
-if (!secretKey) {
-  // eslint-disable-next-line no-console
-  console.warn("Warning: STRIPE_SECRET_KEY is not defined in environment.");
-}
-
-export const stripe = new Stripe(secretKey || "", {
+export const stripe = new Stripe(secretKey, {
   typescript: true,
 });

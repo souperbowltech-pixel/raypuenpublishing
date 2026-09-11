@@ -3,6 +3,8 @@ import { stripe } from "@/lib/stripe";
 import { calculateWholesalePrice } from "@/lib/pricing";
 import { BOOK_1_SKU, WholesaleContact, ShippingAddress } from "@/lib/checkout";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const body: {
