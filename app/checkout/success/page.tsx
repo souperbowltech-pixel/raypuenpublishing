@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { publisherBrand } from "@/lib/book";
 
 export default function CheckoutSuccessPage({
   searchParams,
@@ -42,6 +43,10 @@ export default function CheckoutSuccessPage({
         <Link href="/" className="btn-primary inline-block w-full text-center">
           Return to Storefront
         </Link>
+
+        <p className="mt-6 text-xs text-ink-soft/80 border-t border-ink/10 pt-4">
+          {publisherBrand.fullCredit}
+        </p>
       </div>
     </main>
   );
