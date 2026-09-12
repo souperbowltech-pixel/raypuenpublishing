@@ -20,6 +20,15 @@ const nunito = Nunito_Sans({
 export const metadata: Metadata = {
   title: `${siteMeta.name} — Children's Coloring Books`,
   description: siteMeta.description,
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/brand/puen-colophon.png", type: "image/png" }
+    ],
+    apple: [
+      { url: "/brand/puen-colophon.png" }
+    ]
+  }
 };
 
 export default function RootLayout({

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { updateScout } from "@/lib/scout-store";
+import { NextRequest, NextResponse } from 'next/server';
+import { updateScoutAsync } from '@/lib/scout-store';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,14 +9,14 @@ export async function POST(req: NextRequest) {
     const { token, ...updates } = body;
 
     if (!token) {
-      return NextResponse.json({ error: "Token is required" }, { status: 400 });
+      return NextResponse.json({ error: 'Token is required' }, { status: 400 });
     }
 
-    const scout = updateScout(token, updates);
+    const scout = await updateScoutAsync(token, updates);
     return NextResponse.json({ success: true, scout });
   } catch (err) {
     return NextResponse.json(
-      { error: "Failed to update scout state" },
+      { error: 'Failed to update scout state' },
       { status: 500 }
     );
   }
