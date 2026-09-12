@@ -1,56 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import Stripe from "stripe";
+import { addSubscriberToMailerLite } from "@/lib/mailerlite";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: NextRequest) {
-  const body = await request.text();
-  const signature = request.headers.get("stripe-signature");
-
+export async function POST(req: NextRequest) {
+  const body = await req.text();
+  const signature = req.headers.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  let event: Stripe.Event;
+  let event: any;
 
   try {
     if (webhookSecret && signature) {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } else {
-      // In development / sandbox before webhook secret is configured
-      event = JSON.parse(body) as Stripe.Event;
-      // eslint-disable-next-line no-console
-      console.warn(
-        "[Stripe Webhook] Warning: Processing webhook without signature verification (STRIPE_WEBHOOK_SECRET not set)."
-      );
+      event = JSON.parse(body);
     }
   } catch (err: any) {
-    // eslint-disable-next-line no-console
-    console.error(`[Stripe Webhook Signature Error]: ${err.message}`);
-    return NextResponse.json(
-      { error: `Webhook Error: ${err.message}` },
-      { status: 400 }
-    );
+    console.error("Webhook signature verification failed:", err.message);
+    return NextResponse.json({ error: "Webhook signature failed" }, { status: 400 });
   }
 
-  // Handle successful checkout
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
+    const session = event.data.object;
+    const customerEmail = session.customer_details?.email || session.customer_email;
+    const customerName = session.customer_details?.name || undefined;
+    const orderType = session.metadata?.order_type || "retail";
 
-    // eslint-disable-next-line no-console
-    console.log("✅ [Stripe Webhook] Payment received successfully!");
-    // eslint-disable-next-line no-console
-    console.log("Order details:", {
-      id: session.id,
-      customerEmail: session.customer_details?.email,
-      customerName: session.customer_details?.name,
-      amountTotal: session.amount_total ? session.amount_total / 100 : 0,
-      currency: session.currency,
-      shippingAddress:
-        (session as any).shipping_details?.address ||
-        session.customer_details?.address,
-    });
+    console.log(`[Stripe Webhook] Order completed: ${session.id} (${orderType}) for ${customerEmail}`);
 
-    // NOTE: This is where Lulu API print job and MailerLite email sync hook in
+    // Auto-sync buyer to MailerLite
+    if (customerEmail) {
+      const isWholesale = orderType === "institutional_sponsorship";
+      const groupId = isWholesale
+        ? process.env.MAILERLITE_INSTITUTION_GROUP_ID
+        : process.env.MAILERLITE_RETAIL_GROUP_ID;
+
+      await addSubscriberToMailerLite({
+        email: customerEmail,
+        name: customerName,
+        groupId: groupId || undefined,
+        fields: {
+          order_type: orderType,
+          stripe_session_id: session.id,
+        },
+      });
+      console.log(`[MailerLite] Subscriber synced: ${customerEmail} to group ${groupId}`);
+    }
   }
 
   return NextResponse.json({ received: true });

@@ -1,105 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { calculateWholesalePrice } from "@/lib/pricing";
-import { BOOK_1_SKU, WholesaleContact, ShippingAddress } from "@/lib/checkout";
+import { SPONSOR_TIERS } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body: {
-      contact: WholesaleContact;
-      shippingAddress: ShippingAddress;
-      quantity: number;
-    } = await request.json();
+    const body = await req.json();
+    const { tierId = 1, institution, shippingAddress } = body;
 
-    if (!body || !body.contact || !body.quantity) {
-      return NextResponse.json(
-        { error: "Invalid order data provided." },
-        { status: 400 }
-      );
-    }
-
-    // Always recalculate on the server for security
-    const pricing = calculateWholesalePrice(body.quantity);
-
-    if (!pricing.valid) {
-      return NextResponse.json(
-        { error: pricing.reason || "Invalid quantity for wholesale order." },
-        { status: 400 }
-      );
-    }
+    const tier = SPONSOR_TIERS[tierId as 1 | 2 | 3] || SPONSOR_TIERS[1];
 
     const origin =
       process.env.NEXT_PUBLIC_SITE_URL ||
-      request.headers.get("origin") ||
+      req.headers.get("origin") ||
       "http://localhost:3000";
 
-    const line_items: any[] = [
-      {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: `Children's Coloring Book — Institutional Wholesale (${pricing.quantity} copies)`,
-            description: `Wholesale bulk copies for ${body.contact.institutionName}. Includes 40% institutional discount.`,
-            metadata: {
-              sku: BOOK_1_SKU,
-            },
-          },
-          unit_amount: Math.round(pricing.unitPrice * 100), // $4.19 -> 419 cents
-        },
-        quantity: pricing.quantity,
-      },
-    ];
+    const sessionMetadata: Record<string, string> = {
+      order_type: "institutional_sponsorship",
+      tier_id: String(tier.tierId),
+      tier_name: tier.name,
+      books_sponsored: String(tier.booksSponsored),
+      total_printed_with_match: String(tier.totalPrintedWithMatch),
+      institution_name: institution?.name || "",
+      contact_name: institution?.contactName || "",
+      phone: institution?.phone || "",
+    };
 
-    // If digital fee is NOT waived, add it as a line item
-    if (!pricing.feeWaived && pricing.digitalFee > 0) {
-      line_items.push({
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: "Digital Curriculum & Administration Fee",
-            description: "One-time digital fee (waived on orders of 100+ copies).",
-          },
-          unit_amount: Math.round(pricing.digitalFee * 100), // $20.00 -> 2000 cents
-        },
-        quantity: 1,
-      });
+    if (tier.isPremiumSponsor) {
+      sessionMetadata.premium_sponsor = "true";
+      sessionMetadata.note = "Premium Sponsor: Ship 1 Free Copy";
+      if (shippingAddress) {
+        sessionMetadata.sponsor_shipping = `${shippingAddress.line1}, ${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}`;
+      }
     }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      customer_email: body.contact.email,
-      line_items,
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `${tier.name} — ${tier.booksSponsored} Books (Matched to ${tier.totalPrintedWithMatch})`,
+              description: tier.description,
+            },
+            unit_amount: Math.round(tier.flatPrice * 100),
+          },
+          quantity: 1,
+        },
+      ],
       mode: "payment",
-      shipping_address_collection: {
-        allowed_countries: ["US", "CA", "GB", "AU"],
-      },
-      metadata: {
-        channel: "wholesale",
-        institutionName: body.contact.institutionName,
-        institutionType: body.contact.institutionType,
-        contactName: body.contact.contactName,
-        email: body.contact.email,
-        phone: body.contact.phone,
-        quantity: pricing.quantity.toString(),
-        manualIncluded: pricing.manualIncluded ? "true" : "false",
-        shippingLine1: body.shippingAddress?.line1 || "",
-        shippingCity: body.shippingAddress?.city || "",
-        shippingState: body.shippingAddress?.state || "",
-        shippingPostalCode: body.shippingAddress?.postalCode || "",
-        shippingCountry: body.shippingAddress?.country || "US",
-      },
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}&channel=wholesale`,
-      cancel_url: `${origin}/checkout/cancel`,
+      customer_email: institution?.email || undefined,
+      metadata: sessionMetadata,
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}&type=wholesale`,
+      cancel_url: `${origin}/institutions`,
     });
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
-    console.error("[Wholesale Checkout Error]:", error);
+    console.error("Wholesale checkout error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create wholesale checkout session" },
+      { error: error.message || "Unable to initiate sponsorship checkout" },
       { status: 500 }
     );
   }

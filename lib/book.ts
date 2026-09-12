@@ -1,17 +1,19 @@
 /**
  * ============================================================================
- *  BOOK & SITE CONTENT — Official Copy
- * ============================================================================
- *
- *  All copy and imagery for Book 1 lives here so it can be edited in one place.
+ *  BOOK & SITE CONTENT — Official Copy & Brand Configuration
  * ============================================================================
  */
 
 export interface GalleryImage {
-  /** Path under /public. */
   src: string;
-  /** Alt text (also shown as the caption in the lightbox). */
   alt: string;
+}
+
+export interface BookEdition {
+  editionId: "standard" | "payItForward" | "nepalRecovery";
+  name: string;
+  frontCoverSeal?: string;
+  backCoverCallout?: string;
 }
 
 export interface BookContent {
@@ -24,13 +26,14 @@ export interface BookContent {
   dimensions: string;
   coverImage: GalleryImage;
   gallery: GalleryImage[];
+  activeEdition: BookEdition;
 }
 
 export const book1: BookContent = {
   sku: "PUEN-CB-001",
-  title: "The Geezy Goober's Guide to Icky Sfand",
+  title: "The Geezy Goober's Guide to Icky Island",
   tagline:
-    "An Interactive Rhythmic Rhyme & Tactile Coloring Quest for Early Learners.",
+    "A rhyming adventure in character and righteousness, waiting for your child's creative colors.",
   description:
     "Deep in the woods of Twist-and-Twirl, words are mysteriously vanishing! Co-created by Publisher Ray Puen and his young granddaughters, Kira Grace and Cayleigh Joy, this interactive adventure features a precise, musical iambic rhythm that grips a child's focus. Designed as a deliberate two-part strategy, Volume 1 captures children's deep affection through high-appeal whimsical adventure coloring blocks, priming their hearts to follow our storybook heroes into future structural paths of honor, kindness, and respect.",
   ageRange: "Ages 3–7",
@@ -38,7 +41,13 @@ export const book1: BookContent = {
   dimensions: '8.5" × 8.5" (square, softcover)',
   coverImage: {
     src: "/placeholders/cover.svg",
-    alt: "Front cover of The Geezy Goober's Guide to Icky Sfand",
+    alt: "Front cover of The Geezy Goober's Guide to Icky Island",
+  },
+  activeEdition: {
+    editionId: "nepalRecovery",
+    name: "Nepal Recovery Initiative Edition",
+    frontCoverSeal: "100% of Proceeds Dedicated to Nepal Flood Recovery",
+    backCoverCallout: "Pay It Forward: Sponsor a homeschool circle at puenpublishing.com/institutions",
   },
   gallery: [
     {
@@ -58,6 +67,19 @@ export const book1: BookContent = {
       alt: "Interior page 4 — hot air balloon",
     },
   ],
+};
+
+/** Publisher Brand & Colophon Info */
+export const publisherBrand = {
+  colophonLogo: "/brand/puen-colophon.png",
+  mottoImage: "/brand/puen-motto.png",
+  slogan: "Building character is our commitment; your child's destiny is our product.",
+  imprint: {
+    company: "Puen Publishing",
+    website: "www.puenpublishing.com",
+    email: "info@puenpublishing.com",
+    cityState: "Loma Linda, California · USA",
+  },
 };
 
 /** About-the-author trust block. */
@@ -83,5 +105,5 @@ export const siteMeta = {
   name: "Puen Publishing",
   shortName: "Puen",
   description:
-    "The Geezy Goober's Guide to Icky Sfand — An Interactive Rhythmic Rhyme & Tactile Coloring Quest for Early Learners.",
+    "The Geezy Goober's Guide to Icky Island — A rhyming adventure in character and righteousness, waiting for your child's creative colors.",
 };

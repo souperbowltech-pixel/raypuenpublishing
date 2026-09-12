@@ -1,435 +1,295 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { calculateWholesalePrice } from "@/lib/pricing";
-import {
-  initiateWholesaleCheckout,
-  type WholesaleContact,
-  type ShippingAddress,
-} from "@/lib/checkout";
-import { PricingCalculator } from "./PricingCalculator";
+import React, { useState } from "react";
+import { SPONSOR_TIERS, SponsorTier, formatCurrency } from "@/lib/pricing";
 
-/* Form field model ---------------------------------------------------------- */
-
-interface FormState {
-  institutionName: string;
-  institutionType: string;
-  contactName: string;
-  email: string;
-  phone: string;
-  line1: string;
-  line2: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  quantity: string; // kept as string so the input can be empty while typing
-}
-
-const EMPTY_FORM: FormState = {
-  institutionName: "",
-  institutionType: "school",
-  contactName: "",
-  email: "",
-  phone: "",
-  line1: "",
-  line2: "",
-  city: "",
-  state: "",
-  postalCode: "",
-  country: "United States",
-  quantity: "100",
-};
-
-type Errors = Partial<Record<keyof FormState, string>>;
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validate(form: FormState): Errors {
-  const errors: Errors = {};
-
-  if (!form.institutionName.trim())
-    errors.institutionName = "Please enter your institution's name.";
-  if (!form.contactName.trim())
-    errors.contactName = "Please enter a contact person.";
-
-  if (!form.email.trim()) errors.email = "Please enter an email address.";
-  else if (!EMAIL_RE.test(form.email.trim()))
-    errors.email = "That doesn't look like a valid email address.";
-
-  if (!form.phone.trim()) errors.phone = "Please enter a phone number.";
-  else if (form.phone.replace(/\D/g, "").length < 7)
-    errors.phone = "Please enter a valid phone number.";
-
-  if (!form.line1.trim()) errors.line1 = "Please enter a street address.";
-  if (!form.city.trim()) errors.city = "Please enter a city.";
-  if (!form.state.trim()) errors.state = "Please enter a state / region.";
-  if (!form.postalCode.trim())
-    errors.postalCode = "Please enter a postal code.";
-  if (!form.country.trim()) errors.country = "Please enter a country.";
-
-  const qty = Number(form.quantity);
-  if (form.quantity.trim() === "") errors.quantity = "Please enter a quantity.";
-  else if (!Number.isFinite(qty) || !Number.isInteger(qty))
-    errors.quantity = "Quantity must be a whole number.";
-  else if (qty < 1) errors.quantity = "Quantity must be at least 1.";
-
-  return errors;
-}
-
-/* Component ------------------------------------------------------------------ */
-
-export function WholesaleForm() {
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [errors, setErrors] = useState<Errors>({});
-  const [submitted, setSubmitted] = useState(false);
+export default function WholesaleForm() {
+  const [selectedTier, setSelectedTier] = useState<1 | 2 | 3>(2);
+  const [orgName, setOrgName] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [shippingAddress, setShippingAddress] = useState({
+    line1: "",
+    city: "",
+    state: "",
+    zip: "",
+  });
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  // Live pricing derives purely from the quantity field.
-  const breakdown = useMemo(() => {
-    const qty = Number(form.quantity);
-    return calculateWholesalePrice(
-      Number.isInteger(qty) && qty > 0 ? qty : NaN
-    );
-  }, [form.quantity]);
+  const tier = SPONSOR_TIERS[selectedTier];
 
-  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    // Clear a field's error as soon as the user edits it.
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const nextErrors = validate(form);
-    setErrors(nextErrors);
-
-    if (Object.keys(nextErrors).length > 0) {
-      // Focus the first invalid field for accessibility.
-      const firstKey = Object.keys(nextErrors)[0];
-      document.getElementById(firstKey)?.focus();
-      setSubmitted(false);
-      return;
-    }
-
-    const contact: WholesaleContact = {
-      institutionName: form.institutionName.trim(),
-      institutionType: form.institutionType,
-      contactName: form.contactName.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-    };
-    const shippingAddress: ShippingAddress = {
-      line1: form.line1.trim(),
-      line2: form.line2.trim() || undefined,
-      city: form.city.trim(),
-      state: form.state.trim(),
-      postalCode: form.postalCode.trim(),
-      country: form.country.trim(),
-    };
-
     setLoading(true);
     setServerError(null);
 
-    const res = await initiateWholesaleCheckout({
-      contact,
-      shippingAddress,
-      quantity: Number(form.quantity),
-    });
-
-    if (res.error) {
-      setServerError(res.error);
+    if (tier.requiresShipping && (!shippingAddress.line1 || !shippingAddress.city || !shippingAddress.zip)) {
+      setServerError("Please provide a shipping address to receive your complimentary sponsor copy.");
       setLoading(false);
-    } else {
-      setSubmitted(true);
+      return;
     }
-  }
+
+    try {
+      const res = await fetch("/api/checkout/wholesale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tierId: selectedTier,
+          institution: {
+            name: orgName,
+            contactName,
+            email,
+            phone,
+          },
+          shippingAddress: tier.requiresShipping ? shippingAddress : undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create checkout session");
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      setServerError(err.message || "An unexpected error occurred.");
+      setLoading(false);
+    }
+  };
 
   return (
-    <form
-      noValidate
-      onSubmit={handleSubmit}
-      className="grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-start"
-    >
-      {/* Fields ------------------------------------------------------------ */}
-      <div className="space-y-6">
-        <Fieldset legend="Institution">
-          <Field
-            id="institutionName"
-            label="Institution name"
-            value={form.institutionName}
-            onChange={(v) => update("institutionName", v)}
-            error={errors.institutionName}
-            autoComplete="organization"
-          />
-          <div>
-            <Label htmlFor="institutionType">Type of institution</Label>
-            <select
-              id="institutionType"
-              value={form.institutionType}
-              onChange={(e) => update("institutionType", e.target.value)}
-              className="input"
-            >
-              <option value="school">School</option>
-              <option value="preschool">Preschool / Daycare</option>
-              <option value="church">Church</option>
-              <option value="library">Library</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-        </Fieldset>
-
-        <Fieldset legend="Contact">
-          <Field
-            id="contactName"
-            label="Contact person"
-            value={form.contactName}
-            onChange={(v) => update("contactName", v)}
-            error={errors.contactName}
-            autoComplete="name"
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              id="email"
-              label="Email"
-              type="email"
-              value={form.email}
-              onChange={(v) => update("email", v)}
-              error={errors.email}
-              autoComplete="email"
-            />
-            <Field
-              id="phone"
-              label="Phone"
-              type="tel"
-              value={form.phone}
-              onChange={(v) => update("phone", v)}
-              error={errors.phone}
-              autoComplete="tel"
-            />
-          </div>
-        </Fieldset>
-
-        <Fieldset legend="Shipping address">
-          <Field
-            id="line1"
-            label="Street address"
-            value={form.line1}
-            onChange={(v) => update("line1", v)}
-            error={errors.line1}
-            autoComplete="address-line1"
-          />
-          <Field
-            id="line2"
-            label="Suite / unit (optional)"
-            value={form.line2}
-            onChange={(v) => update("line2", v)}
-            error={errors.line2}
-            autoComplete="address-line2"
-            optional
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              id="city"
-              label="City"
-              value={form.city}
-              onChange={(v) => update("city", v)}
-              error={errors.city}
-              autoComplete="address-level2"
-            />
-            <Field
-              id="state"
-              label="State / region"
-              value={form.state}
-              onChange={(v) => update("state", v)}
-              error={errors.state}
-              autoComplete="address-level1"
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              id="postalCode"
-              label="Postal code"
-              value={form.postalCode}
-              onChange={(v) => update("postalCode", v)}
-              error={errors.postalCode}
-              autoComplete="postal-code"
-            />
-            <Field
-              id="country"
-              label="Country"
-              value={form.country}
-              onChange={(v) => update("country", v)}
-              error={errors.country}
-              autoComplete="country-name"
-            />
-          </div>
-        </Fieldset>
-
-        <Fieldset legend="Quantity">
-          <Field
-            id="quantity"
-            label="Number of copies"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            value={form.quantity}
-            onChange={(v) => update("quantity", v)}
-            error={errors.quantity}
-          />
-          <p className="text-sm text-ink-soft">
-            Tip: orders of{" "}
-            <span className="font-semibold text-ink">
-              {breakdown.freeManualThreshold}+
-            </span>{" "}
-            copies waive the digital fee and include the Teacher&apos;s Master
-            Manual free.
-          </p>
-        </Fieldset>
+    <form onSubmit={handleSubmit} className="space-y-8 rounded-2xl border border-ink/10 bg-paper p-6 sm:p-10 shadow-card">
+      <div>
+        <span className="eyebrow">Nepal Flood Recovery & Mission Multiplication</span>
+        <h2 className="mt-1 text-2xl sm:text-3xl font-bold font-display text-ink">
+          Select Your Sponsorship Package
+        </h2>
+        <p className="mt-2 text-sm sm:text-base text-ink-soft">
+          We apply a 1:1 match to double every package! Tiers 2 & 3 include a complimentary author copy shipped to you as a Premium Sponsor.
+        </p>
       </div>
 
-      {/* Sticky live summary + submit ------------------------------------- */}
-      <div className="space-y-4 lg:sticky lg:top-24">
-        <PricingCalculator breakdown={breakdown} />
+      {/* 3 Flat Tiers Selection */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {([1, 2, 3] as const).map((tId) => {
+          const t = SPONSOR_TIERS[tId];
+          const isSelected = selectedTier === tId;
 
+          return (
+            <div
+              key={tId}
+              onClick={() => setSelectedTier(tId)}
+              className={`cursor-pointer rounded-xl border-2 p-5 transition flex flex-col justify-between ${
+                isSelected
+                  ? "border-spruce bg-spruce/5 ring-2 ring-spruce/30 shadow-md"
+                  : "border-ink/10 bg-paper-deep/40 hover:border-ink/20"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-spruce font-mono">
+                    Tier {tId}
+                  </span>
+                  {t.isPremiumSponsor && (
+                    <span className="rounded-full bg-crayon-gold/20 px-2 py-0.5 text-[10px] font-black uppercase text-ink">
+                      Premium Sponsor
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3">
+                  <span className="text-3xl font-black font-display text-ink">
+                    {formatCurrency(t.flatPrice)}
+                  </span>
+                  <span className="text-xs text-ink-soft block mt-0.5">
+                    Flat Rate Sponsorship
+                  </span>
+                </div>
+
+                <div className="mt-4 rounded-lg bg-paper p-3 border border-ink/10 text-xs space-y-1">
+                  <div className="flex justify-between font-semibold text-ink">
+                    <span>You Sponsor:</span>
+                    <span className="font-bold">{t.booksSponsored} Books</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-spruce">
+                    <span>1:1 Match Prints:</span>
+                    <span>{t.totalPrintedWithMatch} Books Total</span>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs text-ink-soft leading-relaxed">
+                  {t.description}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className={`mt-4 w-full rounded-lg py-2 text-xs font-bold transition ${
+                  isSelected ? "bg-spruce text-paper" : "bg-ink/10 text-ink"
+                }`}
+              >
+                {isSelected ? "✓ Selected Tier" : "Choose Tier"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Contact Fields */}
+      <div className="space-y-4 pt-4 border-t border-ink/10">
+        <h3 className="text-lg font-bold font-display text-ink">
+          Sponsor / Organization Information
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
+              Organization / Church / Co-Op Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              className="input text-sm"
+              placeholder="e.g. Grace Homeschool Co-op"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
+              Contact Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              className="input text-sm"
+              placeholder="e.g. Sarah Jenkins"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input text-sm"
+              placeholder="sarah@example.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
+              Phone Number (Optional)
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="input text-sm"
+              placeholder="(555) 000-0000"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Shipping Address for Tiers 2 & 3 */}
+      {tier.requiresShipping && (
+        <div className="space-y-4 rounded-xl border border-crayon-gold/40 bg-crayon-goldsoft/20 p-5">
+          <div>
+            <span className="inline-block rounded-full bg-crayon-gold px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-ink mb-1">
+              Premium Sponsor Benefit
+            </span>
+            <h4 className="text-base font-bold font-display text-ink">
+              Where should we ship your 1 Free Complimentary Copy?
+            </h4>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-3">
+              <label className="block text-xs font-bold text-ink-soft mb-1">Street Address *</label>
+              <input
+                type="text"
+                required
+                value={shippingAddress.line1}
+                onChange={(e) => setShippingAddress({ ...shippingAddress, line1: e.target.value })}
+                className="input text-sm bg-paper"
+                placeholder="123 Faith Lane"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-ink-soft mb-1">City *</label>
+              <input
+                type="text"
+                required
+                value={shippingAddress.city}
+                onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+                className="input text-sm bg-paper"
+                placeholder="City"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-ink-soft mb-1">State *</label>
+              <input
+                type="text"
+                required
+                value={shippingAddress.state}
+                onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
+                className="input text-sm bg-paper"
+                placeholder="State"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-ink-soft mb-1">Zip Code *</label>
+              <input
+                type="text"
+                required
+                value={shippingAddress.zip}
+                onChange={(e) => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
+                className="input text-sm bg-paper"
+                placeholder="Zip"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submit Button */}
+      <div className="pt-2">
         <button
           type="submit"
           disabled={loading}
-          className="btn-primary w-full text-lg flex items-center justify-center gap-2 disabled:opacity-75"
+          className="btn-primary w-full text-lg flex items-center justify-center gap-2"
         >
-          {loading ? (
-            <>
-              <svg
-                className="animate-spin h-5 w-5 text-paper"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8H4z"
-                ></path>
-              </svg>
-              Redirecting to Checkout...
-            </>
-          ) : (
-            "Request Bulk Order & Checkout"
-          )}
+          {loading ? "Preparing Secure Checkout..." : `Sponsor Tier ${selectedTier} · ${formatCurrency(tier.flatPrice)}`}
         </button>
 
         {serverError && (
-          <p
-            className="text-center text-sm font-semibold text-clay-dark"
-            role="alert"
-          >
+          <p className="mt-3 text-center text-sm font-semibold text-clay-dark" role="alert">
             {serverError}
           </p>
         )}
 
-        <div className="rounded-lg border border-spruce/30 bg-spruce/10 px-3 py-2 text-center text-xs text-spruce-dark">
-          <span className="font-semibold">🧪 Sandbox Test Mode:</span> Use card{" "}
-          <code className="rounded bg-paper px-1 font-mono font-bold text-ink">4242 4242 4242 4242</code> (Do not enter real cards).
+        <div className="mt-3 rounded-lg border border-spruce/30 bg-spruce/10 px-3 py-2 text-center text-xs text-spruce-dark">
+          <span className="font-semibold">🧪 Sandbox Test Mode:</span> Use test card{" "}
+          <code className="rounded bg-paper px-1 font-mono font-bold text-ink">4242 4242 4242 4242</code>.
         </div>
       </div>
     </form>
   );
 }
 
-/* Small presentational helpers --------------------------------------------- */
-
-function Fieldset({
-  legend,
-  children,
-}: {
-  legend: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <fieldset className="rounded-xl2 border border-ink/10 bg-paper p-5 shadow-card">
-      <legend className="px-2 font-display text-lg font-bold text-ink">
-        {legend}
-      </legend>
-      <div className="space-y-4">{children}</div>
-    </fieldset>
-  );
-}
-
-function Label({
-  htmlFor,
-  children,
-}: {
-  htmlFor: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label
-      htmlFor={htmlFor}
-      className="mb-1 block text-sm font-semibold text-ink"
-    >
-      {children}
-    </label>
-  );
-}
-
-interface FieldProps {
-  id: keyof FormState & string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
-  type?: string;
-  autoComplete?: string;
-  inputMode?: "numeric" | "text" | "tel" | "email";
-  min?: number;
-  optional?: boolean;
-}
-
-function Field({
-  id,
-  label,
-  value,
-  onChange,
-  error,
-  type = "text",
-  autoComplete,
-  inputMode,
-  min,
-  optional,
-}: FieldProps) {
-  return (
-    <div>
-      <Label htmlFor={id}>
-        {label}
-        {!optional && <span className="text-clay"> *</span>}
-      </Label>
-      <input
-        id={id}
-        name={id}
-        type={type}
-        value={value}
-        min={min}
-        inputMode={inputMode}
-        autoComplete={autoComplete}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
-        onChange={(e) => onChange(e.target.value)}
-        className={["input", error ? "input-error" : ""].join(" ")}
-      />
-      {error && (
-        <p id={`${id}-error`} className="mt-1 text-sm font-semibold text-clay-dark">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
+export { WholesaleForm };
