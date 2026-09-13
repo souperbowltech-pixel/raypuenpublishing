@@ -15,44 +15,52 @@ export interface PersistentScoutState {
   updatedAt: string;
 }
 
+// In-memory fallback map (handles serverless environments where fs is read-only)
+const memoryStore: Record<string, PersistentScoutState> = {
+  'CAPTAIN-RAY-700': {
+    token: 'CAPTAIN-RAY-700',
+    scoutName: 'Scout Explorer',
+    completedPages: [],
+    quizScore: 0,
+    referralScore: 0,
+    totalScore: 0,
+    hasPassedQuiz: false,
+    hasRecruitedFriend: false,
+    status: 'In_Progress',
+    updatedAt: new Date().toISOString(),
+  },
+};
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'scouts.json');
 
 function ensureLocalStore(): Record<string, PersistentScoutState> {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(DATA_FILE)) {
-    const initial: Record<string, PersistentScoutState> = {
-      'CAPTAIN-RAY-700': {
-        token: 'CAPTAIN-RAY-700',
-        scoutName: 'Scout Explorer',
-        completedPages: [],
-        quizScore: 0,
-        referralScore: 0,
-        totalScore: 0,
-        hasPassedQuiz: false,
-        hasRecruitedFriend: false,
-        status: 'In_Progress',
-        updatedAt: new Date().toISOString(),
-      },
-    };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2), 'utf8');
-    return initial;
-  }
   try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, JSON.stringify(memoryStore, null, 2), 'utf8');
+      return { ...memoryStore };
+    }
     const raw = fs.readFileSync(DATA_FILE, 'utf8');
     return JSON.parse(raw);
-  } catch {
-    return {};
+  } catch (e) {
+    // Vercel serverless read-only filesystem fallback
+    return memoryStore;
   }
 }
 
 function saveLocalStore(data: Record<string, PersistentScoutState>) {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    Object.assign(memoryStore, data);
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    // Ignore filesystem write error in serverless environment
   }
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
 export async function getOrCreateScoutAsync(token: string, name?: string): Promise<PersistentScoutState> {
@@ -71,12 +79,12 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
         return {
           token: data.token,
           scoutName: data.scout_name || 'Young Scout',
-          completedPages: data.completed_pages || [],
-          quizScore: data.quiz_score ?? 0,
-          referralScore: data.referral_score ?? 0,
-          totalScore: (data.quiz_score ?? 0) + (data.referral_score ?? 0),
-          hasPassedQuiz: (data.quiz_score ?? 0) >= 400,
-          hasRecruitedFriend: (data.referral_score ?? 0) >= 300,
+          completedPages: (data.completed_pages || []).map((p: any) => Number(p)),
+          quizScore: Number(data.quiz_score ?? 0),
+          referralScore: Number(data.referral_score ?? 0),
+          totalScore: Number(data.quiz_score ?? 0) + Number(data.referral_score ?? 0),
+          hasPassedQuiz: Number(data.quiz_score ?? 0) >= 400,
+          hasRecruitedFriend: Number(data.referral_score ?? 0) >= 300,
           status: data.status || 'In_Progress',
           updatedAt: data.updated_at || new Date().toISOString(),
         };
@@ -103,9 +111,9 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
           return {
             token: inserted.token,
             scoutName: inserted.scout_name,
-            completedPages: inserted.completed_pages || [],
-            quizScore: inserted.quiz_score ?? 0,
-            referralScore: inserted.referral_score ?? 0,
+            completedPages: (inserted.completed_pages || []).map((p: any) => Number(p)),
+            quizScore: Number(inserted.quiz_score ?? 0),
+            referralScore: Number(inserted.referral_score ?? 0),
             totalScore: 0,
             hasPassedQuiz: false,
             hasRecruitedFriend: false,
@@ -115,11 +123,11 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
         }
       }
     } catch (err) {
-      console.warn('Supabase read error, falling back to local store:', err);
+      console.warn('Supabase read error, falling back to safe local store:', err);
     }
   }
 
-  // 2. Fallback to local JSON store
+  // 2. Safe local store fallback
   return getOrCreateScoutLocal(cleanToken, name);
 }
 
@@ -168,7 +176,7 @@ export async function updateScoutAsync(
     }
   }
 
-  // 2. Always keep local mirror updated
+  // 2. Local mirror
   const localStore = ensureLocalStore();
   localStore[updated.token] = updated;
   saveLocalStore(localStore);
@@ -176,7 +184,7 @@ export async function updateScoutAsync(
   return updated;
 }
 
-// Synchronous local helpers for compatibility
+// Synchronous local helpers
 export function getOrCreateScoutLocal(token: string, name?: string): PersistentScoutState {
   const store = ensureLocalStore();
   const cleanToken = token.trim() || 'CAPTAIN-RAY-700';
