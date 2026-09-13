@@ -1,12 +1,45 @@
 import Link from "next/link";
 import { publisherBrand } from "@/lib/book";
+import { stripe } from "@/lib/stripe";
+import { addSubscriberToMailerLite } from "@/lib/mailerlite";
 
-export default function CheckoutSuccessPage({
+export const dynamic = "force-dynamic";
+
+export default async function CheckoutSuccessPage({
   searchParams,
 }: {
   searchParams: { session_id?: string; channel?: string };
 }) {
   const isWholesale = searchParams.channel === "wholesale";
+  const sessionId = searchParams.session_id;
+
+  // Direct sync on success page (guarantees MailerLite subscription even before webhook setup)
+  if (sessionId) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const customerEmail = session.customer_details?.email || session.customer_email;
+      const customerName = session.customer_details?.name || undefined;
+      const orderType = session.metadata?.channel || (isWholesale ? "institutional_sponsorship" : "retail");
+
+      if (customerEmail) {
+        const groupId = isWholesale
+          ? process.env.MAILERLITE_INSTITUTION_GROUP_ID
+          : process.env.MAILERLITE_RETAIL_GROUP_ID;
+
+        await addSubscriberToMailerLite({
+          email: customerEmail,
+          name: customerName,
+          groupId: groupId || undefined,
+          fields: {
+            order_type: orderType,
+            stripe_session_id: session.id,
+          },
+        });
+      }
+    } catch (e) {
+      console.warn("Direct MailerLite sync warning:", e);
+    }
+  }
 
   return (
     <main className="min-h-[80vh] flex items-center justify-center px-4 py-16">
