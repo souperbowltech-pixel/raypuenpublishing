@@ -21,7 +21,7 @@ interface ShippingAddress {
 
 export interface LuluPrintJobParams {
   externalId: string;
-  shippingLevel?: 'MAIL' | 'PRIORITY_MAIL' | 'GROUND_HD' | 'EXPEDITED';
+  shippingLevel?: "MAIL" | "PRIORITY_MAIL" | "GROUND_HD" | "EXPEDITED";
   shippingAddress: ShippingAddress;
   contactEmail: string;
   lineItems: Array<{
@@ -39,10 +39,10 @@ let tokenExpiresAt: number = 0;
 export async function getLuluAccessToken(): Promise<string | null> {
   const clientKey = process.env.LULU_CLIENT_KEY;
   const clientSecret = process.env.LULU_CLIENT_SECRET;
-  const baseUrl = process.env.LULU_API_BASE_URL || 'https://api.sandbox.lulu.com';
+  const baseUrl = process.env.LULU_API_BASE_URL || "https://api.sandbox.lulu.com";
 
   if (!clientKey || !clientSecret) {
-    console.warn('[Lulu API] Missing LULU_CLIENT_KEY or LULU_CLIENT_SECRET');
+    console.warn("[Lulu API] Missing LULU_CLIENT_KEY or LULU_CLIENT_SECRET");
     return null;
   }
 
@@ -51,23 +51,23 @@ export async function getLuluAccessToken(): Promise<string | null> {
   }
 
   try {
-    const authHeader = Buffer.from(${clientKey}:).toString('base64');
-    const tokenUrl = ${baseUrl}/auth/realms/glasstree/protocol/openid-connect/token;
+    const authHeader = Buffer.from(clientKey + ":" + clientSecret).toString("base64");
+    const tokenUrl = baseUrl + "/auth/realms/glasstree/protocol/openid-connect/token";
 
     const res = await fetch(tokenUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        Authorization: Basic ,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: "Basic " + authHeader,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        grant_type: 'client_credentials',
+        grant_type: "client_credentials",
       }),
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error('[Lulu API] Token request failed:', res.status, errText);
+      console.error("[Lulu API] Token request failed:", res.status, errText);
       return null;
     }
 
@@ -76,17 +76,17 @@ export async function getLuluAccessToken(): Promise<string | null> {
     tokenExpiresAt = Date.now() + data.expires_in * 1000;
     return cachedToken;
   } catch (err) {
-    console.error('[Lulu API] Token request exception:', err);
+    console.error("[Lulu API] Token request exception:", err);
     return null;
   }
 }
 
 export async function createLuluPrintJob(params: LuluPrintJobParams) {
   const token = await getLuluAccessToken();
-  const baseUrl = process.env.LULU_API_BASE_URL || 'https://api.sandbox.lulu.com';
+  const baseUrl = process.env.LULU_API_BASE_URL || "https://api.sandbox.lulu.com";
 
   if (!token) {
-    return { success: false, error: 'Unable to authenticate with Lulu API' };
+    return { success: false, error: "Unable to authenticate with Lulu API" };
   }
 
   const payload = {
@@ -108,16 +108,16 @@ export async function createLuluPrintJob(params: LuluPrintJobParams) {
       postcode: params.shippingAddress.postcode,
       phone_number: params.shippingAddress.phone_number,
     },
-    shipping_level: params.shippingLevel || 'MAIL',
+    shipping_level: params.shippingLevel || "MAIL",
     contact_email: params.contactEmail,
   };
 
   try {
-    const res = await fetch(${baseUrl}/print-jobs/, {
-      method: 'POST',
+    const res = await fetch(baseUrl + "/print-jobs/", {
+      method: "POST",
       headers: {
-        Authorization: Bearer ,
-        'Content-Type': 'application/json',
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     });
@@ -125,13 +125,13 @@ export async function createLuluPrintJob(params: LuluPrintJobParams) {
     const data = await res.json();
 
     if (!res.ok) {
-      console.error('[Lulu API] Print job creation error:', res.status, data);
+      console.error("[Lulu API] Print job creation error:", res.status, data);
       return { success: false, status: res.status, error: data };
     }
 
     return { success: true, printJob: data };
   } catch (err: any) {
-    console.error('[Lulu API] Print job exception:', err);
+    console.error("[Lulu API] Print job exception:", err);
     return { success: false, error: err.message };
   }
 }
