@@ -9,18 +9,21 @@ export async function addSubscriberToMailerLite(params: {
 }) {
   const apiKey = process.env.MAILERLITE_API_KEY;
   if (!apiKey) {
-    console.warn("MAILERLITE_API_KEY is not configured.");
+    console.warn("[MailerLite] MAILERLITE_API_KEY is not configured.");
     return null;
   }
 
   const payload: Record<string, any> = {
-    email: params.email,
+    email: params.email.trim().toLowerCase(),
   };
 
+  // Only pass standard known fields to prevent MailerLite schema rejections
+  const subscriberFields: Record<string, any> = {};
   if (params.name) {
-    payload.fields = { name: params.name, ...(params.fields || {}) };
-  } else if (params.fields) {
-    payload.fields = params.fields;
+    subscriberFields.name = params.name;
+  }
+  if (Object.keys(subscriberFields).length > 0) {
+    payload.fields = subscriberFields;
   }
 
   if (params.groupId) {
@@ -39,9 +42,14 @@ export async function addSubscriberToMailerLite(params: {
     });
 
     const data = await res.json();
+    if (!res.ok) {
+      console.error("[MailerLite API Error]:", res.status, data);
+    } else {
+      console.log(`[MailerLite] Subscriber synced successfully: ${params.email} (ID: ${data?.data?.id})`);
+    }
     return data;
   } catch (error) {
-    console.error("MailerLite addSubscriber error:", error);
+    console.error("[MailerLite] Network error:", error);
     return null;
   }
 }
