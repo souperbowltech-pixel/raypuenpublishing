@@ -2,10 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { RETAIL_PRICE } from "@/lib/pricing";
 import { BOOK_1_SKU } from "@/lib/checkout";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 10 requests / minute / IP
+  const limit = rateLimit(`checkout-retail:${clientIp(request)}`, 10, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    );
+  }
+
   try {
     const body = await request.json();
     const quantity =
@@ -49,11 +59,11 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (error: any) {
+  } catch (error) {
     // eslint-disable-next-line no-console
     console.error("[Retail Checkout Error]:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create checkout session" },
+      { error: "Failed to create checkout session" },
       { status: 500 }
     );
   }

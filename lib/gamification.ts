@@ -153,3 +153,19 @@ export function getQuizQuestionsForBook(bookNum: 1 | 2 | 3): QuizQuestion[] {
     };
   });
 }
+
+/**
+ * Server-side quiz grading. The client submits raw answers (a map of
+ * questionId -> chosen option index) and the score is computed here so it can
+ * never be forged. Clamped to [0, academicPassThreshold].
+ */
+export function gradeQuiz(bookNum: 1 | 2 | 3, answers: Record<string, number>): number {
+  const questions = getQuizQuestionsForBook(bookNum);
+  let score = 0;
+  for (const q of questions) {
+    if (answers && answers[q.id] === q.correctIndex) {
+      score += BOOK2_GATE_CONFIG.pointsPerQuestion;
+    }
+  }
+  return Math.max(0, Math.min(BOOK2_GATE_CONFIG.academicPassThreshold, score));
+}

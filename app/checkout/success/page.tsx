@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 export default async function CheckoutSuccessPage({
   searchParams,
 }: {
-  searchParams: { session_id?: string; channel?: string };
+  searchParams: { session_id?: string; type?: string; channel?: string };
 }) {
-  const isWholesale = searchParams.channel === "wholesale";
   const sessionId = searchParams.session_id;
+  let isWholesale = false;
 
   // Direct sync on success page (guarantees MailerLite subscription even before webhook setup)
   if (sessionId) {
@@ -19,7 +19,11 @@ export default async function CheckoutSuccessPage({
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       const customerEmail = session.customer_details?.email || session.customer_email;
       const customerName = session.customer_details?.name || undefined;
-      const orderType = session.metadata?.channel || (isWholesale ? "institutional_sponsorship" : "retail");
+
+      // Derive the channel from the authoritative Stripe session metadata,
+      // never from the (spoofable / mismatched) query string.
+      const orderType = session.metadata?.order_type || session.metadata?.channel || "retail";
+      isWholesale = orderType === "institutional_sponsorship";
 
       if (customerEmail) {
         const groupId = isWholesale

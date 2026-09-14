@@ -1,15 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { SPONSOR_TIERS } from "@/lib/pricing";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function POST(req: NextRequest) {
+  // Rate limit: 10 requests / minute / IP
+  const limit = rateLimit(`checkout-wholesale:${clientIp(req)}`, 10, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } }
+    );
+  }
+
   try {
     const body = await req.json();
-    const { tierId = 1, institution, shippingAddress } = body;
+    const { tierId, institution, shippingAddress } = body;
 
-    const tier = SPONSOR_TIERS[tierId as 1 | 2 | 3] || SPONSOR_TIERS[1];
+    // Validate the contact email.
+    const email = String(institution?.email ?? "").trim().toLowerCase();
+    if (!EMAIL_REGEX.test(email)) {
+      return NextResponse.json(
+        { error: "A valid contact email is required." },
+        { status: 400 }
+      );
+    }
+
+    // Normalize the tier to 1 | 2 | 3 (default 1).
+    const normalizedTierId: 1 | 2 | 3 =
+      tierId === 2 || tierId === 3 ? tierId : 1;
+    const tier = SPONSOR_TIERS[normalizedTierId];
 
     const origin =
       process.env.NEXT_PUBLIC_SITE_URL ||
@@ -51,17 +75,17 @@ export async function POST(req: NextRequest) {
         },
       ],
       mode: "payment",
-      customer_email: institution?.email || undefined,
+      customer_email: email,
       metadata: sessionMetadata,
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}&type=wholesale`,
       cancel_url: `${origin}/institutions`,
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Wholesale checkout error:", error);
     return NextResponse.json(
-      { error: error.message || "Unable to initiate sponsorship checkout" },
+      { error: "Unable to initiate sponsorship checkout" },
       { status: 500 }
     );
   }

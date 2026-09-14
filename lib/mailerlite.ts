@@ -1,6 +1,8 @@
 /**
  * MailerLite integration helper for Puen Publishing.
  */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function addSubscriberToMailerLite(params: {
   email: string;
   name?: string;
@@ -13,24 +15,36 @@ export async function addSubscriberToMailerLite(params: {
     return null;
   }
 
-  const payload: Record<string, any> = {
-    email: params.email.trim().toLowerCase(),
-  };
+  const email = params.email.trim().toLowerCase();
+  if (!EMAIL_REGEX.test(email)) {
+    console.error("[MailerLite] Invalid email address, skipping sync:", params.email);
+    return null;
+  }
 
-  // Only pass standard known fields to prevent MailerLite schema rejections
-  const subscriberFields: Record<string, any> = {};
+  // Custom `fields` (e.g. order_type, stripe_session_id) may not be declared in
+  // the MailerLite schema; combine them with the standard `name` field.
+  const subscriberFields: Record<string, any> = { ...(params.fields || {}) };
   if (params.name) {
     subscriberFields.name = params.name;
   }
-  if (Object.keys(subscriberFields).length > 0) {
-    payload.fields = subscriberFields;
-  }
 
+  const basePayload: Record<string, any> = {
+    email,
+    // Always create as "active" so the subscriber appears in the Active list
+    // even when Double Opt-in is enabled on the account.
+    status: "active",
+  };
   if (params.groupId) {
-    payload.groups = [params.groupId];
+    basePayload.groups = [params.groupId];
   }
 
-  try {
+  const hasFields = Object.keys(subscriberFields).length > 0;
+
+  async function post(withFields: boolean) {
+    const payload: Record<string, any> = { ...basePayload };
+    if (withFields && hasFields) {
+      payload.fields = subscriberFields;
+    }
     const res = await fetch("https://connect.mailerlite.com/api/subscribers", {
       method: "POST",
       headers: {
@@ -40,12 +54,24 @@ export async function addSubscriberToMailerLite(params: {
       },
       body: JSON.stringify(payload),
     });
+    const data = await res.json().catch(() => null);
+    return { res, data };
+  }
 
-    const data = await res.json();
+  try {
+    let { res, data } = await post(true);
+
+    // 422 = MailerLite rejected an undeclared custom field. Retry once without
+    // the custom fields so the subscribe still succeeds.
+    if (res.status === 422 && hasFields) {
+      console.error("[MailerLite API Error]:", res.status, data, "— retrying without custom fields");
+      ({ res, data } = await post(false));
+    }
+
     if (!res.ok) {
       console.error("[MailerLite API Error]:", res.status, data);
     } else {
-      console.log(`[MailerLite] Subscriber synced successfully: ${params.email} (ID: ${data?.data?.id})`);
+      console.log(`[MailerLite] Subscriber synced successfully: ${email} (ID: ${data?.data?.id})`);
     }
     return data;
   } catch (error) {

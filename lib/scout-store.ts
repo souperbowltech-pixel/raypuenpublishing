@@ -34,6 +34,23 @@ const memoryStore: Record<string, PersistentScoutState> = {
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'scouts.json');
 
+// --- Defense-in-depth sanitisers (never trust merged-in values) ---
+function clampInt(value: unknown, min: number, max: number): number {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+
+function sanitizePages(pages: unknown): number[] {
+  if (!Array.isArray(pages)) return [];
+  const seen = new Set<number>();
+  for (const p of pages) {
+    const n = Math.round(Number(p));
+    if (Number.isFinite(n) && n >= 1 && n <= 19) seen.add(n);
+  }
+  return Array.from(seen).sort((a, b) => a - b);
+}
+
 function ensureLocalStore(): Record<string, PersistentScoutState> {
   try {
     if (!fs.existsSync(DATA_DIR)) {
@@ -142,6 +159,13 @@ export async function updateScoutAsync(
     updatedAt: new Date().toISOString(),
   };
 
+  // Defense-in-depth: never let a caller change the token or push out-of-range
+  // scores/pages, then recompute all derived fields from the clamped values.
+  updated.token = current.token;
+  updated.quizScore = clampInt(updated.quizScore, 0, 400);
+  updated.referralScore = clampInt(updated.referralScore, 0, 300);
+  updated.completedPages = sanitizePages(updated.completedPages);
+
   updated.totalScore = updated.quizScore + updated.referralScore;
   updated.hasPassedQuiz = updated.quizScore >= 400;
   updated.hasRecruitedFriend = updated.referralScore >= 300;
@@ -219,6 +243,12 @@ export function updateScoutLocal(
     ...partial,
     updatedAt: new Date().toISOString(),
   };
+
+  // Defense-in-depth: force token, clamp scores, sanitize pages, then recompute.
+  updated.token = scout.token;
+  updated.quizScore = clampInt(updated.quizScore, 0, 400);
+  updated.referralScore = clampInt(updated.referralScore, 0, 300);
+  updated.completedPages = sanitizePages(updated.completedPages);
 
   updated.totalScore = updated.quizScore + updated.referralScore;
   updated.hasPassedQuiz = updated.quizScore >= 400;
