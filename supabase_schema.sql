@@ -23,20 +23,18 @@ CREATE INDEX IF NOT EXISTS idx_scout_profiles_status ON scout_profiles(status);
 -- Enable Row Level Security (RLS)
 ALTER TABLE scout_profiles ENABLE ROW LEVEL SECURITY;
 
--- Allow public read access (Scouts can check their state via token)
-CREATE POLICY "Allow public read on scout_profiles"
-ON scout_profiles FOR SELECT
-USING (true);
-
--- Allow public insert and update (Scouts update page completions, quiz, and referrals)
-CREATE POLICY "Allow public insert on scout_profiles"
-ON scout_profiles FOR INSERT
-WITH CHECK (true);
-
-CREATE POLICY "Allow public update on scout_profiles"
-ON scout_profiles FOR UPDATE
-USING (true)
-WITH CHECK (true);
+-- ============================================================================
+-- RLS is DEFAULT-DENY for the anon (browser) key: no public SELECT / INSERT /
+-- UPDATE / DELETE policies are defined, so the anon key that ships to the
+-- browser cannot read or write scout rows directly.
+--
+-- All reads and writes go through the server API routes, which use the Supabase
+-- SERVICE ROLE key (SUPABASE_SERVICE_ROLE_KEY). The service role bypasses RLS
+-- entirely, so no policies are needed for server access.
+--
+-- Do NOT re-add "WITH CHECK (true)" public policies — that is what allowed
+-- anyone with the anon key to forge any scout row.
+-- ============================================================================
 
 -- Insert initial flagship scout record
 INSERT INTO scout_profiles (token, scout_name, completed_pages, quiz_score, referral_score, status)

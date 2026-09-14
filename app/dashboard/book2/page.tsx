@@ -38,11 +38,12 @@ export default function Book2DashboardPage() {
     loadState();
   }, [referralCode]);
 
-  // Sync state to persistent API
+  // Sync state to persistent API. The server is authoritative: it returns the
+  // canonical scout record, which we mirror back into local state.
   const persistUpdate = async (updates: Record<string, any>) => {
     setIsSaving(true);
     try {
-      await fetch("/api/scout/update", {
+      const res = await fetch("/api/scout/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,6 +51,12 @@ export default function Book2DashboardPage() {
           ...updates,
         }),
       });
+      const data = await res.json();
+      if (data?.scout) {
+        setQuizScore(data.scout.quizScore ?? 0);
+        setReferralScore(data.scout.referralScore ?? 0);
+        setCompletedPages(data.scout.completedPages ?? []);
+      }
     } catch {
       // ignore
     } finally {
@@ -67,19 +74,21 @@ export default function Book2DashboardPage() {
     persistUpdate({ completedPages: updated });
   };
 
-  const handleQuizScoreChange = (score: number) => {
-    setQuizScore(score);
-    persistUpdate({ quizScore: score });
+  // Quiz answers are graded server-side; we never send a client-computed score.
+  const handleQuizSubmit = (answers: Record<string, number>, book: 1 | 2 | 3) => {
+    persistUpdate({ quizAnswers: answers, quizBook: book });
+  };
+
+  const handleQuizReset = (book: 1 | 2 | 3) => {
+    persistUpdate({ quizAnswers: {}, quizBook: book });
   };
 
   const handleSimulateReferral = () => {
-    setReferralScore(300);
-    persistUpdate({ referralScore: 300 });
+    persistUpdate({ demoReferral: true });
   };
 
   const handleResetReferral = () => {
-    setReferralScore(0);
-    persistUpdate({ referralScore: 0 });
+    persistUpdate({ demoReferral: false });
   };
 
   const totalScore = quizScore + referralScore;
@@ -158,7 +167,8 @@ export default function Book2DashboardPage() {
         {/* 3. Step 1: Academic Pass - 12-Question Trilogy Mastery Quiz Engine (400 pts) */}
         <ComprehensionQuiz
           currentQuizScore={quizScore}
-          onScoreUpdate={handleQuizScoreChange}
+          onSubmitAnswers={handleQuizSubmit}
+          onReset={handleQuizReset}
           bookNumber={2}
         />
 

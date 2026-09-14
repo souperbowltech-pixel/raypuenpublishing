@@ -8,6 +8,20 @@
 
 ---
 
+> ## ⚠️ ACTION REQUIRED — ROTATE EXPOSED CREDENTIALS
+>
+> Earlier revisions of this document committed live secrets to a public repository:
+> the Lulu `LULU_CLIENT_KEY` / `LULU_CLIENT_SECRET`, the Supabase project URL, and
+> Stripe account/keys. Those values have now been **redacted from the current file,
+> but redaction does NOT remove them from git history** — anyone can still recover
+> them from previous commits.
+>
+> **All exposed credentials MUST be rotated immediately** (Lulu client key/secret,
+> Stripe secret key, Supabase service-role and anon keys). See [`SECURITY.md`](SECURITY.md)
+> for the full findings and the required manual rotation/configuration steps.
+
+---
+
 ## 1. Executive Summary & Project Background
 
 This project represents the digital storefront and community fulfillment infrastructure for **Ray Puen's children's publication venture**, operating under the primary Bowker ISBN publishing umbrella of **Regency Press (RP)** with **Puen Publishing** acting as the specialized 501(c)(3) educational imprint.
@@ -31,7 +45,7 @@ The platform is purpose-built to support:
 - **Brand Identity & Favicon:** Ray Puen's official gold crest colophon cropped and configured as browser favicon (`/favicon.ico`, `app/icon.png`, Apple touch icons).
 
 ### B. Cloud Database (Supabase) — Architected for 100,000+ Students
-- **Database Engine:** Supabase PostgreSQL instance live at `https://rrssxdmsfvrzpixgoiuo.supabase.co`.
+- **Database Engine:** Supabase PostgreSQL instance (project URL and keys are stored in private env vars, not committed).
 - **High-Concurrency Table Schema (`scout_profiles`):**
   - Tracks unique student scout tokens (e.g. `CAPTAIN-RAY-700`).
   - Stores dynamic array of completed pages (`1` through `19`).
@@ -45,10 +59,8 @@ The platform is purpose-built to support:
 - Academic pass gate (400 pts) + friend referral gate (300 pts) triggering the **Volume 3 Master Scout Unlock**.
 
 ### D. Payments & Commerce (Stripe Sandbox Integration)
-- Connected to Ray's official account: `info@puenpublishing.com` (`acct_1UFAwQ0CnaRWSl97`).
-- Verified standard keys:
-  - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`: `pk_test_51UFAwQ0C...`
-  - `STRIPE_SECRET_KEY`: `sk_test_51UFAwQ0C...`
+- Connected to Ray's official Stripe account (account ID and keys are stored in private env vars, not committed).
+- Stripe keys (`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) are configured in the deployment environment only — never committed to the repository.
 - **End-to-End Test Passed:** Retail checkout (\$6.99) and institutional tier checkouts execute cleanly and redirect to the branded `/checkout/success` receipt page.
 
 ### E. MailerLite Email Automation
@@ -61,8 +73,7 @@ The platform is purpose-built to support:
 ### F. Lulu Print-On-Demand API Engine
 - Complete OAuth2 Client-Credentials fulfillment engine built in `lib/lulu.ts`.
 - Connected to Ray's Lulu developer portal with Sandbox credentials:
-  - `LULU_CLIENT_KEY`: `3c6f230a-c24e-4653-adea-15498d7e423f`
-  - `LULU_CLIENT_SECRET`: `B0hfTXNC9L8dj09MyS8YDB1tM1z938Y1`
+  - `LULU_CLIENT_KEY` / `LULU_CLIENT_SECRET`: stored in private env vars, not committed.
   - Ready for automatic zero-dollar student print dispatch.
 
 ---

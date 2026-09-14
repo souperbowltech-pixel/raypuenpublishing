@@ -4,13 +4,15 @@ import React, { useState } from "react";
 import { getQuizQuestionsForBook, QuizQuestion } from "@/lib/gamification";
 
 interface ComprehensionQuizProps {
-  onScoreUpdate: (score: number) => void;
+  onSubmitAnswers: (answers: Record<string, number>, book: 1 | 2 | 3) => void;
+  onReset: (book: 1 | 2 | 3) => void;
   currentQuizScore: number;
   bookNumber?: 1 | 2 | 3;
 }
 
 export default function ComprehensionQuiz({
-  onScoreUpdate,
+  onSubmitAnswers,
+  onReset,
   currentQuizScore,
   bookNumber = 2,
 }: ComprehensionQuizProps) {
@@ -27,28 +29,23 @@ export default function ComprehensionQuiz({
     }));
   };
 
-  const calculateScore = () => {
-    let score = 0;
-    questions.forEach((q) => {
-      if (answers[q.id] === q.correctIndex) {
-        score += 100;
-      }
-    });
+  // Grading is done server-side; the client only submits the raw answers.
+  const handleSubmit = () => {
     setSubmitted(true);
-    onScoreUpdate(score);
+    onSubmitAnswers(answers, activeBook);
   };
 
   const handleReset = () => {
     setAnswers({});
     setSubmitted(false);
-    onScoreUpdate(0);
+    onReset(activeBook);
   };
 
   const handleSwitchBook = (b: 1 | 2 | 3) => {
     setActiveBook(b);
     setAnswers({});
     setSubmitted(false);
-    onScoreUpdate(0);
+    onReset(b);
   };
 
   const allAnswered = questions.every((q) => answers[q.id] !== undefined);
@@ -163,7 +160,7 @@ export default function ComprehensionQuiz({
           <button
             type="button"
             disabled={!allAnswered}
-            onClick={calculateScore}
+            onClick={handleSubmit}
             className="btn-primary w-full sm:w-auto"
           >
             Submit Quiz & Lock Academic Points (100 pts / question)
