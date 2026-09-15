@@ -15,10 +15,32 @@ export default function Book2DashboardPage() {
   const [referralScore, setReferralScore] = useState(0);
   const [completedPages, setCompletedPages] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const referralCode = "CAPTAIN-RAY-700";
+  // Unique per-scout token. There is no login, so each browser gets its own
+  // persistent token (generated once, stored in localStorage) instead of every
+  // scout sharing one hardcoded token.
+  const [referralCode, setReferralCode] = useState<string>("");
 
-  // Load persistent state on mount
   useEffect(() => {
+    let token = "";
+    try {
+      token = localStorage.getItem("scout_token") || "";
+    } catch {
+      // localStorage unavailable (private mode) — fall back to a session token
+    }
+    if (!token) {
+      token = "SCOUT-" + Math.random().toString(36).slice(2, 10).toUpperCase();
+      try {
+        localStorage.setItem("scout_token", token);
+      } catch {
+        // ignore write errors
+      }
+    }
+    setReferralCode(token);
+  }, []);
+
+  // Load persistent state once we have a token
+  useEffect(() => {
+    if (!referralCode) return;
     async function loadState() {
       try {
         const res = await fetch(`/api/scout/state?token=${referralCode}`);
