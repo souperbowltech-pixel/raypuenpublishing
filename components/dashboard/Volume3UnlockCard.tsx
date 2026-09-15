@@ -10,10 +10,10 @@ export default function Volume3UnlockCard({ scoutName }: Volume3UnlockCardProps)
   const [addressConfirmed, setAddressConfirmed] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     recipient: scoutName || "Young Scout",
-    addressLine1: "123 Faith Lane",
-    city: "Loma Linda",
+    addressLine1: "33514 Liberty Rd.",
+    city: "Yucaipa",
     state: "CA",
-    zip: "92354",
+    zip: "92399",
   });
 
   const handleConfirmShipping = (e: React.FormEvent) => {
