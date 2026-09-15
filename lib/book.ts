@@ -80,7 +80,7 @@ export const publisherBrand = {
     company: "Regency Press • Puen Publishing",
     website: "www.puenpublishing.com",
     email: "info@puenpublishing.com",
-    cityState: "Loma Linda, California · USA",
+    cityState: "Yucaipa, California · USA",
   },
 };
 
