@@ -5,7 +5,8 @@ import Link from "next/link";
 import ScoreGate from "@/components/dashboard/ScoreGate";
 import ComprehensionQuiz from "@/components/dashboard/ComprehensionQuiz";
 import QuestCaptainBox from "@/components/dashboard/QuestCaptainBox";
-import Volume3UnlockCard from "@/components/dashboard/Volume3UnlockCard";
+import BookUnlockCard from "@/components/dashboard/BookUnlockCard";
+import GrandpaSponsorCard from "@/components/dashboard/GrandpaSponsorCard";
 import PageStickersGrid from "@/components/dashboard/PageStickersGrid";
 import { BOOK2_GATE_CONFIG } from "@/lib/gamification";
 
@@ -13,12 +14,33 @@ export default function Book2DashboardPage() {
   const [scoutName, setScoutName] = useState("Scout Explorer");
   const [quizScore, setQuizScore] = useState(0);
   const [referralScore, setReferralScore] = useState(0);
+  const [friendsCompleted, setFriendsCompleted] = useState(0);
+  const [book3Unlocked, setBook3Unlocked] = useState(false);
   const [completedPages, setCompletedPages] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const referralCode = "CAPTAIN-RAY-700";
 
   // Load persistent state on mount
   useEffect(() => {
+    async function confirmSponsorshipIfReturning() {
+      if (typeof window === "undefined") return;
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("sponsored") === "1" && params.get("session_id")) {
+        try {
+          await fetch("/api/checkout/sponsor/confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: params.get("session_id") }),
+          });
+        } catch {
+          // ignore — the Stripe webhook is the primary unlock path
+        } finally {
+          // Clean the query string so a refresh doesn't re-confirm.
+          window.history.replaceState({}, "", "/dashboard/book2");
+        }
+      }
+    }
+
     async function loadState() {
       try {
         const res = await fetch(`/api/scout/state?token=${referralCode}`);
@@ -27,6 +49,8 @@ export default function Book2DashboardPage() {
           setScoutName(data.scout.scoutName || "Scout Explorer");
           setQuizScore(data.scout.quizScore || 0);
           setReferralScore(data.scout.referralScore || 0);
+          setFriendsCompleted(data.scout.friendsCompleted || 0);
+          setBook3Unlocked(Boolean(data.scout.book3Unlocked));
           setCompletedPages(data.scout.completedPages || []);
         }
       } catch (e) {
@@ -35,7 +59,8 @@ export default function Book2DashboardPage() {
         if (savedPages) setCompletedPages(JSON.parse(savedPages));
       }
     }
-    loadState();
+    // Confirm any returning Grandpa sponsorship first, then load the fresh state.
+    confirmSponsorshipIfReturning().then(loadState);
   }, [referralCode]);
 
   // Sync state to persistent API. The server is authoritative: it returns the
@@ -55,6 +80,8 @@ export default function Book2DashboardPage() {
       if (data?.scout) {
         setQuizScore(data.scout.quizScore ?? 0);
         setReferralScore(data.scout.referralScore ?? 0);
+        setFriendsCompleted(data.scout.friendsCompleted ?? 0);
+        setBook3Unlocked(Boolean(data.scout.book3Unlocked));
         setCompletedPages(data.scout.completedPages ?? []);
       }
     } catch {
@@ -83,18 +110,13 @@ export default function Book2DashboardPage() {
     persistUpdate({ quizAnswers: {}, quizBook: book });
   };
 
-  const handleSimulateReferral = () => {
-    persistUpdate({ demoReferral: true });
-  };
-
-  const handleResetReferral = () => {
-    persistUpdate({ demoReferral: false });
+  const handleSetFriends = (count: number) => {
+    persistUpdate({ demoFriendsCompleted: count });
   };
 
   const totalScore = quizScore + referralScore;
   const hasPassedQuiz = quizScore >= BOOK2_GATE_CONFIG.academicPassThreshold;
-  const hasFriendRecruited = referralScore >= BOOK2_GATE_CONFIG.friendReferralPoints;
-  const isUnlocked = totalScore >= BOOK2_GATE_CONFIG.unlockThreshold;
+  const isBook2Unlocked = totalScore >= BOOK2_GATE_CONFIG.unlockThreshold;
 
   return (
     <div className="min-h-screen bg-paper text-ink pb-24">
@@ -164,25 +186,31 @@ export default function Book2DashboardPage() {
           onTogglePage={handleTogglePage}
         />
 
-        {/* 3. Step 1: Academic Pass - 12-Question Trilogy Mastery Quiz Engine (400 pts) */}
+        {/* 3. Step 1: Academic Pass - Book 1 Comprehension Quiz Engine (400 pts) */}
         <ComprehensionQuiz
           currentQuizScore={quizScore}
           onSubmitAnswers={handleQuizSubmit}
           onReset={handleQuizReset}
-          bookNumber={2}
+          bookNumber={1}
         />
 
-        {/* 4. Step 2: Quest Captain Mission - Friend Referral Engine (300 pts) */}
+        {/* 4. Step 2: Quest Captain Mission - 2-of-3 Friend Referral Engine (300 pts) */}
         <QuestCaptainBox
-          hasFriendRecruited={hasFriendRecruited}
+          friendsCompleted={friendsCompleted}
           referralCode={referralCode}
           hasPassedQuiz={hasPassedQuiz}
-          onSimulateReferral={handleSimulateReferral}
-          onResetReferral={handleResetReferral}
+          onSetFriends={handleSetFriends}
         />
 
-        {/* 5. Volume 3 Unlock Celebration & Lulu Automated $0.00 Dispatch */}
-        {isUnlocked && <Volume3UnlockCard scoutName={scoutName} />}
+        {/* 5. Peer track: reaching 700 pts unlocks Book 2 free (IngramSpark dispatch) */}
+        {isBook2Unlocked && <BookUnlockCard scoutName={scoutName} bookNumber={2} />}
+
+        {/* 6. Grandpa track: a relative's $40 sponsorship unlocks Book 3 in parallel */}
+        {book3Unlocked ? (
+          <BookUnlockCard scoutName={scoutName} bookNumber={3} />
+        ) : (
+          <GrandpaSponsorCard scoutToken={referralCode} scoutName={scoutName} />
+        )}
       </main>
     </div>
   );

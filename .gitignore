@@ -29,6 +29,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local runtime scout store (test/dev data) & local editor tooling
+/data/
+/.claude/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { RETAIL_PRICE } from "@/lib/pricing";
 import { BOOK_1_SKU } from "@/lib/checkout";
+import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,10 @@ export async function POST(request: NextRequest) {
         channel: "retail",
         sku: BOOK_1_SKU,
         quantity: quantity.toString(),
+      },
+      // Legal credit line, shown to the customer on the Stripe Checkout page.
+      custom_text: {
+        submit: { message: publisherBrand.fullCredit },
       },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout/cancel`,

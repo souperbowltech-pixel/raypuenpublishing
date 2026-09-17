@@ -20,15 +20,32 @@ export interface ScoutState {
   referralCode: string;
 }
 
+/**
+ * Referral gate (Ray's directive #2): the 3-pack invite form captures 3 friend
+ * names, but the 300 referral points fire the moment ANY 2 of those 3 invited
+ * friends log in and turn their Page 1 sticker from grayscale to full colour.
+ */
+export const REFERRAL_INVITE_CAPACITY = 3; // names captured at checkout
+export const REFERRAL_FRIEND_REQUIREMENT = 2; // friends needed to fire the points
+
 export const BOOK2_GATE_CONFIG = {
   headerBanner: "BECOME A QUEST CAPTAIN! UPGRADE YOUR SCORE TO THE BIBLICAL 700!",
   mainPanelCopy:
-    "Fantastic job, Scout! You aced your Book 2 Mastery Quiz and locked in your 400 Academic Points. Your digital coloring ribbon is officially ready to print! But to keep your legacy path alive for Book 3, you must recruit 1 friend to join the circle.",
+    "Fantastic job, Scout! You read Book 1, aced your comprehension quiz, and locked in your 400 Academic Points. Your digital coloring ribbon is officially ready to print! To reach the Biblical 700 and unlock Book 2 completely free, you must recruit 2 friends to join the circle.",
   academicPassThreshold: 400,
   friendReferralPoints: 300,
+  friendReferralRequirement: REFERRAL_FRIEND_REQUIREMENT,
+  friendInviteCapacity: REFERRAL_INVITE_CAPACITY,
   unlockThreshold: 700,
   pointsPerQuestion: 100,
 };
+
+/**
+ * The $40 "Grandpa multiplier" (Ray's directive #6): a relative or family friend
+ * can sponsor a child for a flat $40, which leap-frogs the peer track and unlocks
+ * Book 3 free — independently of the 700-point Book 2 path.
+ */
+export const GRANDPA_SPONSOR_PRICE = 40.0;
 
 export const TRILOGY_QUIZ_DATA: Record<1 | 2 | 3, Array<{ question: string; correct: string; incorrect: string[] }>> = {
   1: [

@@ -1,34 +1,95 @@
 import fs from 'fs';
 import path from 'path';
 import { supabase } from '@/lib/supabase';
+import {
+  BOOK2_GATE_CONFIG,
+  REFERRAL_FRIEND_REQUIREMENT,
+  REFERRAL_INVITE_CAPACITY,
+} from '@/lib/gamification';
 
 export interface PersistentScoutState {
   token: string;
   scoutName: string;
   completedPages: number[];
   quizScore: number;
+  /** Number of invited friends (0–3) who logged in and coloured their Page 1. */
+  friendsCompleted: number;
+  /** Derived: 300 once `friendsCompleted` reaches the 2-friend requirement. */
   referralScore: number;
   totalScore: number;
   hasPassedQuiz: boolean;
   hasRecruitedFriend: boolean;
-  status: 'In_Progress' | 'Academic_Pass' | 'Unlock_Volume_3';
+  /** Peer track: reaching 700 pts unlocks Book 2 free. */
+  book2Unlocked: boolean;
+  /** Grandpa track: a relative's $40 sponsorship unlocks Book 3 free. */
+  book3Sponsored: boolean;
+  book3Unlocked: boolean;
+  status: 'In_Progress' | 'Academic_Pass' | 'Unlock_Volume_2';
   updatedAt: string;
+}
+
+/** The authoritative, non-derived inputs a scout record is built from. */
+interface ScoutInput {
+  token: string;
+  scoutName: string;
+  completedPages: number[];
+  quizScore: number;
+  friendsCompleted: number;
+  book3Sponsored: boolean;
+  updatedAt: string;
+}
+
+/**
+ * Recompute every derived field from the authoritative inputs (`quizScore` and
+ * `friendsCompleted`) plus the `book3Sponsored` flag, so the peer (Book 2) and
+ * Grandpa (Book 3) tracks stay consistent everywhere. Also clamps the inputs.
+ */
+function deriveScoutFields(s: ScoutInput): PersistentScoutState {
+  const quizScore = clampInt(s.quizScore, 0, BOOK2_GATE_CONFIG.academicPassThreshold);
+  const friendsCompleted = clampInt(s.friendsCompleted, 0, REFERRAL_INVITE_CAPACITY);
+  const book3Sponsored = Boolean(s.book3Sponsored);
+
+  const hasRecruitedFriend = friendsCompleted >= REFERRAL_FRIEND_REQUIREMENT;
+  const referralScore = hasRecruitedFriend ? BOOK2_GATE_CONFIG.friendReferralPoints : 0;
+  const totalScore = quizScore + referralScore;
+  const hasPassedQuiz = quizScore >= BOOK2_GATE_CONFIG.academicPassThreshold;
+  const book2Unlocked = totalScore >= BOOK2_GATE_CONFIG.unlockThreshold;
+
+  const status: PersistentScoutState['status'] = book2Unlocked
+    ? 'Unlock_Volume_2'
+    : hasPassedQuiz
+    ? 'Academic_Pass'
+    : 'In_Progress';
+
+  return {
+    token: s.token,
+    scoutName: s.scoutName,
+    completedPages: s.completedPages,
+    quizScore,
+    friendsCompleted,
+    referralScore,
+    totalScore,
+    hasPassedQuiz,
+    hasRecruitedFriend,
+    book2Unlocked,
+    book3Sponsored,
+    book3Unlocked: book3Sponsored,
+    status,
+    updatedAt: s.updatedAt,
+  };
 }
 
 // In-memory fallback map (handles serverless environments where fs is read-only)
 const memoryStore: Record<string, PersistentScoutState> = {
-  'CAPTAIN-RAY-700': {
+  'CAPTAIN-RAY-700': deriveScoutFields({
     token: 'CAPTAIN-RAY-700',
     scoutName: 'Scout Explorer',
     completedPages: [],
     quizScore: 0,
-    referralScore: 0,
-    totalScore: 0,
-    hasPassedQuiz: false,
-    hasRecruitedFriend: false,
-    status: 'In_Progress',
+    friendsCompleted: 0,
+    book3Sponsored: false,
     updatedAt: new Date().toISOString(),
-  },
+  }),
 };
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -93,18 +154,25 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
         .maybeSingle();
 
       if (!error && data) {
-        return {
+        // `friends_completed` is the new authoritative referral input. When the
+        // column is absent (pre-migration rows) fall back to the legacy
+        // referral_score (>=300 meant the friend gate was met).
+        const friendsCompleted =
+          data.friends_completed != null
+            ? Number(data.friends_completed)
+            : Number(data.referral_score ?? 0) >= 300
+            ? REFERRAL_FRIEND_REQUIREMENT
+            : 0;
+
+        return deriveScoutFields({
           token: data.token,
           scoutName: data.scout_name || 'Young Scout',
           completedPages: (data.completed_pages || []).map((p: any) => Number(p)),
           quizScore: Number(data.quiz_score ?? 0),
-          referralScore: Number(data.referral_score ?? 0),
-          totalScore: Number(data.quiz_score ?? 0) + Number(data.referral_score ?? 0),
-          hasPassedQuiz: Number(data.quiz_score ?? 0) >= 400,
-          hasRecruitedFriend: Number(data.referral_score ?? 0) >= 300,
-          status: data.status || 'In_Progress',
+          friendsCompleted,
+          book3Sponsored: Boolean(data.book3_sponsored),
           updatedAt: data.updated_at || new Date().toISOString(),
-        };
+        }) as PersistentScoutState;
       }
 
       // If not found in Supabase, create record
@@ -125,18 +193,15 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
           .maybeSingle();
 
         if (!insertError && inserted) {
-          return {
+          return deriveScoutFields({
             token: inserted.token,
             scoutName: inserted.scout_name,
             completedPages: (inserted.completed_pages || []).map((p: any) => Number(p)),
             quizScore: Number(inserted.quiz_score ?? 0),
-            referralScore: Number(inserted.referral_score ?? 0),
-            totalScore: 0,
-            hasPassedQuiz: false,
-            hasRecruitedFriend: false,
-            status: inserted.status,
+            friendsCompleted: Number(inserted.friends_completed ?? 0),
+            book3Sponsored: Boolean(inserted.book3_sponsored),
             updatedAt: inserted.updated_at,
-          };
+          }) as PersistentScoutState;
         }
       }
     } catch (err) {
@@ -153,30 +218,17 @@ export async function updateScoutAsync(
   partial: Partial<PersistentScoutState>
 ): Promise<PersistentScoutState> {
   const current = await getOrCreateScoutAsync(token);
-  const updated: PersistentScoutState = {
-    ...current,
-    ...partial,
-    updatedAt: new Date().toISOString(),
-  };
 
   // Defense-in-depth: never let a caller change the token or push out-of-range
-  // scores/pages, then recompute all derived fields from the clamped values.
-  updated.token = current.token;
-  updated.quizScore = clampInt(updated.quizScore, 0, 400);
-  updated.referralScore = clampInt(updated.referralScore, 0, 300);
-  updated.completedPages = sanitizePages(updated.completedPages);
-
-  updated.totalScore = updated.quizScore + updated.referralScore;
-  updated.hasPassedQuiz = updated.quizScore >= 400;
-  updated.hasRecruitedFriend = updated.referralScore >= 300;
-
-  if (updated.totalScore >= 700) {
-    updated.status = 'Unlock_Volume_3';
-  } else if (updated.hasPassedQuiz) {
-    updated.status = 'Academic_Pass';
-  } else {
-    updated.status = 'In_Progress';
-  }
+  // values. Merge, force the token, sanitize pages, then recompute every derived
+  // field from the authoritative inputs (deriveScoutFields also clamps).
+  const merged = { ...current, ...partial };
+  const updated: PersistentScoutState = deriveScoutFields({
+    ...merged,
+    token: current.token,
+    completedPages: sanitizePages(merged.completedPages),
+    updatedAt: new Date().toISOString(),
+  }) as PersistentScoutState;
 
   // 1. Sync to Supabase
   if (supabase) {
@@ -192,6 +244,19 @@ export async function updateScoutAsync(
             referral_score: updated.referralScore,
             status: updated.status,
             updated_at: updated.updatedAt,
+          },
+          { onConflict: 'token' }
+        );
+
+      // Best-effort: persist the new columns separately so that if the Supabase
+      // schema has not been migrated yet, the primary upsert above still lands.
+      await supabase
+        .from('scout_profiles')
+        .upsert(
+          {
+            token: updated.token,
+            friends_completed: updated.friendsCompleted,
+            book3_sponsored: updated.book3Sponsored,
           },
           { onConflict: 'token' }
         );
@@ -214,21 +279,36 @@ export function getOrCreateScoutLocal(token: string, name?: string): PersistentS
   const cleanToken = token.trim() || 'CAPTAIN-RAY-700';
 
   if (!store[cleanToken]) {
-    store[cleanToken] = {
+    store[cleanToken] = deriveScoutFields({
       token: cleanToken,
       scoutName: name || 'Young Scout',
       completedPages: [],
       quizScore: 0,
-      referralScore: 0,
-      totalScore: 0,
-      hasPassedQuiz: false,
-      hasRecruitedFriend: false,
-      status: 'In_Progress',
+      friendsCompleted: 0,
+      book3Sponsored: false,
       updatedAt: new Date().toISOString(),
-    };
+    });
     saveLocalStore(store);
   }
-  return store[cleanToken];
+
+  // Normalize on read: a scouts.json written by an older build may lack the new
+  // fields (friends_completed / book3_sponsored) or carry a stale status. Recompute
+  // from the authoritative inputs, inferring friendsCompleted from legacy referral_score.
+  const rec = store[cleanToken] as Partial<PersistentScoutState> & { referralScore?: number };
+  return deriveScoutFields({
+    token: rec.token ?? cleanToken,
+    scoutName: rec.scoutName ?? 'Young Scout',
+    completedPages: rec.completedPages ?? [],
+    quizScore: rec.quizScore ?? 0,
+    friendsCompleted:
+      rec.friendsCompleted != null
+        ? rec.friendsCompleted
+        : (rec.referralScore ?? 0) >= 300
+        ? REFERRAL_FRIEND_REQUIREMENT
+        : 0,
+    book3Sponsored: Boolean(rec.book3Sponsored),
+    updatedAt: rec.updatedAt ?? new Date().toISOString(),
+  });
 }
 
 export function updateScoutLocal(
@@ -238,29 +318,15 @@ export function updateScoutLocal(
   const store = ensureLocalStore();
   const scout = getOrCreateScoutLocal(token);
 
-  const updated: PersistentScoutState = {
-    ...scout,
-    ...partial,
+  // Defense-in-depth: force token, sanitize pages, then recompute all derived
+  // fields (deriveScoutFields clamps quizScore + friendsCompleted).
+  const merged = { ...scout, ...partial };
+  const updated: PersistentScoutState = deriveScoutFields({
+    ...merged,
+    token: scout.token,
+    completedPages: sanitizePages(merged.completedPages),
     updatedAt: new Date().toISOString(),
-  };
-
-  // Defense-in-depth: force token, clamp scores, sanitize pages, then recompute.
-  updated.token = scout.token;
-  updated.quizScore = clampInt(updated.quizScore, 0, 400);
-  updated.referralScore = clampInt(updated.referralScore, 0, 300);
-  updated.completedPages = sanitizePages(updated.completedPages);
-
-  updated.totalScore = updated.quizScore + updated.referralScore;
-  updated.hasPassedQuiz = updated.quizScore >= 400;
-  updated.hasRecruitedFriend = updated.referralScore >= 300;
-
-  if (updated.totalScore >= 700) {
-    updated.status = 'Unlock_Volume_3';
-  } else if (updated.hasPassedQuiz) {
-    updated.status = 'Academic_Pass';
-  } else {
-    updated.status = 'In_Progress';
-  }
+  }) as PersistentScoutState;
 
   store[scout.token] = updated;
   saveLocalStore(store);

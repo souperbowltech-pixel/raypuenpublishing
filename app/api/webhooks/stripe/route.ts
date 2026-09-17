@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { addSubscriberToMailerLite } from "@/lib/mailerlite";
+import { updateScoutAsync } from "@/lib/scout-store";
+
+const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +37,22 @@ export async function POST(req: NextRequest) {
     const orderType = session.metadata?.order_type || "retail";
 
     console.log(`[Stripe Webhook] Order completed: ${session.id} (${orderType}) for ${customerEmail}`);
+
+    // Grandpa multiplier: a confirmed $40 sponsorship unlocks Book 3 for the
+    // scout named in the session metadata (independent of the peer 700 track).
+    if (orderType === "grandpa_sponsorship") {
+      const scoutToken = session.metadata?.scout_token || "";
+      if (TOKEN_REGEX.test(scoutToken)) {
+        try {
+          await updateScoutAsync(scoutToken, { book3Sponsored: true });
+          console.log(`[Grandpa Sponsor] Book 3 unlocked for scout ${scoutToken}`);
+        } catch (err) {
+          console.error("[Grandpa Sponsor] Failed to unlock Book 3:", err);
+        }
+      } else {
+        console.warn("[Grandpa Sponsor] Missing/invalid scout_token in session metadata");
+      }
+    }
 
     // Auto-sync buyer to MailerLite
     if (customerEmail) {
