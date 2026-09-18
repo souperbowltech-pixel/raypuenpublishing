@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { GRANDPA_SPONSOR_PRICE } from "@/lib/gamification";
+import SponsorQRCode from "@/components/dashboard/SponsorQRCode";
 
 interface GrandpaSponsorCardProps {
   scoutToken: string;
@@ -44,6 +45,12 @@ export default function GrandpaSponsorCard({ scoutToken, scoutName }: GrandpaSpo
     currency: "USD",
   }).format(GRANDPA_SPONSOR_PRICE);
 
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://raypuenpublishing.vercel.app";
+  const sponsorLink = `${origin}/sponsor?token=${encodeURIComponent(scoutToken)}${
+    scoutName ? `&scout=${encodeURIComponent(scoutName)}` : ""
+  }`;
+
   return (
     <div className="rounded-2xl border-2 border-clay/30 bg-gradient-to-b from-clay/5 to-paper p-6 sm:p-8 shadow-card">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ink/10 pb-5">
@@ -68,18 +75,23 @@ export default function GrandpaSponsorCard({ scoutToken, scoutName }: GrandpaSpo
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
-        <button
-          type="button"
-          onClick={handleSponsor}
-          disabled={loading}
-          className="btn-primary w-full sm:w-auto text-base disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {loading ? "Redirecting to secure checkout…" : `💳 Sponsor Book 3 (${price})`}
-        </button>
-        <span className="text-xs text-ink-soft">
-          Secure payment via Stripe. Book 3 unlocks automatically the moment the sponsorship is confirmed.
-        </span>
+      <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-5">
+        <div className="flex-1">
+          <button
+            type="button"
+            onClick={handleSponsor}
+            disabled={loading}
+            className="btn-primary w-full sm:w-auto text-base disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? "Redirecting to secure checkout…" : `💳 Sponsor Book 3 (${price})`}
+          </button>
+          <p className="mt-2 text-xs text-ink-soft">
+            Secure payment via Stripe. Book 3 unlocks automatically the moment the sponsorship is confirmed.
+          </p>
+        </div>
+
+        {/* Legacy QR checkout — a relative can scan to sponsor from a printed page or shared screen */}
+        <SponsorQRCode value={sponsorLink} caption="Scan to sponsor Book 3 — hand this to a relative!" />
       </div>
 
       {error && (

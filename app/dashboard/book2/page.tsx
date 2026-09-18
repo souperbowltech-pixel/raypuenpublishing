@@ -7,6 +7,7 @@ import ComprehensionQuiz from "@/components/dashboard/ComprehensionQuiz";
 import QuestCaptainBox from "@/components/dashboard/QuestCaptainBox";
 import BookUnlockCard from "@/components/dashboard/BookUnlockCard";
 import GrandpaSponsorCard from "@/components/dashboard/GrandpaSponsorCard";
+import Book2ContinuationBanner from "@/components/dashboard/Book2ContinuationBanner";
 import PageStickersGrid from "@/components/dashboard/PageStickersGrid";
 import { BOOK2_GATE_CONFIG } from "@/lib/gamification";
 
@@ -146,6 +147,10 @@ export default function Book2DashboardPage() {
       </header>
 
       <main className="container-page mt-8 space-y-8 max-w-5xl">
+        {/* Rule 2: Book 2 Continuation Hook — persistent nudge toward the Grandpa path,
+            shown once Book 2 is unlocked but no relative has sponsored yet. */}
+        {isBook2Unlocked && !book3Unlocked && <Book2ContinuationBanner />}
+
         {/* Welcome Profile Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-paper-deep p-4 sm:p-6 border border-ink/10">
           <div>

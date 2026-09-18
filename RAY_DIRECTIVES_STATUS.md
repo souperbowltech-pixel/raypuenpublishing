@@ -1,11 +1,46 @@
 # Ray's Directives — Implementation Status
 
 Tracking the work from the Sept 16 email thread (Stripe/MailerLite hardening,
-point-gate logic, referral engine, dual-unlock paths, print fulfillment).
+point-gate logic, referral engine, dual-unlock paths, print fulfillment) and the
+Sept 18 spec (Module A sticker album + Module B continuity loop).
 
 Legend: ✅ Done · 🔧 In progress · ⛔ Blocked (needs Ray) · ⬜ Not started
 
-Last updated: 2026-09-16
+Last updated: 2026-09-18
+
+---
+
+## Sept 18 — Module A & B
+
+**Module A — 19-Slot Sticker Album**
+- A1 ✅ Interactive 19-slot grid with grayscale→full-colour toggle (numbered gray
+  silhouette when locked; full-colour PNG merit badge when complete).
+- A2 ⛔→ready: real badge PNGs drop into `public/stickers/slot-01.png … slot-19.png`
+  (illustrator ~Sept 19). Grid + PDF fall back to numbered placeholders until then.
+- A3 ✅ "Download Master Sticker Sheet" — server route `GET /api/stickers/sheet`
+  builds a print-ready 8.5×11 PDF of all 19 badges (pdf-lib). Verified valid PDF.
+
+**Module B — Grandpa Multiplier Continuity Loop**
+- B1 ✅ Dual-key already live: Pathway A (2 friends→300→Book 2), Pathway B ($40→Book 3).
+- B2 ✅ Rule 1 (Temporary Bypass): account never locked; Grandpa link is a quiet button.
+- B3 ✅ Rule 2 (Continuation Hook): persistent Book 2 banner with Ray's exact copy,
+  shown when `book2Unlocked && !book3Sponsored`.
+- B4 ✅ Rule 3 (Leap-Frog): $40 event unlocks Book 3 from any point. Ray may add an
+  extra step "before/with Book 3" later — unlock kept modular for easy extension.
+
+**QR checkouts (Ray's confirmation)**
+- ✅ Grandpa `$40` link now has a scannable QR (component `SponsorQRCode`) pointing at
+  a new public landing page `GET /sponsor?token=…` that starts the sponsorship checkout.
+
+Confirmed by Ray (Sept 18): Biblical 700 = 400 quiz + 300 referral (unchanged); QR
+codes wanted wherever a checkout link is used; stickers delivered sequentially.
+
+New files: `lib/stickers.ts`, `app/api/stickers/sheet/route.ts`, `app/sponsor/page.tsx`,
+`components/dashboard/Book2ContinuationBanner.tsx`, `components/dashboard/SponsorQRCode.tsx`,
+`public/stickers/README.md`. Deps added: `pdf-lib`, `qrcode`.
+
+Verification: `tsc --noEmit` clean · 19/19 tests · `next build` passes · live E2E
+(banner shows at 700, PDF streams, QR renders, /sponsor page starts checkout).
 
 ---
 

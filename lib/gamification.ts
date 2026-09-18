@@ -47,6 +47,27 @@ export const BOOK2_GATE_CONFIG = {
  */
 export const GRANDPA_SPONSOR_PRICE = 40.0;
 
+/**
+ * Rule 2 (Book 2 Continuation Hook): when a profile advances to Book 2 without an
+ * adult relative contribution, a persistent encouraging banner is shown at the top
+ * of the dashboard. This is Ray's exact approved copy.
+ */
+export const BOOK2_CONTINUATION_BANNER =
+  "Hey Scout! Show your favorite completed Book 1 coloring pages to a grandfather, relative, or family friend today! Their support via your secret dashboard link will instantly pre-approve and unlock Book 3 for you early!";
+
+/** Total interactive sticker slots (one per child-facing virtue page of Book 1). */
+export const STICKER_SLOT_COUNT = 19;
+
+/**
+ * Path to a slot's full-colour merit-badge PNG. Illustrator assets drop into
+ * `public/stickers/` as slot-01.png … slot-19.png (delivered in the
+ * `Geezy_Goober_V1_Stickers_Final` ZIP). Until a file exists the UI falls back
+ * to a numbered placeholder, so badges can be added sequentially.
+ */
+export function stickerBadgePath(slot: number): string {
+  return `/stickers/slot-${String(slot).padStart(2, "0")}.png`;
+}
+
 export const TRILOGY_QUIZ_DATA: Record<1 | 2 | 3, Array<{ question: string; correct: string; incorrect: string[] }>> = {
   1: [
     {

@@ -1,36 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-
-export interface PageSlotInfo {
-  pageNumber: number;
-  title: string;
-  virtue: string;
-  icon: string;
-  gradient: string;
-}
-
-export const BOOK2_PAGES: PageSlotInfo[] = [
-  { pageNumber: 1, title: "The Burlap Sack Escape", virtue: "Humility", icon: "🎒", gradient: "from-amber-400 to-orange-500" },
-  { pageNumber: 2, title: "The Hidden Green Mountain", virtue: "Perseverance", icon: "⛰️", gradient: "from-emerald-400 to-teal-600" },
-  { pageNumber: 3, title: "Grumble-Grip's Perch", virtue: "Patience", icon: "🦅", gradient: "from-blue-400 to-indigo-600" },
-  { pageNumber: 4, title: "Sunny Fairy's Golden Crown", virtue: "Joy", icon: "✨", gradient: "from-yellow-300 to-amber-500" },
-  { pageNumber: 5, title: "Pink Bubble-Glue Lake", virtue: "Courage", icon: "🌊", gradient: "from-pink-400 to-rose-600" },
-  { pageNumber: 6, title: "Barnaby Bingle's Crew", virtue: "Teamwork", icon: "🐻", gradient: "from-amber-600 to-stone-700" },
-  { pageNumber: 7, title: "The Wild Blueprint Map", virtue: "Vision", icon: "📜", gradient: "from-teal-400 to-cyan-600" },
-  { pageNumber: 8, title: "Giant Button Submarine", virtue: "Creativity", icon: "🧵", gradient: "from-violet-400 to-purple-600" },
-  { pageNumber: 9, title: "Whistling Sea-Shell Melody", virtue: "Harmony", icon: "🐚", gradient: "from-cyan-300 to-blue-500" },
-  { pageNumber: 10, title: "Gentle Orange Octopus", virtue: "Kindness", icon: "🐙", gradient: "from-orange-400 to-red-500" },
-  { pageNumber: 11, title: "The Carved Wooden Key", virtue: "Faithfulness", icon: "🗝️", gradient: "from-yellow-500 to-amber-700" },
-  { pageNumber: 12, title: "The Sea-Sheller's Secret Den", virtue: "Focus", icon: "🏝️", gradient: "from-emerald-500 to-green-700" },
-  { pageNumber: 13, title: "The Throne of Solid Stone", virtue: "Reverence", icon: "👑", gradient: "from-purple-500 to-indigo-800" },
-  { pageNumber: 14, title: "Tickle-Squid's Lace Mustache", virtue: "Laughter", icon: "🦑", gradient: "from-green-400 to-emerald-600" },
-  { pageNumber: 15, title: "Rolling on the Water", virtue: "Fellowship", icon: "🎈", gradient: "from-rose-400 to-red-600" },
-  { pageNumber: 16, title: "Rare Blue & Tan Paint-Rocks", virtue: "Truth", icon: "💎", gradient: "from-sky-400 to-blue-600" },
-  { pageNumber: 17, title: "Feathers of Tan & Blue", virtue: "Grace", icon: "🪶", gradient: "from-amber-300 to-yellow-600" },
-  { pageNumber: 18, title: "The Goober's Words Unbound", virtue: "Freedom", icon: "🕊️", gradient: "from-sky-300 to-indigo-500" },
-  { pageNumber: 19, title: "The Master Scout Circle", virtue: "Love", icon: "🌟", gradient: "from-yellow-400 via-orange-500 to-red-500" },
-];
+import { stickerBadgePath } from "@/lib/gamification";
+import { PAGE_STICKER_META } from "@/lib/stickers";
 
 interface PageStickersGridProps {
   completedPages: number[];
@@ -43,6 +15,12 @@ export default function PageStickersGrid({
 }: PageStickersGridProps) {
   const completedCount = completedPages.length;
   const progressPercent = Math.round((completedCount / 19) * 100);
+
+  // Track slots whose real merit-badge PNG hasn't been delivered yet, so we can
+  // fall back to a coloured numbered placeholder instead of a broken image.
+  const [missingBadges, setMissingBadges] = useState<Set<number>>(new Set());
+  const markBadgeMissing = (n: number) =>
+    setMissingBadges((prev) => (prev.has(n) ? prev : new Set(prev).add(n)));
 
   return (
     <div className="rounded-2xl border border-ink/10 bg-paper p-6 sm:p-8 shadow-card">
@@ -77,9 +55,27 @@ export default function PageStickersGrid({
         </div>
       </div>
 
+      {/* Master Sticker Sheet — server-generated PDF of all 19 badges for home printing */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-spruce/25 bg-spruce/5 p-3.5">
+        <p className="text-xs sm:text-sm text-ink-soft">
+          Print all 19 merit badges on one page — ready for adhesive sticker paper.
+        </p>
+        <a
+          href="/api/stickers/sheet"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg bg-spruce px-4 py-2 text-sm font-bold text-paper transition hover:bg-spruce-dark shadow-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Download Master Sticker Sheet
+        </a>
+      </div>
+
       {/* 19 Digital Sticker Slots */}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-        {BOOK2_PAGES.map((page) => {
+        {PAGE_STICKER_META.map((page) => {
           const isAchieved = completedPages.includes(page.pageNumber);
 
           return (
@@ -103,13 +99,27 @@ export default function PageStickersGrid({
                   </span>
                 </div>
 
-                {/* Sticker Icon Circle */}
-                <div
-                  className={`mx-auto h-16 w-16 rounded-full flex items-center justify-center text-3xl shadow-sm transition-transform duration-300 group-hover:scale-110 bg-gradient-to-br ${
-                    isAchieved ? page.gradient : "from-gray-300 to-gray-400"
-                  }`}
-                >
-                  <span className="drop-shadow-sm">{page.icon}</span>
+                {/* Merit Badge — full-colour PNG when achieved; gray numbered silhouette when locked */}
+                <div className="mx-auto h-16 w-16 transition-transform duration-300 group-hover:scale-110">
+                  {isAchieved && !missingBadges.has(page.pageNumber) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={stickerBadgePath(page.pageNumber)}
+                      alt={`${page.title} merit badge`}
+                      className="h-16 w-16 object-contain drop-shadow-sm"
+                      onError={() => markBadgeMissing(page.pageNumber)}
+                    />
+                  ) : (
+                    <div
+                      className={`h-16 w-16 rounded-full flex items-center justify-center font-display font-black text-xl shadow-sm bg-gradient-to-br ${
+                        isAchieved
+                          ? `${page.gradient} text-white`
+                          : "from-gray-300 to-gray-400 text-gray-600"
+                      }`}
+                    >
+                      {page.pageNumber}
+                    </div>
+                  )}
                 </div>
 
                 <h4 className="mt-2 text-xs font-bold text-ink line-clamp-1 font-display">
