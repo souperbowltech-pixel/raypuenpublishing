@@ -1,7 +1,7 @@
 # PUEN PUBLISHING & REGENCY PRESS — PROJECT MASTER STATUS REPORT
 **Document Name:** `PROJECT_STATUS_AND_HANDOVER_REPORT.md`  
 **Date:** Monday, September 14, 2026  
-**Client:** Ray Puen (CEO, Stewardship Digital Assets LLC / Regency Press / Puen Publishing)  
+**Client:** Ray Puen (Regency Press / Puen Publishing / New Life Mission Board, Inc.)  
 **Lead Engineer:** Huzaifah  
 **Live Production URL:** [https://raypuenpublishing.vercel.app](https://raypuenpublishing.vercel.app)  
 **GitHub Repository:** `https://github.com/souperbowltech-pixel/raypuenpublishing` (Branch: `main`)
@@ -29,8 +29,8 @@ This project represents the digital storefront and community fulfillment infrast
 The platform is purpose-built to support:
 1. **Retail Storefront:** Direct-to-consumer sales of Book 1 (*The Geezy Goober’s Guide to Icky Island: The Geezy Goober and the Magic Pen*) at \$6.99 with instant print-on-demand fulfillment.
 2. **Institutional & Humanitarian Wholesale Portal:** Flat sponsorship tiers for the **Nepal Recovery Initiative Edition** (1:1 student matching for earthquake recovery schools).
-3. **Interactive 19-Slot Digital Gamification Ledger:** Real-time sticker unlocking for Book 2, tracking page completion, comprehension quizzes (400 pts), and peer recruitment (300 pts) up to the 700-point threshold for unlocking Volume 3.
-4. **Automated Zero-Dollar Print Dispatch:** Lulu Print-on-Demand integration for instant physical dispatch upon milestone completion.
+3. **Interactive 19-Slot Digital Gamification Ledger:** Real-time sticker unlocking for Book 2, tracking page completion, comprehension quizzes (400 pts), and peer recruitment (300 pts) up to the 700-point threshold for unlocking Book 2 (`Unlock_Volume_2`); a relative's \$40 sponsorship separately unlocks Book 3.
+4. **Print Fulfilment:** IngramSpark print-on-demand / distribution (API wiring pending IngramSpark credentials and print files).
 
 ---
 
@@ -38,7 +38,7 @@ The platform is purpose-built to support:
 
 ### A. Official Bowker Registry & Legal Imprint Architecture
 - **Footer & Metadata Synchronization:** Configured dual-entity legal credits across the entire application:
-  `"Published by Regency Press under the Puen Publishing Imprint — Stewardship Digital Assets LLC (501(c)(3) Educational Partner)"`.
+  `"Published by Regency Press under the Puen Publishing Imprint (An Educational Imprint of New Life Mission Board, Inc.)"` (single source: `lib/book.ts`).
 - **Title Accuracy:** Bowker ISBN title constraints fully enforced:
   *Title:* **The Geezy Goober’s Guide to Icky Island**  
   *Subtitle:* **The Geezy Goober and the Magic Pen**
@@ -50,13 +50,13 @@ The platform is purpose-built to support:
   - Tracks unique student scout tokens (e.g. `CAPTAIN-RAY-700`).
   - Stores dynamic array of completed pages (`1` through `19`).
   - Validated quiz score (`0` to `400`) and referral score (`0` to `300`).
-  - Generated total score (`quiz_score + referral_score`) with indexed status states (`In_Progress`, `Academic_Pass`, `Unlock_Volume_3`).
+  - Generated total score (`quiz_score + referral_score`) with indexed status states (`In_Progress`, `Academic_Pass`, `Unlock_Volume_2`).
 - **Real-Time Verification:** Flagship scout data successfully synced live to cloud database and verified.
 
 ### C. 19-Slot Digital Sticker Album & Gamification (`/dashboard/book2`)
 - Interactive digital sticker album implementing all 19 unique virtue badges (Humility, Perseverance, Patience, Joy, Courage, Teamwork, etc.).
 - Real-time client-to-cloud synchronization: Clicking any sticker immediately illuminates it from grayscale to vibrant color, updates local state, and writes to Supabase.
-- Academic pass gate (400 pts) + friend referral gate (300 pts) triggering the **Volume 3 Master Scout Unlock**.
+- Academic pass gate (400 pts) + friend referral gate (300 pts) triggering the **Book 2 unlock** (`Unlock_Volume_2`).
 
 ### D. Payments & Commerce (Stripe Sandbox Integration)
 - Connected to Ray's official Stripe account (account ID and keys are stored in private env vars, not committed).
@@ -70,11 +70,9 @@ The platform is purpose-built to support:
   - **Institutional / Nepal Sponsors Group:** `198342926101645263`
 - **Dual-Path Sync:** Guaranteed buyer capture via both Stripe Webhook and direct `/checkout/success` page retrieval (sanitized payload preventing field rejection). Live test confirmed subscriber creation.
 
-### F. Lulu Print-On-Demand API Engine
-- Complete OAuth2 Client-Credentials fulfillment engine built in `lib/lulu.ts`.
-- Connected to Ray's Lulu developer portal with Sandbox credentials:
-  - `LULU_CLIENT_KEY` / `LULU_CLIENT_SECRET`: stored in private env vars, not committed.
-  - Ready for automatic zero-dollar student print dispatch.
+### F. Print Fulfilment (IngramSpark)
+- The earlier Lulu integration has been **removed** (`lib/lulu.ts` deleted); print fulfilment is now IngramSpark.
+- The UI already references IngramSpark. Automatic print/ship orders are switched on once IngramSpark API access and print files (interior/cover PDFs, ISBN/trim spec) are provided. Until then paid orders are saved to the `orders` table with `fulfillment_status = 'pending'` so none are lost.
 
 ---
 
@@ -94,15 +92,12 @@ The platform is purpose-built to support:
 To move from Sandbox / Testing to **Live Commercial Launch**, Ray needs to address the following items:
 
 1. **Stripe Account Live Activation:**
-   - In Stripe Dashboard, click **"Activate your account"** to submit business tax ID / EIN (Stewardship Digital Assets LLC) and US bank account details for payouts.
+   - In Stripe Dashboard, click **"Activate your account"** to submit business tax ID / EIN and US bank account details for payouts.
    - Once activated, toggle off "Test mode" and generate **Live Keys** (`pk_live_...` and `sk_live_...`).
-2. **Lulu Production Print Pod ID & Printable PDFs:**
-   - Provide direct hosting URLs or upload files for:
-     1. Book 1 Interior PDF (32 coloring pages formatted to Lulu print specs).
-     2. Book 1 Cover PDF (Standard edition & Nepal Recovery initiative edition).
-   - Obtain the final `pod_package_id` from Lulu for the exact paper weight, trim size (e.g. 8.5x11), and binding.
-3. **Custom Domain Connection:**
-   - Link `puenpublishing.com` (or desired subdomain) in Vercel project domain settings. DNS records:
+2. **IngramSpark API access & print files:**
+   - Provide IngramSpark API credentials and print-ready files: Book 1 interior PDF, cover PDF(s), ISBN and trim spec.
+3. **Custom Domain Connection (handled by our team, not the client):**
+   - Link `puenpublishing.com` in Vercel project domain settings. DNS records:
      - `CNAME` for `www` pointing to `cname.vercel-dns.com`
      - `A` record for apex pointing to `76.76.21.21`
 
@@ -127,8 +122,8 @@ To move from Sandbox / Testing to **Live Commercial Launch**, Ray needs to addre
        │
        ▼ (700 Pts / Order)
 ┌────────────────────────────────────────────────────────┐
-│             Lulu Print-On-Demand API                   │
-│      (Zero-Dollar Print Dispatch & Shipping)           │
+│           IngramSpark Print-On-Demand API              │
+│        (Print Dispatch & Shipping — pending)           │
 └────────────────────────────────────────────────────────┘
 ```
 

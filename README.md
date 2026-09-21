@@ -2,8 +2,10 @@
 
 Frontend and pricing engine for **Puen Publishing**, an independent imprint
 selling children's coloring books. This is **Milestone 1 of 2**. Payment,
-print fulfilment and email integrations (Stripe, Lulu, MailerLite) arrive in
-Milestone 2 — this milestone ships clean, well-typed stubs those can plug into.
+print fulfilment and email integrations (Stripe, IngramSpark, MailerLite) were
+added after Milestone 1. Stripe checkout, the signed webhook, MailerLite sync and
+Supabase persistence are live (sandbox); IngramSpark wiring awaits API access.
+See `RAY_DIRECTIVES_STATUS.md` for current status.
 
 ## What's in this milestone
 
@@ -134,8 +136,8 @@ public/placeholders/      # swappable placeholder images
 
 ## Milestone 2 (not built yet)
 
-`.env.example` documents every variable the next milestone needs (Stripe, Lulu,
-MailerLite). The integration points are already isolated:
+`.env.example` documents every variable the integrations need (Stripe, IngramSpark,
+MailerLite, Supabase). The integration points are already isolated:
 
 - **`lib/checkout.ts`** — replace the `console.log` in each stub with a real
   request. The payload shapes (`RetailOrderPayload`, `WholesaleOrderPayload`)
@@ -146,7 +148,7 @@ MailerLite). The integration points are already isolated:
 ## Notes / constraints honoured
 
 - No `localStorage` / `sessionStorage` anywhere.
-- No Stripe / Lulu / MailerLite code — clean stubs only.
+- Stripe, MailerLite and Supabase are integrated server-side (see `app/api`); the IngramSpark print integration is not built yet.
 - All book copy is obvious placeholder text (`[PLACEHOLDER ...]`).
 - Pricing logic is deliberately simple, readable, and thoroughly tested.
 ```

@@ -18,7 +18,7 @@ export default function ScoreGate({
 }: ScoreGateProps) {
   const percentage = Math.min(100, Math.round((totalScore / 700) * 100));
   const hasAcademicPass = quizScore >= BOOK2_GATE_CONFIG.academicPassThreshold;
-  const isVolume3Unlocked = totalScore >= BOOK2_GATE_CONFIG.unlockThreshold;
+  const isBook2Unlocked = totalScore >= BOOK2_GATE_CONFIG.unlockThreshold;
 
   const handlePrintRibbon = () => {
     window.print();
@@ -50,11 +50,11 @@ export default function ScoreGate({
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-bold uppercase tracking-wider shadow-sm"
               style={{
-                backgroundColor: isVolume3Unlocked ? "#2E6B5E" : hasAcademicPass ? "#E4A93C" : "#5A5148",
+                backgroundColor: isBook2Unlocked ? "#2E6B5E" : hasAcademicPass ? "#E4A93C" : "#5A5148",
                 color: "#FCF8F1",
               }}
             >
-              {isVolume3Unlocked ? "🌟 Status: Unlock_Volume_3" : hasAcademicPass ? "📜 Status: Academic_Pass" : "🧭 Status: In_Progress"}
+              {isBook2Unlocked ? "🌟 Status: Unlock_Volume_2" : hasAcademicPass ? "📜 Status: Academic_Pass" : "🧭 Status: In_Progress"}
             </span>
           </div>
         </div>
@@ -71,8 +71,8 @@ export default function ScoreGate({
           <span className={hasAcademicPass ? "text-spruce font-black" : ""}>
             400 pts (Quiz Pass)
           </span>
-          <span className={isVolume3Unlocked ? "text-spruce-dark font-black" : ""}>
-            700 pts (Volume 3 Unlock)
+          <span className={isBook2Unlocked ? "text-spruce-dark font-black" : ""}>
+            700 pts (Book 2 Unlock)
           </span>
         </div>
       </div>

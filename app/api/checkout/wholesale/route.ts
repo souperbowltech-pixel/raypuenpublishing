@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { SPONSOR_TIERS } from "@/lib/pricing";
+import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +78,10 @@ export async function POST(req: NextRequest) {
       mode: "payment",
       customer_email: email,
       metadata: sessionMetadata,
+      // Legal credit line, shown to the customer on the Stripe Checkout page.
+      custom_text: {
+        submit: { message: publisherBrand.fullCredit },
+      },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}&type=wholesale`,
       cancel_url: `${origin}/institutions`,
     });

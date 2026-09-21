@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateScoutAsync, PersistentScoutState } from '@/lib/scout-store';
-import { gradeQuiz } from '@/lib/gamification';
+import {
+  gradeQuiz,
+  REFERRAL_FRIEND_REQUIREMENT,
+  REFERRAL_INVITE_CAPACITY,
+} from '@/lib/gamification';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -65,9 +69,21 @@ export async function POST(req: NextRequest) {
       updates.quizScore = gradeQuiz(quizBook, answers);
     }
 
-    // Referral: only the demo flag, and only when explicitly enabled in the env.
-    if (process.env.ALLOW_DEMO_REFERRAL === 'true' && body.demoReferral !== undefined) {
-      updates.referralScore = body.demoReferral === true ? 300 : 0;
+    // Referral (Ray's directive #2): the 300 points are derived server-side from
+    // how many of the 3 invited friends coloured their Page 1 — the points fire
+    // once ANY 2 of 3 are complete. In production this count is driven by the
+    // friends' own logins; here we only accept demo controls, and only when the
+    // env flag is explicitly enabled.
+    if (process.env.ALLOW_DEMO_REFERRAL === 'true') {
+      if (body.demoFriendsCompleted !== undefined) {
+        const n = Math.round(Number(body.demoFriendsCompleted));
+        updates.friendsCompleted = Number.isFinite(n)
+          ? Math.max(0, Math.min(REFERRAL_INVITE_CAPACITY, n))
+          : 0;
+      } else if (body.demoReferral !== undefined) {
+        // Back-compat: a truthy demoReferral means the friend gate is met.
+        updates.friendsCompleted = body.demoReferral === true ? REFERRAL_FRIEND_REQUIREMENT : 0;
+      }
     }
 
     if (Object.keys(updates).length === 0) {

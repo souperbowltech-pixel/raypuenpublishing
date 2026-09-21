@@ -2,11 +2,53 @@
 
 import React, { useState } from "react";
 
-interface Volume3UnlockCardProps {
+interface BookUnlockCardProps {
   scoutName: string;
+  /** 2 = peer/700-point track, 3 = $40 Grandpa sponsorship track. */
+  bookNumber: 2 | 3;
 }
 
-export default function Volume3UnlockCard({ scoutName }: Volume3UnlockCardProps) {
+const COPY = {
+  2: {
+    badge: "🏆 Milestone Complete · 700 Points",
+    heading: "Book 2 Unlocked 100% Free!",
+    blurb: (
+      <>
+        Praise God! You read Book 1, mastered its comprehension quiz (400 pts) and
+        recruited 2 friends to the circle (300 pts). Reaching the{" "}
+        <strong>Biblical 700</strong> has updated your state to{" "}
+        <code className="bg-spruce/20 text-spruce-dark px-2 py-0.5 rounded font-mono font-bold">
+          Unlock_Volume_2
+        </code>
+        !
+      </>
+    ),
+    fulfillmentNote: "Zero-Dollar Peer-Reward Fulfillment Trigger ($0.00 Cost to Scout)",
+    cta: "🚀 Confirm Address & Trigger Free Book 2 Printing",
+    gifted: "$0.00 (Gifted via Biblical 700 Gate)",
+  },
+  3: {
+    badge: "💛 Grandpa Multiplier · $40 Sponsored",
+    heading: "Book 3 Unlocked!",
+    blurb: (
+      <>
+        A generous relative activated the <strong>$40 sponsorship link</strong>,
+        which leap-frogs the peer track and pre-approves Book 3. Your state now
+        reads{" "}
+        <code className="bg-spruce/20 text-spruce-dark px-2 py-0.5 rounded font-mono font-bold">
+          Unlock_Volume_3
+        </code>
+        !
+      </>
+    ),
+    fulfillmentNote: "Sponsored Fulfillment Trigger ($0.00 Cost to Scout — covered by sponsor)",
+    cta: "🚀 Confirm Address & Trigger Sponsored Book 3 Printing",
+    gifted: "$0.00 (Covered by the $40 Grandpa Sponsorship)",
+  },
+} as const;
+
+export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCardProps) {
+  const copy = COPY[bookNumber];
   const [addressConfirmed, setAddressConfirmed] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     recipient: scoutName || "Young Scout",
@@ -25,13 +67,13 @@ export default function Volume3UnlockCard({ scoutName }: Volume3UnlockCardProps)
     <div className="rounded-3xl border-3 border-crayon-gold bg-gradient-to-b from-crayon-goldsoft/40 via-paper to-spruce/10 p-6 sm:p-10 shadow-book text-ink">
       <div className="text-center">
         <div className="inline-flex items-center gap-2 rounded-full bg-crayon-gold px-4 py-1.5 text-xs font-black uppercase tracking-widest text-ink shadow-sm">
-          🏆 Milestone Complete · 700 Points
+          {copy.badge}
         </div>
         <h2 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black font-display text-ink">
-          Book 3 Unlocked 100% Free!
+          {copy.heading}
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-base sm:text-lg text-ink-soft leading-relaxed">
-          Praise God! You have mastered the Book 2 Quiz (400 pts) and recruited a fellow friend to the circle (300 pts). Reaching the <strong>Biblical 700</strong> has updated your state to <code className="bg-spruce/20 text-spruce-dark px-2 py-0.5 rounded font-mono font-bold">Unlock_Volume_3</code>!
+          {copy.blurb}
         </p>
       </div>
 
@@ -43,10 +85,10 @@ export default function Volume3UnlockCard({ scoutName }: Volume3UnlockCardProps)
             </span>
             <div>
               <h4 className="text-base font-bold text-ink">
-                Lulu Print-on-Demand Automated Dispatch
+                IngramSpark Global Print &amp; Distribution
               </h4>
               <p className="text-xs text-ink-soft">
-                Zero-Dollar Promotional Fulfillment Trigger ($0.00 Cost to Scout)
+                {copy.fulfillmentNote}
               </p>
             </div>
           </div>
@@ -109,7 +151,7 @@ export default function Volume3UnlockCard({ scoutName }: Volume3UnlockCardProps)
 
             <div className="pt-2">
               <button type="submit" className="btn-primary w-full sm:w-auto text-base">
-                🚀 Confirm Address & Trigger Free Book 3 Printing
+                {copy.cta}
               </button>
             </div>
           </form>
@@ -119,14 +161,14 @@ export default function Volume3UnlockCard({ scoutName }: Volume3UnlockCardProps)
               <div className="text-4xl">🎉</div>
               <div>
                 <h5 className="text-lg font-bold text-spruce-dark font-display">
-                  Order Successfully Dispatched to Lulu API!
+                  Order Successfully Dispatched to IngramSpark!
                 </h5>
                 <p className="mt-1 text-sm text-ink-soft">
-                  Book 3 is currently being printed on premium paper and will be shipped directly to{" "}
+                  Book {bookNumber} is currently being printed on premium paper and will be shipped directly to{" "}
                   <strong>{shippingAddress.recipient}</strong> at {shippingAddress.addressLine1}, {shippingAddress.city}, {shippingAddress.state} {shippingAddress.zip}.
                 </p>
                 <p className="mt-2 text-xs font-bold text-spruce">
-                  Tracking & confirmation will be sent to the Scout Captain email. Total billed: $0.00 (Gifted via Biblical 700 Gate).
+                  Tracking &amp; confirmation will be sent to the Scout Captain email. Total billed: {copy.gifted}.
                 </p>
               </div>
             </div>
