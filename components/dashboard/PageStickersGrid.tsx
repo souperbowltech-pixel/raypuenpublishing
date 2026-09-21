@@ -105,7 +105,7 @@ export default function PageStickersGrid({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={stickerBadgePath(page.pageNumber)}
-                      alt={`${page.title} merit badge`}
+                      alt={`${page.virtue} merit badge`}
                       className="h-16 w-16 object-contain drop-shadow-sm"
                       onError={() => markBadgeMissing(page.pageNumber)}
                     />
@@ -123,11 +123,8 @@ export default function PageStickersGrid({
                 </div>
 
                 <h4 className="mt-2 text-xs font-bold text-ink line-clamp-1 font-display">
-                  {page.title}
-                </h4>
-                <p className="text-[11px] font-semibold text-spruce">
                   {page.virtue}
-                </p>
+                </h4>
               </div>
 
               {/* Action Button */}

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "The Geezy Goober's Guide to Icky Sfand",
+              name: "The Geezy Goober's Guide to Icky Sfand: The Search for the Magic Pen (Volume 1)",
               description:
                 "An Interactive Rhythmic Rhyme & Tactile Coloring Quest for Early Learners.",
               metadata: {
