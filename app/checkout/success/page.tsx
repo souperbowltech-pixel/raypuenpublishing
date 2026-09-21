@@ -70,8 +70,8 @@ export default async function CheckoutSuccessPage({
             <li>Dispatched directly to your address within 2–3 business days</li>
             {isWholesale && (
               <li>
-                Orders qualifying for the Teacher’s Master Manual will receive
-                the download link via email shortly.
+                Questions about your sponsorship? Email
+                support@puenpublishing.com and we&apos;ll help right away.
               </li>
             )}
           </ul>

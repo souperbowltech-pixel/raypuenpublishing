@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { addSubscriberToMailerLite } from "@/lib/mailerlite";
 import { updateScoutAsync } from "@/lib/scout-store";
+import { recordOrder, markOrder } from "@/lib/orders";
+import { alertFailure } from "@/lib/alerts";
 
 const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
 
@@ -38,30 +40,70 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Stripe Webhook] Order completed: ${session.id} (${orderType}) for ${customerEmail}`);
 
-    // Grandpa multiplier: a confirmed $40 sponsorship unlocks Book 3 for the
+    const grandpaToken =
+      orderType === "grandpa_sponsorship" && TOKEN_REGEX.test(session.metadata?.scout_token || "")
+        ? (session.metadata.scout_token as string)
+        : null;
+
+    // Steps that must succeed for Stripe to stop retrying (all are idempotent).
+    let retryNeeded = false;
+
+    // 1. Persist the paid order first so no order can be lost.
+    const recorded = await recordOrder({
+      stripeSessionId: session.id,
+      orderType,
+      customerEmail,
+      customerName,
+      amountTotal: session.amount_total,
+      currency: session.currency,
+      scoutToken: grandpaToken,
+      metadata: session.metadata || {},
+    });
+    if (!recorded.ok && !recorded.skipped) {
+      retryNeeded = true;
+      await alertFailure("Paid order could not be saved", {
+        session: session.id,
+        orderType,
+        email: customerEmail,
+        error: recorded.error,
+      });
+    }
+
+    // 2. Grandpa multiplier: a confirmed $40 sponsorship unlocks Book 3 for the
     // scout named in the session metadata (independent of the peer 700 track).
     if (orderType === "grandpa_sponsorship") {
-      const scoutToken = session.metadata?.scout_token || "";
-      if (TOKEN_REGEX.test(scoutToken)) {
+      if (grandpaToken) {
         try {
-          await updateScoutAsync(scoutToken, { book3Sponsored: true });
-          console.log(`[Grandpa Sponsor] Book 3 unlocked for scout ${scoutToken}`);
-        } catch (err) {
-          console.error("[Grandpa Sponsor] Failed to unlock Book 3:", err);
+          await updateScoutAsync(grandpaToken, { book3Sponsored: true });
+          console.log(`[Grandpa Sponsor] Book 3 unlocked for scout ${grandpaToken}`);
+          await markOrder(session.id, { fulfillmentStatus: "fulfilled", lastError: null });
+        } catch (err: any) {
+          retryNeeded = true;
+          await markOrder(session.id, { fulfillmentStatus: "failed", lastError: String(err?.message || err) });
+          await alertFailure("Grandpa sponsorship paid but Book 3 unlock failed", {
+            session: session.id,
+            scoutToken: grandpaToken,
+            email: customerEmail,
+            error: err?.message || err,
+          });
         }
       } else {
-        console.warn("[Grandpa Sponsor] Missing/invalid scout_token in session metadata");
+        await markOrder(session.id, { fulfillmentStatus: "failed", lastError: "Missing/invalid scout_token" });
+        await alertFailure("Grandpa sponsorship paid but scout_token is missing/invalid", {
+          session: session.id,
+          email: customerEmail,
+        });
       }
     }
 
-    // Auto-sync buyer to MailerLite
+    // 3. Auto-sync buyer to MailerLite (alert-only: a retry can't fix a bad key/field).
     if (customerEmail) {
       const isWholesale = orderType === "institutional_sponsorship";
       const groupId = isWholesale
         ? process.env.MAILERLITE_INSTITUTION_GROUP_ID
         : process.env.MAILERLITE_RETAIL_GROUP_ID;
 
-      await addSubscriberToMailerLite({
+      const synced = await addSubscriberToMailerLite({
         email: customerEmail,
         name: customerName,
         groupId: groupId || undefined,
@@ -70,7 +112,17 @@ export async function POST(req: NextRequest) {
           stripe_session_id: session.id,
         },
       });
-      console.log(`[MailerLite] Subscriber synced: ${customerEmail} to group ${groupId}`);
+      if (process.env.MAILERLITE_API_KEY && !synced?.data?.id) {
+        await alertFailure("MailerLite sync failed for a paid order", {
+          session: session.id,
+          email: customerEmail,
+        });
+      }
+    }
+
+    // Non-2xx makes Stripe retry the event with backoff; everything above is idempotent.
+    if (retryNeeded) {
+      return NextResponse.json({ error: "Order processing incomplete; retry" }, { status: 500 });
     }
   }
 

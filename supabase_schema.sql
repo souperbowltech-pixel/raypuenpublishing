@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS scout_profiles (
   quiz_score INTEGER NOT NULL DEFAULT 0 CHECK (quiz_score >= 0 AND quiz_score <= 400),
   referral_score INTEGER NOT NULL DEFAULT 0 CHECK (referral_score >= 0 AND referral_score <= 300),
   total_score INTEGER GENERATED ALWAYS AS (quiz_score + referral_score) STORED,
-  status TEXT NOT NULL DEFAULT 'In_Progress' CHECK (status IN ('In_Progress', 'Academic_Pass', 'Unlock_Volume_3')),
+  status TEXT NOT NULL DEFAULT 'In_Progress' CHECK (status IN ('In_Progress', 'Academic_Pass', 'Unlock_Volume_2')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -38,5 +38,5 @@ ALTER TABLE scout_profiles ENABLE ROW LEVEL SECURITY;
 
 -- Insert initial flagship scout record
 INSERT INTO scout_profiles (token, scout_name, completed_pages, quiz_score, referral_score, status)
-VALUES ('CAPTAIN-RAY-700', 'Scout Explorer', ARRAY[1, 2], 400, 300, 'Unlock_Volume_3')
+VALUES ('CAPTAIN-RAY-700', 'Scout Explorer', ARRAY[1, 2], 400, 300, 'Unlock_Volume_2')
 ON CONFLICT (token) DO NOTHING;

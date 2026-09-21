@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WholesaleForm } from "@/components/institutions/WholesaleForm";
-import {
-  formatCurrency,
-  wholesaleDiscountLabel,
-  WHOLESALE_UNIT_PRICE,
-  FREE_MANUAL_THRESHOLD,
-  DIGITAL_FEE,
-} from "@/lib/pricing";
+import { formatCurrency, SPONSOR_TIERS } from "@/lib/pricing";
 import { siteMeta } from "@/lib/book";
 
 /**
@@ -20,7 +14,7 @@ import { siteMeta } from "@/lib/book";
 export const metadata: Metadata = {
   title: `Bulk & Institutional Orders — ${siteMeta.name}`,
   description:
-    "Wholesale pricing for schools, preschools, churches and libraries.",
+    "Flat-rate book sponsorship packages for schools, preschools, churches and libraries.",
   robots: { index: false, follow: false },
 };
 
@@ -41,22 +35,22 @@ export default function InstitutionsPage() {
       <main className="container-page py-12">
         {/* Intro ------------------------------------------------------- */}
         <div className="max-w-2xl">
-          <p className="eyebrow">Bulk & wholesale</p>
+          <p className="eyebrow">Bulk & sponsorship</p>
           <h1 className="mt-2 font-display text-4xl font-bold text-ink sm:text-5xl">
             Coloring books for your whole classroom
           </h1>
           <p className="mt-4 text-lg text-ink-soft">
-            Special {wholesaleDiscountLabel()}-off pricing for schools,
-            preschools, churches and libraries — just{" "}
+            Sponsor books for schools, preschools, churches and libraries with
+            a flat-rate package — from{" "}
             <span className="font-semibold text-ink">
-              {formatCurrency(WHOLESALE_UNIT_PRICE)}
+              {formatCurrency(SPONSOR_TIERS[1].flatPrice)}
             </span>{" "}
-            per book. Order{" "}
+            for {SPONSOR_TIERS[1].booksSponsored} books to{" "}
             <span className="font-semibold text-ink">
-              {FREE_MANUAL_THRESHOLD} or more
+              {formatCurrency(SPONSOR_TIERS[3].flatPrice)}
             </span>{" "}
-            and we&apos;ll waive the {formatCurrency(DIGITAL_FEE)} digital fee
-            and include the Teacher&apos;s Master Manual free.
+            for {SPONSOR_TIERS[3].booksSponsored}. Every package is matched
+            1:1, doubling the number of books printed.
           </p>
         </div>
 
@@ -64,16 +58,16 @@ export default function InstitutionsPage() {
         <ul className="mt-8 grid gap-3 sm:grid-cols-3">
           {[
             {
-              t: `${wholesaleDiscountLabel()} off retail`,
-              d: `${formatCurrency(WHOLESALE_UNIT_PRICE)} per copy, every order.`,
+              t: "Flat-rate packages",
+              d: `${formatCurrency(SPONSOR_TIERS[1].flatPrice)}, ${formatCurrency(SPONSOR_TIERS[2].flatPrice)} or ${formatCurrency(SPONSOR_TIERS[3].flatPrice)} — no per-copy math.`,
             },
             {
-              t: "Fee waived at 100+",
-              d: `Skip the ${formatCurrency(DIGITAL_FEE)} digital fee on bulk orders.`,
+              t: "1:1 match",
+              d: "We match every package to print double the books.",
             },
             {
-              t: "Free Teacher's Manual",
-              d: "Master Manual PDF included at 100+ copies.",
+              t: "Free author copy",
+              d: "Tiers 2 & 3 ship one complimentary copy to you.",
             },
           ].map((perk) => (
             <li
