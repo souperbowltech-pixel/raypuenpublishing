@@ -53,6 +53,29 @@ export async function GET(req: NextRequest) {
 
     const shareCodes = await supabase.from("scout_profiles").select("family_id, share_code").limit(1);
     checks.scoutFamilyColumns = shareCodes.error ? fail(shareCodes.error) : { ok: true };
+
+    // Re-save an existing row exactly as the app does, to surface write errors
+    // that the store would otherwise only log (uses the demo profile's own row).
+    const demo = await supabase.from("scout_profiles").select("*").eq("token", "CAPTAIN-RAY-700").maybeSingle();
+    if (demo.error) {
+      checks.demoRowRead = fail(demo.error);
+    } else if (!demo.data) {
+      checks.demoRowRead = { ok: false, error: "no demo row yet" };
+    } else {
+      const { error } = await supabase.from("scout_profiles").upsert(
+        {
+          token: demo.data.token,
+          scout_name: demo.data.scout_name,
+          completed_pages: demo.data.completed_pages,
+          quiz_score: demo.data.quiz_score,
+          referral_score: demo.data.referral_score,
+          status: demo.data.status,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "token" }
+      );
+      checks.demoRowRewrite = error ? fail(error) : { ok: true };
+    }
   }
 
   const ok = config.configured && Object.values(checks).every((c) => c.ok);
