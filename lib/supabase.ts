@@ -12,8 +12,18 @@ const supabaseKey = serviceRoleKey || anonKey || '';
 
 export const usingServiceRole = Boolean(serviceRoleKey);
 
+/**
+ * Next.js patches global fetch and caches GET responses, and supabase-js runs on
+ * that fetch — which silently served stale rows: a child's progress was written
+ * but read back from a cached snapshot. Every database call must bypass it.
+ */
+const noStoreFetch: typeof fetch = (input, init) => fetch(input, { ...init, cache: 'no-store' });
+
 export const supabase = supabaseUrl && supabaseKey
-  ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+  ? createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+      global: { fetch: noStoreFetch },
+    })
   : null;
 
 /** True on the live Vercel deployment, where a missing database must never be silent. */
