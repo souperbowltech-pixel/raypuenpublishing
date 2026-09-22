@@ -1,21 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrCreateScoutAsync } from '@/lib/scout-store';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { resolveScoutAccess } from '@/lib/scout-access';
 
 export const dynamic = 'force-dynamic';
-
-const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
-
-function sanitizeName(raw: string | null): string | undefined {
-  if (!raw) return undefined;
-  const cleaned = raw
-    .replace(/[<>]/g, '')
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\x00-\x1F\x7F]/g, '')
-    .trim()
-    .slice(0, 60);
-  return cleaned || undefined;
-}
 
 export async function GET(req: NextRequest) {
   // Rate limit: 60 requests / minute / IP
@@ -27,14 +15,20 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const { searchParams } = new URL(req.url);
-  const token = searchParams.get('token') || 'CAPTAIN-RAY-700';
-  const name = sanitizeName(searchParams.get('name'));
-
-  if (!TOKEN_REGEX.test(token)) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
+  // The demo profile when asked for by token; otherwise only the child of the
+  // family signed in on this device.
+  const access = await resolveScoutAccess(req, new URL(req.url).searchParams.get('token'));
+  if (!access) {
+    return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
   }
 
-  const scout = await getOrCreateScoutAsync(token, name);
-  return NextResponse.json({ success: true, scout });
+  const scout = await getOrCreateScoutAsync(access.scoutToken);
+  // A registered family's private token stays on the server.
+  const body = access.kind === 'family'
+    ? { ...scout, token: undefined, shareCode: access.family.shareCode }
+    : scout;
+  return NextResponse.json(
+    { success: true, mode: access.kind, scout: body },
+    { headers: { 'Cache-Control': 'no-store' } }
+  );
 }

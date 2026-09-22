@@ -59,3 +59,24 @@ create index if not exists idx_orders_order_type on public.orders(order_type);
 create index if not exists idx_orders_fulfillment_status on public.orders(fulfillment_status);
 create index if not exists idx_orders_customer_email on public.orders(customer_email);
 alter table public.orders enable row level security;
+
+-- 5. Sept 22: family accounts (families, family_sessions, family_id + share_code)
+create table if not exists public.families (
+  id uuid primary key default gen_random_uuid(),
+  parent_email text not null unique,
+  email_verified_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table public.families enable row level security;
+create table if not exists public.family_sessions (
+  token_hash text primary key,
+  family_id uuid not null references public.families(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now()
+);
+create index if not exists idx_family_sessions_family on public.family_sessions(family_id);
+alter table public.family_sessions enable row level security;
+alter table public.scout_profiles
+  add column if not exists family_id uuid references public.families(id) on delete cascade,
+  add column if not exists share_code text unique;
+create index if not exists idx_scout_profiles_family on public.scout_profiles(family_id);

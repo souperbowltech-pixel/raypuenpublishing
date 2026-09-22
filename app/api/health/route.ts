@@ -43,6 +43,16 @@ export async function GET(req: NextRequest) {
 
     const orders = await supabase.from("orders").select("stripe_session_id", { head: true, count: "exact" });
     checks.ordersTable = orders.error ? fail(orders.error) : { ok: true };
+
+    // Family accounts (registration, sessions and the public share code).
+    const families = await supabase.from("families").select("id", { head: true, count: "exact" });
+    checks.familiesTable = families.error ? fail(families.error) : { ok: true };
+
+    const sessions = await supabase.from("family_sessions").select("token_hash", { head: true, count: "exact" });
+    checks.familySessionsTable = sessions.error ? fail(sessions.error) : { ok: true };
+
+    const shareCodes = await supabase.from("scout_profiles").select("family_id, share_code").limit(1);
+    checks.scoutFamilyColumns = shareCodes.error ? fail(shareCodes.error) : { ok: true };
   }
 
   const ok = config.configured && Object.values(checks).every((c) => c.ok);

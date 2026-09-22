@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ScoreGate from "@/components/dashboard/ScoreGate";
 import ComprehensionQuiz from "@/components/dashboard/ComprehensionQuiz";
 import QuestCaptainBox from "@/components/dashboard/QuestCaptainBox";
@@ -11,71 +12,61 @@ import Book2ContinuationBanner from "@/components/dashboard/Book2ContinuationBan
 import PageStickersGrid from "@/components/dashboard/PageStickersGrid";
 import { BOOK2_GATE_CONFIG } from "@/lib/gamification";
 
+const DEMO_TOKEN = "CAPTAIN-RAY-700";
+
 export default function Book2DashboardPage() {
-  const [scoutName, setScoutName] = useState("Scout Explorer");
+  const router = useRouter();
+  // "family": the child of the family signed in on this device.
+  // "demo":   the shared preview profile (/dashboard/book2?demo=1).
+  const [mode, setMode] = useState<"loading" | "family" | "demo">("loading");
+  const [shareCode, setShareCode] = useState("");
+  const [scoutName, setScoutName] = useState("");
   const [quizScore, setQuizScore] = useState(0);
   const [referralScore, setReferralScore] = useState(0);
   const [friendsCompleted, setFriendsCompleted] = useState(0);
   const [book3Unlocked, setBook3Unlocked] = useState(false);
   const [completedPages, setCompletedPages] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const referralCode = "CAPTAIN-RAY-700";
 
-  // Load persistent state on mount
+  const applyScout = (scout: any) => {
+    setScoutName(scout.scoutName || "");
+    setQuizScore(scout.quizScore ?? 0);
+    setReferralScore(scout.referralScore ?? 0);
+    setFriendsCompleted(scout.friendsCompleted ?? 0);
+    setBook3Unlocked(Boolean(scout.book3Unlocked));
+    setCompletedPages(scout.completedPages ?? []);
+    if (scout.shareCode) setShareCode(scout.shareCode);
+  };
+
+  // Load the signed-in family's child, the demo profile, or send the visitor to sign up.
   useEffect(() => {
-    async function confirmSponsorshipIfReturning() {
-      if (typeof window === "undefined") return;
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("sponsored") === "1" && params.get("session_id")) {
-        try {
-          await fetch("/api/checkout/sponsor/confirm", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ session_id: params.get("session_id") }),
-          });
-        } catch {
-          // ignore — the Stripe webhook is the primary unlock path
-        } finally {
-          // Clean the query string so a refresh doesn't re-confirm.
-          window.history.replaceState({}, "", "/dashboard/book2");
-        }
-      }
-    }
-
-    async function loadState() {
+    const isDemo = new URLSearchParams(window.location.search).get("demo") === "1";
+    (async () => {
       try {
-        const res = await fetch(`/api/scout/state?token=${referralCode}`);
-        const data = await res.json();
-        if (data?.scout) {
-          setScoutName(data.scout.scoutName || "Scout Explorer");
-          setQuizScore(data.scout.quizScore || 0);
-          setReferralScore(data.scout.referralScore || 0);
-          setFriendsCompleted(data.scout.friendsCompleted || 0);
-          setBook3Unlocked(Boolean(data.scout.book3Unlocked));
-          setCompletedPages(data.scout.completedPages || []);
+        const res = await fetch(isDemo ? `/api/scout/state?token=${DEMO_TOKEN}` : "/api/scout/state", { cache: "no-store" });
+        if (res.status === 401) {
+          router.replace("/start");
+          return;
         }
-      } catch (e) {
-        // Fallback to local storage if API unreachable
-        const savedPages = localStorage.getItem("book2_completed_pages");
-        if (savedPages) setCompletedPages(JSON.parse(savedPages));
+        const data = await res.json();
+        if (data?.scout) applyScout(data.scout);
+        setMode(isDemo ? "demo" : "family");
+      } catch {
+        setMode(isDemo ? "demo" : "family");
       }
-    }
-    // Confirm any returning Grandpa sponsorship first, then load the fresh state.
-    confirmSponsorshipIfReturning().then(loadState);
-  }, [referralCode]);
+    })();
+  }, [router]);
 
   // Sync state to persistent API. The server is authoritative: it returns the
-  // canonical scout record, which we mirror back into local state.
+  // canonical scout record, which we mirror back into local state. A family's
+  // requests carry no token; the server uses this device's session.
   const persistUpdate = async (updates: Record<string, any>) => {
     setIsSaving(true);
     try {
       const res = await fetch("/api/scout/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: referralCode,
-          ...updates,
-        }),
+        body: JSON.stringify(mode === "demo" ? { token: DEMO_TOKEN, ...updates } : updates),
       });
       const data = await res.json();
       if (data?.scout) {
@@ -92,13 +83,17 @@ export default function Book2DashboardPage() {
     }
   };
 
+  const handleSignOut = async () => {
+    await fetch("/api/family/logout", { method: "POST" });
+    router.replace("/start");
+  };
+
   const handleTogglePage = (pageNumber: number) => {
     const updated = completedPages.includes(pageNumber)
       ? completedPages.filter((p) => p !== pageNumber)
       : [...completedPages, pageNumber].sort((a, b) => a - b);
 
     setCompletedPages(updated);
-    localStorage.setItem("book2_completed_pages", JSON.stringify(updated));
     persistUpdate({ completedPages: updated });
   };
 
@@ -118,6 +113,14 @@ export default function Book2DashboardPage() {
   const totalScore = quizScore + referralScore;
   const hasPassedQuiz = quizScore >= BOOK2_GATE_CONFIG.academicPassThreshold;
   const isBook2Unlocked = totalScore >= BOOK2_GATE_CONFIG.unlockThreshold;
+
+  if (mode === "loading") {
+    return (
+      <div className="min-h-screen bg-paper text-ink flex items-center justify-center">
+        <p className="text-ink-soft font-semibold">Opening your Explorer dashboard…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-paper text-ink pb-24">
@@ -172,8 +175,13 @@ export default function Book2DashboardPage() {
           <div className="text-xs text-ink-soft sm:text-right">
             <span>Verified Reader · Persistent Server State</span>
             <span className="block font-mono font-bold text-spruce">
-              {isSaving ? "💾 Syncing..." : `Passkey ID: ${referralCode}`}
+              {isSaving ? "💾 Syncing..." : mode === "demo" ? "Demo profile" : `Explorer code: ${shareCode}`}
             </span>
+            {mode === "family" && (
+              <button type="button" onClick={handleSignOut} className="mt-1 text-xs font-semibold text-ink-soft underline hover:text-ink">
+                Not your family? Sign out
+              </button>
+            )}
           </div>
         </div>
 
@@ -202,8 +210,9 @@ export default function Book2DashboardPage() {
         {/* 4. Step 2: Quest Captain Mission - 2-of-3 Friend Referral Engine (300 pts) */}
         <QuestCaptainBox
           friendsCompleted={friendsCompleted}
-          referralCode={referralCode}
+          referralCode={mode === "demo" ? DEMO_TOKEN : shareCode}
           hasPassedQuiz={hasPassedQuiz}
+          showDemoControls={mode === "demo"}
           onSetFriends={handleSetFriends}
         />
 
@@ -214,7 +223,11 @@ export default function Book2DashboardPage() {
         {book3Unlocked ? (
           <BookUnlockCard scoutName={scoutName} bookNumber={3} />
         ) : (
-          <GrandpaSponsorCard scoutToken={referralCode} scoutName={scoutName} />
+          <GrandpaSponsorCard
+            shareCode={shareCode}
+            scoutName={scoutName}
+            demoToken={mode === "demo" ? DEMO_TOKEN : undefined}
+          />
         )}
       </main>
     </div>

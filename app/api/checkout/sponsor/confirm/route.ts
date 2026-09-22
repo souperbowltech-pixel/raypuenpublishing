@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
     }
 
     const scout = await updateScoutAsync(scoutToken, { book3Sponsored: true });
-    return NextResponse.json({ success: true, paid: true, scout });
+    // The sponsor's browser only learns the child's first name, never the token.
+    return NextResponse.json({ success: true, paid: true, scoutName: scout.scoutName });
   } catch (error) {
     console.error("[Grandpa Sponsor Confirm Error]:", error);
     return NextResponse.json({ error: "Unable to confirm sponsorship" }, { status: 500 });

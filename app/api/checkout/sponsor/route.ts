@@ -3,10 +3,11 @@ import { stripe } from "@/lib/stripe";
 import { GRANDPA_SPONSOR_PRICE } from "@/lib/gamification";
 import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { DEMO_SCOUT_TOKEN, SHARE_CODE_REGEX } from "@/lib/family";
+import { findScoutByShareCode } from "@/lib/family-store";
+import { getOrCreateScoutAsync } from "@/lib/scout-store";
 
 export const dynamic = "force-dynamic";
-
-const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
 
 /**
  * Ray's directive #6 — the "Grandpa multiplier". A relative sponsors a child for
@@ -25,12 +26,24 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const scoutToken = typeof body.scoutToken === "string" ? body.scoutToken.trim() : "";
-    const scoutName =
-      typeof body.scoutName === "string" ? body.scoutName.replace(/[<>]/g, "").slice(0, 60) : "";
-
-    if (!TOKEN_REGEX.test(scoutToken)) {
-      return NextResponse.json({ error: "A valid scout token is required." }, { status: 400 });
+    // Sponsors only ever hold the child's public share code (from the Grandpa QR);
+    // the private scout token is looked up here and never sent to the browser.
+    // The demo profile is reachable by its demo token for previews.
+    const code = typeof body.scoutCode === "string" ? body.scoutCode.trim().toUpperCase() : "";
+    let scoutToken = "";
+    let scoutName = "";
+    if (SHARE_CODE_REGEX.test(code)) {
+      const scout = await findScoutByShareCode(code);
+      if (scout) {
+        scoutToken = scout.scoutToken;
+        scoutName = scout.firstName;
+      }
+    } else if (body.scoutToken === DEMO_SCOUT_TOKEN) {
+      scoutToken = DEMO_SCOUT_TOKEN;
+      scoutName = (await getOrCreateScoutAsync(DEMO_SCOUT_TOKEN)).scoutName;
+    }
+    if (!scoutToken) {
+      return NextResponse.json({ error: "This sponsor link isn't valid. Please ask the family for a new one." }, { status: 400 });
     }
 
     const origin =
@@ -64,8 +77,10 @@ export async function POST(req: NextRequest) {
       custom_text: {
         submit: { message: publisherBrand.fullCredit },
       },
-      success_url: `${origin}/dashboard/book2?sponsored=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/dashboard/book2`,
+      // The sponsor is usually a relative on their own device, so they return to
+      // the sponsor page (which confirms the payment), not to the child's dashboard.
+      success_url: `${origin}/sponsor?done=1&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: code ? `${origin}/sponsor?code=${encodeURIComponent(code)}` : `${origin}/sponsor?token=${DEMO_SCOUT_TOKEN}`,
     });
 
     return NextResponse.json({ url: session.url });

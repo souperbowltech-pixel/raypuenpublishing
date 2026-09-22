@@ -6,10 +6,10 @@ import {
   REFERRAL_INVITE_CAPACITY,
 } from '@/lib/gamification';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
+import { resolveScoutAccess } from '@/lib/scout-access';
+import { validateFirstName } from '@/lib/family';
 
 export const dynamic = 'force-dynamic';
-
-const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
 
 function sanitizeName(raw: unknown): string {
   return String(raw ?? '')
@@ -33,10 +33,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const token = typeof body.token === 'string' ? body.token : '';
-
-    if (!TOKEN_REGEX.test(token)) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
+    const access = await resolveScoutAccess(req, typeof body.token === 'string' ? body.token : null);
+    if (!access) {
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
     }
 
     // STRICT whitelist — never accept quizScore/referralScore/totalScore/status
@@ -44,7 +43,14 @@ export async function POST(req: NextRequest) {
     const updates: Partial<PersistentScoutState> = {};
 
     if (body.scoutName !== undefined) {
-      updates.scoutName = sanitizeName(body.scoutName);
+      if (access.kind === 'family') {
+        // Registered children keep Ray's first-name-only rule.
+        const name = validateFirstName(body.scoutName);
+        if (!name.ok) return NextResponse.json({ error: name.error }, { status: 400 });
+        updates.scoutName = name.value;
+      } else {
+        updates.scoutName = sanitizeName(body.scoutName);
+      }
     }
 
     if (body.completedPages !== undefined) {
@@ -74,7 +80,7 @@ export async function POST(req: NextRequest) {
     // once ANY 2 of 3 are complete. In production this count is driven by the
     // friends' own logins; here we only accept demo controls, and only when the
     // env flag is explicitly enabled.
-    if (process.env.ALLOW_DEMO_REFERRAL === 'true') {
+    if (access.kind === 'demo' && process.env.ALLOW_DEMO_REFERRAL === 'true') {
       if (body.demoFriendsCompleted !== undefined) {
         const n = Math.round(Number(body.demoFriendsCompleted));
         updates.friendsCompleted = Number.isFinite(n)
@@ -90,8 +96,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
-    const scout = await updateScoutAsync(token, updates);
-    return NextResponse.json({ success: true, scout });
+    const scout = await updateScoutAsync(access.scoutToken, updates);
+    const out = access.kind === 'family'
+      ? { ...scout, token: undefined, shareCode: access.family.shareCode }
+      : scout;
+    return NextResponse.json({ success: true, mode: access.kind, scout: out });
   } catch (err) {
     console.error('[scout/update] error:', err);
     return NextResponse.json(
