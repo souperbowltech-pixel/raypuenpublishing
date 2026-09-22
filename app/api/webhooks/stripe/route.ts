@@ -4,6 +4,7 @@ import { addSubscriberToMailerLite } from "@/lib/mailerlite";
 import { updateScoutAsync } from "@/lib/scout-store";
 import { recordOrder, markOrder } from "@/lib/orders";
 import { alertFailure } from "@/lib/alerts";
+import { isProduction } from "@/lib/supabase";
 
 const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
 
@@ -59,6 +60,14 @@ export async function POST(req: NextRequest) {
       scoutToken: grandpaToken,
       metadata: session.metadata || {},
     });
+    if (!recorded.ok && recorded.skipped && isProduction) {
+      // No database on the live site: don't make Stripe retry forever, but say so.
+      await alertFailure("Paid order not saved: database not configured on the live site", {
+        session: session.id,
+        orderType,
+        email: customerEmail,
+      });
+    }
     if (!recorded.ok && !recorded.skipped) {
       retryNeeded = true;
       await alertFailure("Paid order could not be saved", {
