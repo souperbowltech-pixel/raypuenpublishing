@@ -56,6 +56,9 @@ export async function GET(req: NextRequest) {
 
     // Re-save an existing row exactly as the app does, to surface write errors
     // that the store would otherwise only log (uses the demo profile's own row).
+    const demoRows = await supabase.from("scout_profiles").select("token", { head: true, count: "exact" }).eq("token", "CAPTAIN-RAY-700");
+    checks.demoRowCount = demoRows.error ? fail(demoRows.error) : { ok: demoRows.count === 1, error: `rows with the demo token: ${demoRows.count}` };
+
     const demo = await supabase.from("scout_profiles").select("*").eq("token", "CAPTAIN-RAY-700").maybeSingle();
     if (demo.error) {
       checks.demoRowRead = fail(demo.error);
@@ -84,9 +87,10 @@ export async function GET(req: NextRequest) {
           .eq("token", "CAPTAIN-RAY-700")
           .maybeSingle();
         const landed = after.data?.updated_at && after.data.updated_at !== demo.data.updated_at;
-        checks.demoRowRewrite = landed
-          ? { ok: true }
-          : { ok: false, error: `write reported success but the row still reads ${after.data?.updated_at ?? "nothing"}` };
+        checks.demoRowRewrite = {
+          ok: Boolean(landed),
+          error: `before ${demo.data.updated_at} → after ${after.data?.updated_at ?? "nothing"}`,
+        };
       }
     }
   }
