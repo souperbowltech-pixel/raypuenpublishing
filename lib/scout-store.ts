@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { supabase } from '@/lib/supabase';
+import { supabase, isProduction } from '@/lib/supabase';
+import { alertFailure } from '@/lib/alerts';
 import {
   BOOK2_GATE_CONFIG,
   REFERRAL_FRIEND_REQUIREMENT,
@@ -92,6 +93,25 @@ const memoryStore: Record<string, PersistentScoutState> = {
   }),
 };
 
+// A database problem must never be silent: log every occurrence, alert once per
+// kind per server instance (the local fallback keeps the page working meanwhile).
+const alertedDbProblems = new Set<string>();
+function reportDbProblem(context: string, detail: Record<string, unknown> = {}) {
+  console.error(`[scout-store] ${context}`, detail);
+  if (alertedDbProblems.has(context)) return;
+  alertedDbProblems.add(context);
+  void alertFailure(context, detail);
+}
+
+function errText(err: unknown): string {
+  if (!err) return 'unknown error';
+  if (typeof err === 'object') {
+    const e = err as { code?: string; message?: string };
+    return [e.code, e.message].filter(Boolean).join(': ') || String(err);
+  }
+  return String(err);
+}
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'scouts.json');
 
@@ -144,6 +164,10 @@ function saveLocalStore(data: Record<string, PersistentScoutState>) {
 export async function getOrCreateScoutAsync(token: string, name?: string): Promise<PersistentScoutState> {
   const cleanToken = token.trim() || 'CAPTAIN-RAY-700';
 
+  if (!supabase && isProduction) {
+    reportDbProblem('Database not configured on the live site: scout progress is not being saved');
+  }
+
   // 1. Try Supabase if available
   if (supabase) {
     try {
@@ -152,6 +176,10 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
         .select('*')
         .eq('token', cleanToken)
         .maybeSingle();
+
+      if (error) {
+        reportDbProblem('Scout profile read failed; using temporary memory', { error: errText(error) });
+      }
 
       if (!error && data) {
         // `friends_completed` is the new authoritative referral input. When the
@@ -192,6 +220,10 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
           .select()
           .maybeSingle();
 
+        if (insertError) {
+          reportDbProblem('Scout profile create failed; using temporary memory', { error: errText(insertError) });
+        }
+
         if (!insertError && inserted) {
           return deriveScoutFields({
             token: inserted.token,
@@ -205,7 +237,7 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
         }
       }
     } catch (err) {
-      console.warn('Supabase read error, falling back to safe local store:', err);
+      reportDbProblem('Scout profile read threw; using temporary memory', { error: errText(err) });
     }
   }
 
@@ -233,7 +265,7 @@ export async function updateScoutAsync(
   // 1. Sync to Supabase
   if (supabase) {
     try {
-      await supabase
+      const { error: saveError } = await supabase
         .from('scout_profiles')
         .upsert(
           {
@@ -248,9 +280,13 @@ export async function updateScoutAsync(
           { onConflict: 'token' }
         );
 
+      if (saveError) {
+        reportDbProblem('Scout progress save failed', { error: errText(saveError) });
+      }
+
       // Best-effort: persist the new columns separately so that if the Supabase
       // schema has not been migrated yet, the primary upsert above still lands.
-      await supabase
+      const { error: extraError } = await supabase
         .from('scout_profiles')
         .upsert(
           {
@@ -260,8 +296,11 @@ export async function updateScoutAsync(
           },
           { onConflict: 'token' }
         );
+      if (extraError) {
+        reportDbProblem('Saving friends_completed / book3_sponsored failed (migration not applied?)', { error: errText(extraError) });
+      }
     } catch (err) {
-      console.warn('Supabase upsert error:', err);
+      reportDbProblem('Scout progress save threw', { error: errText(err) });
     }
   }
 
