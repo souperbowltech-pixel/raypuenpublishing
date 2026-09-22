@@ -74,7 +74,20 @@ export async function GET(req: NextRequest) {
         },
         { onConflict: "token" }
       );
-      checks.demoRowRewrite = error ? fail(error) : { ok: true };
+      if (error) {
+        checks.demoRowRewrite = fail(error);
+      } else {
+        // A write that reports success but changes nothing is the dangerous case.
+        const after = await supabase
+          .from("scout_profiles")
+          .select("updated_at")
+          .eq("token", "CAPTAIN-RAY-700")
+          .maybeSingle();
+        const landed = after.data?.updated_at && after.data.updated_at !== demo.data.updated_at;
+        checks.demoRowRewrite = landed
+          ? { ok: true }
+          : { ok: false, error: `write reported success but the row still reads ${after.data?.updated_at ?? "nothing"}` };
+      }
     }
   }
 
