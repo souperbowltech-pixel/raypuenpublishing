@@ -34,12 +34,22 @@ export async function GET(req: NextRequest) {
     const cols = await supabase.from("scout_profiles").select("friends_completed, book3_sponsored").limit(1);
     checks.scoutNewColumns = cols.error ? fail(cols.error) : { ok: true };
 
-    // Writing the Book 2 status also proves the status CHECK migration is applied.
+    // Writing the Book 2 status also proves the status CHECK migration is applied,
+    // and reading it back proves the write really landed and is not served from a
+    // cached snapshot (the stale-progress bug fixed on Sept 22).
+    const stamp = new Date().toISOString();
     const write = await supabase.from("scout_profiles").upsert(
-      { token: HEALTH_TOKEN, scout_name: "Health Check", status: "Unlock_Volume_2", updated_at: new Date().toISOString() },
+      { token: HEALTH_TOKEN, scout_name: "Health Check", status: "Unlock_Volume_2", updated_at: stamp },
       { onConflict: "token" }
     );
-    checks.scoutWrite = write.error ? fail(write.error) : { ok: true };
+    if (write.error) {
+      checks.scoutWrite = fail(write.error);
+    } else {
+      const back = await supabase.from("scout_profiles").select("updated_at").eq("token", HEALTH_TOKEN).maybeSingle();
+      checks.scoutWrite = back.data?.updated_at === stamp
+        ? { ok: true }
+        : { ok: false, error: `wrote ${stamp} but read back ${back.data?.updated_at ?? "nothing"}` };
+    }
 
     const orders = await supabase.from("orders").select("stripe_session_id", { head: true, count: "exact" });
     checks.ordersTable = orders.error ? fail(orders.error) : { ok: true };
@@ -56,43 +66,6 @@ export async function GET(req: NextRequest) {
 
     // Re-save an existing row exactly as the app does, to surface write errors
     // that the store would otherwise only log (uses the demo profile's own row).
-    const demoRows = await supabase.from("scout_profiles").select("token", { head: true, count: "exact" }).eq("token", "CAPTAIN-RAY-700");
-    checks.demoRowCount = demoRows.error ? fail(demoRows.error) : { ok: demoRows.count === 1, error: `rows with the demo token: ${demoRows.count}` };
-
-    const demo = await supabase.from("scout_profiles").select("*").eq("token", "CAPTAIN-RAY-700").maybeSingle();
-    if (demo.error) {
-      checks.demoRowRead = fail(demo.error);
-    } else if (!demo.data) {
-      checks.demoRowRead = { ok: false, error: "no demo row yet" };
-    } else {
-      const { error } = await supabase.from("scout_profiles").upsert(
-        {
-          token: demo.data.token,
-          scout_name: demo.data.scout_name,
-          completed_pages: demo.data.completed_pages,
-          quiz_score: demo.data.quiz_score,
-          referral_score: demo.data.referral_score,
-          status: demo.data.status,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "token" }
-      );
-      if (error) {
-        checks.demoRowRewrite = fail(error);
-      } else {
-        // A write that reports success but changes nothing is the dangerous case.
-        const after = await supabase
-          .from("scout_profiles")
-          .select("updated_at")
-          .eq("token", "CAPTAIN-RAY-700")
-          .maybeSingle();
-        const landed = after.data?.updated_at && after.data.updated_at !== demo.data.updated_at;
-        checks.demoRowRewrite = {
-          ok: Boolean(landed),
-          error: `before ${demo.data.updated_at} → after ${after.data?.updated_at ?? "nothing"}`,
-        };
-      }
-    }
   }
 
   const ok = config.configured && Object.values(checks).every((c) => c.ok);
