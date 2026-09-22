@@ -11,8 +11,11 @@ interface QuestCaptainBoxProps {
   friendsCompleted: number;
   /** Demo control: set the completed-friend count directly. */
   onSetFriends: (count: number) => void;
+  /** The child's public share code (never the private scout token). */
   referralCode: string;
   hasPassedQuiz: boolean;
+  /** Show the "Simulate Friend Join" controls (demo profile only). */
+  showDemoControls?: boolean;
 }
 
 export default function QuestCaptainBox({
@@ -20,6 +23,7 @@ export default function QuestCaptainBox({
   onSetFriends,
   referralCode,
   hasPassedQuiz,
+  showDemoControls = false,
 }: QuestCaptainBoxProps) {
   const [copied, setCopied] = useState(false);
   const siteUrl =
@@ -134,7 +138,8 @@ export default function QuestCaptainBox({
             })}
           </div>
 
-          {/* Demo controls (Simulate friend joins / reset) */}
+          {/* Demo controls (Simulate friend joins / reset) — demo profile only */}
+          {showDemoControls && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -155,6 +160,7 @@ export default function QuestCaptainBox({
               </button>
             )}
           </div>
+          )}
         </div>
       </div>
     </div>

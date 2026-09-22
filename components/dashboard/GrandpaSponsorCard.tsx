@@ -5,8 +5,11 @@ import { GRANDPA_SPONSOR_PRICE } from "@/lib/gamification";
 import SponsorQRCode from "@/components/dashboard/SponsorQRCode";
 
 interface GrandpaSponsorCardProps {
-  scoutToken: string;
+  /** The child's public share code (GG-…); the private token never reaches the page. */
+  shareCode: string;
   scoutName: string;
+  /** The shared demo profile, which is sponsored by its demo token instead. */
+  demoToken?: string;
 }
 
 /**
@@ -14,7 +17,7 @@ interface GrandpaSponsorCardProps {
  * friend can sponsor a flat $40, which leap-frogs the peer track and unlocks
  * Book 3 free, independently of the 700-point Book 2 path.
  */
-export default function GrandpaSponsorCard({ scoutToken, scoutName }: GrandpaSponsorCardProps) {
+export default function GrandpaSponsorCard({ shareCode, scoutName, demoToken }: GrandpaSponsorCardProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +28,7 @@ export default function GrandpaSponsorCard({ scoutToken, scoutName }: GrandpaSpo
       const res = await fetch("/api/checkout/sponsor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scoutToken, scoutName }),
+        body: JSON.stringify(demoToken ? { scoutToken: demoToken } : { scoutCode: shareCode }),
       });
       const data = await res.json();
       if (data?.url) {
@@ -47,7 +50,7 @@ export default function GrandpaSponsorCard({ scoutToken, scoutName }: GrandpaSpo
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "https://raypuenpublishing.vercel.app";
-  const sponsorLink = `${origin}/sponsor?token=${encodeURIComponent(scoutToken)}${
+  const sponsorLink = `${origin}/sponsor?${demoToken ? `token=${encodeURIComponent(demoToken)}` : `code=${encodeURIComponent(shareCode)}`}${
     scoutName ? `&scout=${encodeURIComponent(scoutName)}` : ""
   }`;
 
