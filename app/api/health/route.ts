@@ -46,7 +46,9 @@ export async function GET(req: NextRequest) {
       checks.scoutWrite = fail(write.error);
     } else {
       const back = await supabase.from("scout_profiles").select("updated_at").eq("token", HEALTH_TOKEN).maybeSingle();
-      checks.scoutWrite = back.data?.updated_at === stamp
+      // Postgres returns "+00:00" where JavaScript writes "Z": compare instants.
+      const readBack = back.data?.updated_at ? Date.parse(back.data.updated_at) : NaN;
+      checks.scoutWrite = readBack === Date.parse(stamp)
         ? { ok: true }
         : { ok: false, error: `wrote ${stamp} but read back ${back.data?.updated_at ?? "nothing"}` };
     }
