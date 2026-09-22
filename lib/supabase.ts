@@ -40,8 +40,17 @@ export function supabaseConfigSummary() {
   } catch {
     urlHost = 'invalid-url';
   }
+  const keyFormat = (k: string | undefined) =>
+    !k ? null
+      : k.split('.').length === 3 && k.startsWith('eyJ') ? 'jwt'
+      : k.startsWith('sb_secret_') ? 'sb_secret'
+      : k.startsWith('sb_publishable_') ? 'sb_publishable'
+      : k.startsWith('SUPABASE_') || k.length < 30 ? 'placeholder'
+      : 'unrecognised';
   return {
     configured: Boolean(supabase),
+    serviceKeyFormat: keyFormat(serviceRoleKey),
+    anonKeyFormat: keyFormat(anonKey),
     urlHost,
     urlSource: process.env.SUPABASE_URL ? 'SUPABASE_URL' : process.env.NEXT_PUBLIC_SUPABASE_URL ? 'NEXT_PUBLIC_SUPABASE_URL' : null,
     keySource: serviceRoleKey ? 'SUPABASE_SERVICE_ROLE_KEY' : anonKey ? 'NEXT_PUBLIC_SUPABASE_ANON_KEY' : null,
