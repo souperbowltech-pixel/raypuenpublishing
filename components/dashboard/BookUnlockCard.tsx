@@ -2,6 +2,13 @@
 
 import React, { useState } from "react";
 
+/**
+ * Automatic print-and-ship is switched on once IngramSpark is connected. Until
+ * then the card never collects an address it can't use or claims a dispatch
+ * that didn't happen: it tells the family the free book is reserved.
+ */
+const PRINT_FULFILLMENT_LIVE = false;
+
 interface BookUnlockCardProps {
   scoutName: string;
   /** 2 = peer/700-point track, 3 = $40 Grandpa sponsorship track. */
@@ -51,11 +58,11 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
   const copy = COPY[bookNumber];
   const [addressConfirmed, setAddressConfirmed] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
-    recipient: scoutName || "Young Scout",
-    addressLine1: "33514 Liberty Rd.",
-    city: "Yucaipa",
-    state: "CA",
-    zip: "92399",
+    recipient: "",
+    addressLine1: "",
+    city: "",
+    state: "",
+    zip: "",
   });
 
   const handleConfirmShipping = (e: React.FormEvent) => {
@@ -92,12 +99,25 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
               </p>
             </div>
           </div>
-          <span className="rounded-full bg-spruce/20 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-spruce-dark">
-            API Status: READY_FOR_DISPATCH
-          </span>
+          {!PRINT_FULFILLMENT_LIVE && (
+            <span className="rounded-full bg-crayon-gold/25 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-ink">
+              Printing opens soon
+            </span>
+          )}
         </div>
 
-        {!addressConfirmed ? (
+        {!PRINT_FULFILLMENT_LIVE ? (
+          <div className="mt-5 rounded-xl bg-spruce/10 border border-spruce/30 p-5">
+            <h5 className="text-lg font-bold text-spruce-dark font-display">
+              Your free Book {bookNumber} is reserved for Scout {scoutName || "Explorer"}!
+            </h5>
+            <p className="mt-1 text-sm text-ink-soft">
+              Printing and shipping open soon. When they do, you&apos;ll confirm your
+              shipping address right here, and your copy will be printed and mailed to
+              you at no cost.
+            </p>
+          </div>
+        ) : !addressConfirmed ? (
           <form onSubmit={handleConfirmShipping} className="mt-5 space-y-4">
             <p className="text-sm font-semibold text-ink">
               Please confirm the shipping destination for Scout <span className="text-clay font-bold">{scoutName || "Explorer"}</span>:
@@ -110,6 +130,8 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
                   type="text"
                   value={shippingAddress.recipient}
                   onChange={(e) => setShippingAddress({ ...shippingAddress, recipient: e.target.value })}
+                  placeholder="Parent or guardian's name"
+                  autoComplete="name"
                   className="input text-sm py-2"
                   required
                 />
@@ -120,19 +142,30 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
                   type="text"
                   value={shippingAddress.addressLine1}
                   onChange={(e) => setShippingAddress({ ...shippingAddress, addressLine1: e.target.value })}
+                  placeholder="e.g. 12 Oak Street"
+                  autoComplete="address-line1"
                   className="input text-sm py-2"
                   required
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-soft uppercase mb-1">City, State</label>
+                <label className="block text-xs font-bold text-ink-soft uppercase mb-1">City</label>
                 <input
                   type="text"
-                  value={`${shippingAddress.city}, ${shippingAddress.state}`}
-                  onChange={(e) => {
-                    const parts = e.target.value.split(",");
-                    setShippingAddress({ ...shippingAddress, city: parts[0]?.trim() || "", state: parts[1]?.trim() || "" });
-                  }}
+                  value={shippingAddress.city}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+                  autoComplete="address-level2"
+                  className="input text-sm py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-ink-soft uppercase mb-1">State</label>
+                <input
+                  type="text"
+                  value={shippingAddress.state}
+                  onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
+                  autoComplete="address-level1"
                   className="input text-sm py-2"
                   required
                 />
@@ -143,6 +176,7 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
                   type="text"
                   value={shippingAddress.zip}
                   onChange={(e) => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
+                  autoComplete="postal-code"
                   className="input text-sm py-2"
                   required
                 />

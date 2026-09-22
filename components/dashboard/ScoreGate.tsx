@@ -31,7 +31,7 @@ export default function ScoreGate({
           Gate Milestone
         </span>
         <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-wide font-display text-white">
-          {BOOK2_GATE_CONFIG.headerBanner}
+          {isBook2Unlocked ? BOOK2_GATE_CONFIG.unlockedHeaderBanner : BOOK2_GATE_CONFIG.headerBanner}
         </h2>
       </div>
 
@@ -83,10 +83,10 @@ export default function ScoreGate({
             <div className="text-2xl sm:text-3xl">🎖️</div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-spruce-dark font-display">
-                Academic Points Secured!
+                {isBook2Unlocked ? BOOK2_GATE_CONFIG.unlockedPanelTitle : "Academic Points Secured!"}
               </h3>
               <p className="mt-1 text-sm sm:text-base leading-relaxed text-ink-soft">
-                {BOOK2_GATE_CONFIG.mainPanelCopy}
+                {isBook2Unlocked ? BOOK2_GATE_CONFIG.unlockedPanelCopy : BOOK2_GATE_CONFIG.mainPanelCopy}
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">

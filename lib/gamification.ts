@@ -30,6 +30,10 @@ export const REFERRAL_FRIEND_REQUIREMENT = 2; // friends needed to fire the poin
 
 export const BOOK2_GATE_CONFIG = {
   headerBanner: "BECOME A QUEST CAPTAIN! UPGRADE YOUR SCORE TO THE BIBLICAL 700!",
+  unlockedHeaderBanner: "QUEST CAPTAIN! YOU REACHED THE BIBLICAL 700!",
+  unlockedPanelTitle: "Biblical 700 Reached!",
+  unlockedPanelCopy:
+    "Wonderful work, Scout! You read Book 1, aced your comprehension quiz (400 points) and brought 2 friends into the circle (300 points). Book 2 is now unlocked for you completely free!",
   mainPanelCopy:
     "Fantastic job, Scout! You read Book 1, aced your comprehension quiz, and locked in your 400 Academic Points. Your digital coloring ribbon is officially ready to print! To reach the Biblical 700 and unlock Book 2 completely free, you must recruit 2 friends to join the circle.",
   academicPassThreshold: 400,
