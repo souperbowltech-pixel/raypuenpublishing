@@ -30,6 +30,9 @@ export const PAGE_STICKER_META: StickerSlotMeta[] = [
   { pageNumber: 15, virtue: "Fortitude", gradient: "from-rose-400 to-red-600" },
   { pageNumber: 16, virtue: "Adaptability", gradient: "from-sky-400 to-blue-600" },
   { pageNumber: 17, virtue: "Perseverance", gradient: "from-amber-300 to-yellow-600" },
-  { pageNumber: 18, virtue: "Integrity", gradient: "from-sky-300 to-indigo-500" },
-  { pageNumber: 19, virtue: "Stewardship", gradient: "from-yellow-400 via-orange-500 to-red-500" },
+  // 2026-09-23: the illustrator's final artwork renamed these two — badge 18 now
+  // reads GENEROSITY and badge 19 reads INTEGRITY, replacing Stewardship. The
+  // wording here must match what is printed on the badge the child is looking at.
+  { pageNumber: 18, virtue: "Generosity", gradient: "from-violet-400 to-purple-600" },
+  { pageNumber: 19, virtue: "Integrity", gradient: "from-yellow-400 via-orange-500 to-red-500" },
 ];
