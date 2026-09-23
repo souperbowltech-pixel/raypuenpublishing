@@ -1,16 +1,14 @@
 /**
  * Pricing constants and calculations for Puen Publishing.
+ *
+ * Institutions are priced with the flat `SPONSOR_TIERS` below. An earlier
+ * per-copy model ($4.19/book plus a $20 digital fee waived at 100 copies) was
+ * superseded and removed on 2026-09-23 — the live portal says "no per-copy
+ * math". It is in git history if that model is ever revived.
  */
 
 export const RETAIL_PRICE = 6.99;
-export const WHOLESALE_UNIT_PRICE = 4.19;
-export const DIGITAL_FEE = 20.0;
-export const FREE_MANUAL_THRESHOLD = 100;
 export const CURRENCY = "USD";
-
-export function wholesaleDiscountLabel(): string {
-  return "40%";
-}
 
 export interface SponsorTier {
   tierId: 1 | 2 | 3;
@@ -55,127 +53,6 @@ export const SPONSOR_TIERS: Record<1 | 2 | 3, SponsorTier> = {
     requiresShipping: true,
   },
 };
-
-export interface WholesalePriceBreakdown {
-  valid: boolean;
-  reason?: string;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
-  digitalFee: number;
-  feeWaived: boolean;
-  manualIncluded: boolean;
-  total: number;
-  effectivePerUnit: number;
-  copiesUntilFreeManual: number;
-  freeManualThreshold: number;
-}
-
-export function isValidQuantity(quantity: unknown): boolean {
-  if (typeof quantity !== "number" || isNaN(quantity) || !isFinite(quantity)) {
-    return false;
-  }
-  if (!Number.isInteger(quantity)) {
-    return false;
-  }
-  return quantity >= 1;
-}
-
-function roundToCents(amount: number): number {
-  return Math.round(amount * 100) / 100;
-}
-
-export function calculateWholesalePrice(quantity: unknown): WholesalePriceBreakdown {
-  if (typeof quantity !== "number" || isNaN(quantity) || !isFinite(quantity)) {
-    return {
-      valid: false,
-      reason: "Quantity must be a valid number.",
-      quantity: 0,
-      unitPrice: WHOLESALE_UNIT_PRICE,
-      subtotal: 0,
-      digitalFee: 0,
-      feeWaived: false,
-      manualIncluded: false,
-      total: 0,
-      effectivePerUnit: 0,
-      copiesUntilFreeManual: FREE_MANUAL_THRESHOLD,
-      freeManualThreshold: FREE_MANUAL_THRESHOLD,
-    };
-  }
-
-  if (!Number.isInteger(quantity)) {
-    return {
-      valid: false,
-      reason: "Quantity must be a whole number.",
-      quantity: 0,
-      unitPrice: WHOLESALE_UNIT_PRICE,
-      subtotal: 0,
-      digitalFee: 0,
-      feeWaived: false,
-      manualIncluded: false,
-      total: 0,
-      effectivePerUnit: 0,
-      copiesUntilFreeManual: FREE_MANUAL_THRESHOLD,
-      freeManualThreshold: FREE_MANUAL_THRESHOLD,
-    };
-  }
-
-  if (quantity < 0) {
-    return {
-      valid: false,
-      reason: "Quantity cannot be negative.",
-      quantity: 0,
-      unitPrice: WHOLESALE_UNIT_PRICE,
-      subtotal: 0,
-      digitalFee: 0,
-      feeWaived: false,
-      manualIncluded: false,
-      total: 0,
-      effectivePerUnit: 0,
-      copiesUntilFreeManual: FREE_MANUAL_THRESHOLD,
-      freeManualThreshold: FREE_MANUAL_THRESHOLD,
-    };
-  }
-
-  if (quantity === 0) {
-    return {
-      valid: false,
-      reason: "Quantity must be at least 1.",
-      quantity: 0,
-      unitPrice: WHOLESALE_UNIT_PRICE,
-      subtotal: 0,
-      digitalFee: 0,
-      feeWaived: false,
-      manualIncluded: false,
-      total: 0,
-      effectivePerUnit: 0,
-      copiesUntilFreeManual: FREE_MANUAL_THRESHOLD,
-      freeManualThreshold: FREE_MANUAL_THRESHOLD,
-    };
-  }
-
-  const qty = quantity;
-  const subtotal = roundToCents(qty * WHOLESALE_UNIT_PRICE);
-  const feeWaived = qty >= FREE_MANUAL_THRESHOLD;
-  const digitalFee = feeWaived ? 0 : DIGITAL_FEE;
-  const total = roundToCents(subtotal + digitalFee);
-  const effectivePerUnit = roundToCents(total / qty);
-  const copiesUntilFreeManual = Math.max(0, FREE_MANUAL_THRESHOLD - qty);
-
-  return {
-    valid: true,
-    quantity: qty,
-    unitPrice: WHOLESALE_UNIT_PRICE,
-    subtotal,
-    digitalFee,
-    feeWaived,
-    manualIncluded: feeWaived,
-    total,
-    effectivePerUnit,
-    copiesUntilFreeManual,
-    freeManualThreshold: FREE_MANUAL_THRESHOLD,
-  };
-}
 
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
