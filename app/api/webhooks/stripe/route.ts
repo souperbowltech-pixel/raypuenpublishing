@@ -83,9 +83,25 @@ export async function POST(req: NextRequest) {
     if (orderType === "grandpa_sponsorship") {
       if (grandpaToken) {
         try {
-          await updateScoutAsync(grandpaToken, { book3Sponsored: true });
-          console.log(`[Grandpa Sponsor] Book 3 unlocked for scout ${grandpaToken}`);
-          await markOrder(session.id, { fulfillmentStatus: "fulfilled", lastError: null });
+          const result = await updateScoutAsync(grandpaToken, { book3Sponsored: true });
+          if (!result.persisted) {
+            // The unlock did not reach the database. Never mark this order
+            // fulfilled — return non-2xx so Stripe retries (every step is
+            // idempotent) and leave the order visible as unfinished.
+            retryNeeded = true;
+            await markOrder(session.id, {
+              fulfillmentStatus: "failed",
+              lastError: result.error || "Book 3 unlock was not saved",
+            });
+            await alertFailure("Grandpa sponsorship paid but Book 3 unlock was not saved", {
+              session: session.id,
+              email: customerEmail,
+              error: result.error,
+            });
+          } else {
+            console.log(`[Grandpa Sponsor] Book 3 unlocked for scout ${grandpaToken}`);
+            await markOrder(session.id, { fulfillmentStatus: "fulfilled", lastError: null });
+          }
         } catch (err: any) {
           retryNeeded = true;
           await markOrder(session.id, { fulfillmentStatus: "failed", lastError: String(err?.message || err) });

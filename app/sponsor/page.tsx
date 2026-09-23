@@ -8,7 +8,10 @@ import { publisherBrand } from "@/lib/book";
 const SHARE_CODE_REGEX = /^GG-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/;
 const DEMO_TOKEN = "CAPTAIN-RAY-700";
 
-type Stage = "form" | "confirming" | "thanks" | "unconfirmed";
+// "unlock-pending": the payment definitely succeeded, but writing the unlock did
+// not. Telling this sponsor Book 3 is unlocked would be exactly the kind of
+// false confirmation the checkout success page was fixed to stop.
+type Stage = "form" | "confirming" | "thanks" | "unlock-pending" | "unconfirmed";
 
 /**
  * Public landing page a relative reaches by scanning the Grandpa QR code (or
@@ -41,7 +44,8 @@ export default function SponsorLandingPage() {
         .then((r) => r.json())
         .then((d) => {
           if (d?.scoutName) setScoutName(d.scoutName);
-          setStage(d?.paid ? "thanks" : "unconfirmed");
+          if (d?.paid && d?.unlockPending) setStage("unlock-pending");
+          else setStage(d?.paid ? "thanks" : "unconfirmed");
         })
         .catch(() => setStage("unconfirmed"));
     }
@@ -128,6 +132,18 @@ export default function SponsorLandingPage() {
               Your {price} gift is confirmed and Book 3 is now unlocked
               {scoutName ? ` for ${scoutName}` : ""}. They&apos;ll see it on their dashboard
               the next time they open it.
+            </p>
+          </>
+        )}
+
+        {stage === "unlock-pending" && (
+          <>
+            <h1 className="font-display text-3xl font-black text-ink sm:text-4xl">Thank you!</h1>
+            <p className="mt-4 text-base text-ink-soft leading-relaxed">
+              Your {price} gift went through. We&apos;re still finishing the unlock on
+              {scoutName ? ` ${scoutName}'s` : " the child's"} dashboard — our team has
+              been alerted and it will be in place shortly. Nothing more is needed from
+              you, and you have not been charged twice.
             </p>
           </>
         )}

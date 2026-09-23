@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ScoreGate from "@/components/dashboard/ScoreGate";
@@ -18,7 +18,10 @@ export default function Book2DashboardPage() {
   const router = useRouter();
   // "family": the child of the family signed in on this device.
   // "demo":   the shared preview profile (/dashboard/book2?demo=1).
-  const [mode, setMode] = useState<"loading" | "family" | "demo">("loading");
+  // "error" matters as much as the rest: an empty dashboard means "no progress
+  // yet", so it may only ever be shown when the server actually said so.
+  const [mode, setMode] = useState<"loading" | "family" | "demo" | "error">("loading");
+  const [saveFailed, setSaveFailed] = useState(false);
   const [shareCode, setShareCode] = useState("");
   const [scoutName, setScoutName] = useState("");
   const [quizScore, setQuizScore] = useState(0);
@@ -39,36 +42,61 @@ export default function Book2DashboardPage() {
   };
 
   // Load the signed-in family's child, the demo profile, or send the visitor to sign up.
-  useEffect(() => {
+  const loadScout = useCallback(async () => {
     const isDemo = new URLSearchParams(window.location.search).get("demo") === "1";
-    (async () => {
-      try {
-        const res = await fetch(isDemo ? `/api/scout/state?token=${DEMO_TOKEN}` : "/api/scout/state", { cache: "no-store" });
-        if (res.status === 401) {
-          router.replace("/start");
-          return;
-        }
-        const data = await res.json();
-        if (data?.scout) applyScout(data.scout);
-        setMode(isDemo ? "demo" : "family");
-      } catch {
-        setMode(isDemo ? "demo" : "family");
+    setMode("loading");
+    try {
+      const res = await fetch(isDemo ? `/api/scout/state?token=${DEMO_TOKEN}` : "/api/scout/state", { cache: "no-store" });
+      if (res.status === 401) {
+        router.replace("/start");
+        return;
       }
-    })();
+      // Anything else that is not OK (rate limit, server error) must not fall
+      // through to the empty defaults — that would show a child with real
+      // progress a dashboard reset to zero.
+      if (!res.ok) {
+        setMode("error");
+        return;
+      }
+      const data = await res.json();
+      if (data?.scout) applyScout(data.scout);
+      setMode(isDemo ? "demo" : "family");
+    } catch {
+      setMode("error");
+    }
   }, [router]);
+
+  useEffect(() => {
+    loadScout();
+  }, [loadScout]);
 
   // Sync state to persistent API. The server is authoritative: it returns the
   // canonical scout record, which we mirror back into local state. A family's
   // requests carry no token; the server uses this device's session.
-  const persistUpdate = async (updates: Record<string, any>) => {
+  /** Returns whether the change was actually confirmed saved by the server. */
+  const persistUpdate = async (
+    updates: Record<string, any>,
+    rollback?: () => void
+  ): Promise<boolean> => {
     setIsSaving(true);
+    setSaveFailed(false);
     try {
       const res = await fetch("/api/scout/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(mode === "demo" ? { token: DEMO_TOKEN, ...updates } : updates),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
+
+      // The server now tells us whether the write actually reached the database.
+      // Anything short of a confirmed save has to undo the optimistic change,
+      // otherwise a sticker stays lit that nobody ever recorded.
+      if (!res.ok || data?.saved === false) {
+        rollback?.();
+        setSaveFailed(true);
+        return false;
+      }
+
       if (data?.scout) {
         setQuizScore(data.scout.quizScore ?? 0);
         setReferralScore(data.scout.referralScore ?? 0);
@@ -76,8 +104,11 @@ export default function Book2DashboardPage() {
         setBook3Unlocked(Boolean(data.scout.book3Unlocked));
         setCompletedPages(data.scout.completedPages ?? []);
       }
+      return true;
     } catch {
-      // ignore
+      rollback?.();
+      setSaveFailed(true);
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -89,18 +120,20 @@ export default function Book2DashboardPage() {
   };
 
   const handleTogglePage = (pageNumber: number) => {
+    const previous = completedPages;
     const updated = completedPages.includes(pageNumber)
       ? completedPages.filter((p) => p !== pageNumber)
       : [...completedPages, pageNumber].sort((a, b) => a - b);
 
     setCompletedPages(updated);
-    persistUpdate({ completedPages: updated });
+    persistUpdate({ completedPages: updated }, () => setCompletedPages(previous));
   };
 
   // Quiz answers are graded server-side; we never send a client-computed score.
-  const handleQuizSubmit = (answers: Record<string, number>, book: 1 | 2 | 3) => {
+  // The result is handed back so the quiz can unlock itself again if the 400
+  // points were never actually recorded.
+  const handleQuizSubmit = (answers: Record<string, number>, book: 1 | 2 | 3) =>
     persistUpdate({ quizAnswers: answers, quizBook: book });
-  };
 
   const handleQuizReset = (book: 1 | 2 | 3) => {
     persistUpdate({ quizAnswers: {}, quizBook: book });
@@ -118,6 +151,23 @@ export default function Book2DashboardPage() {
     return (
       <div className="min-h-screen bg-paper text-ink flex items-center justify-center">
         <p className="text-ink-soft font-semibold">Opening your Explorer dashboard…</p>
+      </div>
+    );
+  }
+
+  if (mode === "error") {
+    return (
+      <div className="min-h-screen bg-paper text-ink flex items-center justify-center px-4">
+        <div className="max-w-md w-full rounded-2xl border border-ink/10 bg-paper p-8 text-center shadow-card">
+          <h1 className="font-display text-2xl font-bold">We couldn&apos;t load your progress</h1>
+          <p className="mt-3 text-ink-soft leading-relaxed">
+            Your stickers and points are safe — we just couldn&apos;t reach them right
+            now. Please try again in a moment.
+          </p>
+          <button onClick={loadScout} className="btn-primary mt-6 w-full">
+            Try again
+          </button>
+        </div>
       </div>
     );
   }
@@ -150,6 +200,24 @@ export default function Book2DashboardPage() {
       </header>
 
       <main className="container-page mt-8 space-y-8 max-w-5xl">
+        {/* A save that did not reach the database is never hidden: the sticker has
+            already been rolled back, so the child is told rather than left with a
+            dashboard that disagrees with what was actually recorded. */}
+        {saveFailed && (
+          <div
+            role="alert"
+            className="rounded-2xl border border-clay/30 bg-clay/10 p-4 text-sm text-ink flex flex-wrap items-center justify-between gap-3"
+          >
+            <span>
+              <strong className="font-bold">That didn&apos;t save.</strong> Your last
+              change wasn&apos;t recorded, so we&apos;ve put it back. Please try again.
+            </span>
+            <button onClick={() => setSaveFailed(false)} className="text-xs font-bold underline">
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* Rule 2: Book 2 Continuation Hook — persistent nudge toward the Grandpa path,
             shown once Book 2 is unlocked but no relative has sponsored yet. */}
         {isBook2Unlocked && !book3Unlocked && <Book2ContinuationBanner />}

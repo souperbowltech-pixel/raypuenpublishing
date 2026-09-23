@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { updateScoutAsync } from "@/lib/scout-store";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { alertFailure } from "@/lib/alerts";
 
 export const dynamic = "force-dynamic";
 
@@ -45,9 +46,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, paid: false });
     }
 
-    const scout = await updateScoutAsync(scoutToken, { book3Sponsored: true });
+    const result = await updateScoutAsync(scoutToken, { book3Sponsored: true });
+
+    if (!result.persisted) {
+      // The sponsor has already paid, so never tell them it failed — say the
+      // unlock is still finishing, and make sure a human is told about it.
+      await alertFailure('Sponsorship paid but the Book 3 unlock was not saved', {
+        session: sessionId,
+        error: result.error,
+      });
+      return NextResponse.json({
+        success: true,
+        paid: true,
+        unlockPending: true,
+        scoutName: result.state.scoutName,
+      });
+    }
+
     // The sponsor's browser only learns the child's first name, never the token.
-    return NextResponse.json({ success: true, paid: true, scoutName: scout.scoutName });
+    return NextResponse.json({ success: true, paid: true, scoutName: result.state.scoutName });
   } catch (error) {
     console.error("[Grandpa Sponsor Confirm Error]:", error);
     return NextResponse.json({ error: "Unable to confirm sponsorship" }, { status: 500 });

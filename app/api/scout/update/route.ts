@@ -96,11 +96,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
-    const scout = await updateScoutAsync(access.scoutToken, updates);
+    const result = await updateScoutAsync(access.scoutToken, updates);
     const out = access.kind === 'family'
-      ? { ...scout, token: undefined, shareCode: access.family.shareCode }
-      : scout;
-    return NextResponse.json({ success: true, mode: access.kind, scout: out });
+      ? { ...result.state, token: undefined, shareCode: access.family.shareCode }
+      : result.state;
+
+    if (!result.persisted) {
+      // Never report a save that did not happen: the dashboard rolls its
+      // optimistic update back and offers a retry instead of silently losing work.
+      return NextResponse.json(
+        {
+          success: false,
+          saved: false,
+          error: 'Your progress could not be saved. Please try again.',
+          mode: access.kind,
+          scout: out,
+        },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json({ success: true, saved: true, mode: access.kind, scout: out });
   } catch (err) {
     console.error('[scout/update] error:', err);
     return NextResponse.json(

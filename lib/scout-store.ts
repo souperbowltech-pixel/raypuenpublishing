@@ -30,7 +30,7 @@ export interface PersistentScoutState {
 }
 
 /** The authoritative, non-derived inputs a scout record is built from. */
-interface ScoutInput {
+export interface ScoutInput {
   token: string;
   scoutName: string;
   completedPages: number[];
@@ -45,7 +45,7 @@ interface ScoutInput {
  * `friendsCompleted`) plus the `book3Sponsored` flag, so the peer (Book 2) and
  * Grandpa (Book 3) tracks stay consistent everywhere. Also clamps the inputs.
  */
-function deriveScoutFields(s: ScoutInput): PersistentScoutState {
+export function deriveScoutFields(s: ScoutInput): PersistentScoutState {
   const quizScore = clampInt(s.quizScore, 0, BOOK2_GATE_CONFIG.academicPassThreshold);
   const friendsCompleted = clampInt(s.friendsCompleted, 0, REFERRAL_INVITE_CAPACITY);
   const book3Sponsored = Boolean(s.book3Sponsored);
@@ -245,71 +245,201 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
   return getOrCreateScoutLocal(cleanToken, name);
 }
 
-export async function updateScoutAsync(
-  token: string,
-  partial: Partial<PersistentScoutState>
-): Promise<PersistentScoutState> {
-  const current = await getOrCreateScoutAsync(token);
+/** The outcome of a scout write. */
+export interface ScoutWriteResult {
+  state: PersistentScoutState;
+  /**
+   * True only when the new state was confirmed to reach durable storage. Read a
+   * `false` as "not confirmed" rather than "definitely not written": a call that
+   * times out mid-flight may still have landed. Every write here is idempotent,
+   * so retrying after a `false` is always safe.
+   */
+  persisted: boolean;
+  error?: string;
+}
 
-  // Defense-in-depth: never let a caller change the token or push out-of-range
-  // values. Merge, force the token, sanitize pages, then recompute every derived
-  // field from the authoritative inputs (deriveScoutFields also clamps).
+/** Re-read, re-merge and retry this many times when a competing write lands first. */
+const MAX_WRITE_ATTEMPTS = 3;
+
+/** Postgres "undefined column" — the friends_completed/book3_sponsored migration is missing. */
+const UNDEFINED_COLUMN = '42703';
+
+type WriteOutcome =
+  | { kind: 'written' }
+  /**
+   * Written, but against a database that predates the friends_completed /
+   * book3_sponsored columns, so those two values were dropped. Only a real save
+   * for a caller that did not touch them.
+   */
+  | { kind: 'written-without-new-columns' }
+  /** Someone else wrote between our read and our write; the caller must re-merge. */
+  | { kind: 'conflict' }
+  | { kind: 'error'; error: string; code?: string };
+
+/**
+ * Merge a caller's partial onto a known state. Defense-in-depth: never let a
+ * caller change the token or push out-of-range values — force the token,
+ * sanitize pages, then recompute every derived field from the authoritative
+ * inputs (deriveScoutFields also clamps).
+ */
+function mergeScout(
+  current: PersistentScoutState,
+  partial: Partial<PersistentScoutState>
+): PersistentScoutState {
   const merged = { ...current, ...partial };
-  const updated: PersistentScoutState = deriveScoutFields({
+  return deriveScoutFields({
     ...merged,
     token: current.token,
     completedPages: sanitizePages(merged.completedPages),
     updatedAt: new Date().toISOString(),
-  }) as PersistentScoutState;
+  });
+}
 
-  // 1. Sync to Supabase
-  if (supabase) {
-    try {
-      const { error: saveError } = await supabase
-        .from('scout_profiles')
-        .upsert(
-          {
-            token: updated.token,
-            scout_name: updated.scoutName,
-            completed_pages: updated.completedPages,
-            quiz_score: updated.quizScore,
-            referral_score: updated.referralScore,
-            status: updated.status,
-            updated_at: updated.updatedAt,
-          },
-          { onConflict: 'token' }
-        );
+function mirrorLocally(state: PersistentScoutState): PersistentScoutState {
+  const localStore = ensureLocalStore();
+  localStore[state.token] = state;
+  saveLocalStore(localStore);
+  return state;
+}
 
-      if (saveError) {
-        reportDbProblem('Scout progress save failed', { error: errText(saveError) });
-      }
+/**
+ * One conditional write. `expectedUpdatedAt` is the optimistic-concurrency guard:
+ * the row only changes if nobody has written since we read it, so two racing
+ * requests can never silently overwrite each other's fields.
+ */
+async function attemptScoutWrite(
+  token: string,
+  row: Record<string, unknown>,
+  expectedUpdatedAt: string
+): Promise<WriteOutcome> {
+  try {
+    const { data, error } = await supabase!
+      .from('scout_profiles')
+      .update(row)
+      .eq('token', token)
+      .eq('updated_at', expectedUpdatedAt)
+      .select('token');
 
-      // Best-effort: persist the new columns separately so that if the Supabase
-      // schema has not been migrated yet, the primary upsert above still lands.
-      const { error: extraError } = await supabase
-        .from('scout_profiles')
-        .upsert(
-          {
-            token: updated.token,
-            friends_completed: updated.friendsCompleted,
-            book3_sponsored: updated.book3Sponsored,
-          },
-          { onConflict: 'token' }
-        );
-      if (extraError) {
-        reportDbProblem('Saving friends_completed / book3_sponsored failed (migration not applied?)', { error: errText(extraError) });
-      }
-    } catch (err) {
-      reportDbProblem('Scout progress save threw', { error: errText(err) });
+    if (error) {
+      return { kind: 'error', error: errText(error), code: (error as { code?: string }).code };
     }
+    return data && data.length > 0 ? { kind: 'written' } : { kind: 'conflict' };
+  } catch (err) {
+    return { kind: 'error', error: errText(err) };
+  }
+}
+
+async function writeScoutRow(
+  next: PersistentScoutState,
+  expectedUpdatedAt: string
+): Promise<WriteOutcome> {
+  // Split so the pre-migration retry below can reuse the legacy half verbatim.
+  const legacyRow = {
+    scout_name: next.scoutName,
+    completed_pages: next.completedPages,
+    quiz_score: next.quizScore,
+    referral_score: next.referralScore,
+    status: next.status,
+    updated_at: next.updatedAt,
+  };
+  const row = {
+    ...legacyRow,
+    friends_completed: next.friendsCompleted,
+    book3_sponsored: next.book3Sponsored,
+  };
+
+  const outcome = await attemptScoutWrite(next.token, row, expectedUpdatedAt);
+
+  // A database that never received the friends_completed/book3_sponsored migration
+  // rejects those two columns. Retry without them so the rest of a child's
+  // progress still saves, and say loudly that the migration is missing.
+  if (outcome.kind === 'error' && outcome.code === UNDEFINED_COLUMN) {
+    reportDbProblem(
+      'scout_profiles is missing the friends_completed/book3_sponsored columns (migration not applied?)',
+      { error: outcome.error }
+    );
+    const retried = await attemptScoutWrite(next.token, legacyRow, expectedUpdatedAt);
+    // Saying "saved" here would recreate the very bug this contract exists to
+    // stop: the caller must be told those two values did not land.
+    return retried.kind === 'written' ? { kind: 'written-without-new-columns' } : retried;
   }
 
-  // 2. Local mirror
-  const localStore = ensureLocalStore();
-  localStore[updated.token] = updated;
-  saveLocalStore(localStore);
+  return outcome;
+}
 
-  return updated;
+/**
+ * Why a write kept matching zero rows. "Conflict" is only one possibility, and
+ * blaming a race for a row that simply is not there sends whoever reads the
+ * alert hunting the wrong problem.
+ */
+async function diagnoseMissedWrite(token: string): Promise<string> {
+  try {
+    const { data, error } = await supabase!
+      .from('scout_profiles')
+      .select('token')
+      .eq('token', token)
+      .maybeSingle();
+    if (error) return `could not confirm the scout row: ${errText(error)}`;
+    return data ? 'concurrent update' : 'scout row is missing from the database';
+  } catch (err) {
+    return `could not confirm the scout row: ${errText(err)}`;
+  }
+}
+
+async function updateScoutInSupabase(
+  token: string,
+  partial: Partial<PersistentScoutState>
+): Promise<ScoutWriteResult> {
+  // Whether this caller is changing a value that a pre-migration database cannot store.
+  const needsNewColumns = 'friendsCompleted' in partial || 'book3Sponsored' in partial;
+  let state = await getOrCreateScoutAsync(token);
+  let next = state;
+
+  for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
+    // Re-read before each retry so a re-merge lands on top of whoever won the race.
+    if (attempt > 1) state = await getOrCreateScoutAsync(token);
+
+    const expectedUpdatedAt = state.updatedAt;
+    next = mergeScout(state, partial);
+    const outcome = await writeScoutRow(next, expectedUpdatedAt);
+
+    if (outcome.kind === 'written') {
+      return { state: mirrorLocally(next), persisted: true };
+    }
+
+    if (outcome.kind === 'written-without-new-columns') {
+      if (!needsNewColumns) return { state: mirrorLocally(next), persisted: true };
+      // The sponsorship/referral value this call existed to store was dropped.
+      const error = 'scout_profiles is missing the friends_completed/book3_sponsored columns';
+      reportDbProblem('Scout progress partially saved: ' + error);
+      return { state: mirrorLocally(next), persisted: false, error };
+    }
+
+    if (outcome.kind === 'error') {
+      reportDbProblem('Scout progress save failed', { error: outcome.error });
+      return { state: mirrorLocally(next), persisted: false, error: outcome.error };
+    }
+    // kind === 'conflict' → loop and merge onto the newer state.
+  }
+
+  const error = await diagnoseMissedWrite(token);
+  reportDbProblem('Scout progress save never landed', { error });
+  return { state: mirrorLocally(next), persisted: false, error };
+}
+
+export async function updateScoutAsync(
+  token: string,
+  partial: Partial<PersistentScoutState>
+): Promise<ScoutWriteResult> {
+  if (supabase) return updateScoutInSupabase(token, partial);
+
+  const state = updateScoutLocal(token, partial);
+  if (isProduction) {
+    reportDbProblem('Scout progress not saved: database not configured on the live site');
+    return { state, persisted: false, error: 'database not configured' };
+  }
+  // Local development: the JSON store is the intended backend, so this is saved.
+  return { state, persisted: true };
 }
 
 // Synchronous local helpers
@@ -372,5 +502,3 @@ export function updateScoutLocal(
   return updated;
 }
 
-export const getOrCreateScout = getOrCreateScoutLocal;
-export const updateScout = updateScoutLocal;

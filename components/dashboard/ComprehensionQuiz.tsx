@@ -4,7 +4,11 @@ import React, { useState } from "react";
 import { getQuizQuestionsForBook, QuizQuestion } from "@/lib/gamification";
 
 interface ComprehensionQuizProps {
-  onSubmitAnswers: (answers: Record<string, number>, book: 1 | 2 | 3) => void;
+  /** Resolves to false when the score was not actually saved. */
+  onSubmitAnswers: (
+    answers: Record<string, number>,
+    book: 1 | 2 | 3
+  ) => void | Promise<boolean>;
   onReset: (book: 1 | 2 | 3) => void;
   currentQuizScore: number;
   bookNumber?: 1 | 2 | 3;
@@ -30,9 +34,13 @@ export default function ComprehensionQuiz({
   };
 
   // Grading is done server-side; the client only submits the raw answers.
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitted(true);
-    onSubmitAnswers(answers, activeBook);
+    const saved = await onSubmitAnswers(answers, activeBook);
+    // A score that never reached the database must not leave the quiz locked
+    // with the answers revealed — the child would be stuck on 0 points with no
+    // way to try again.
+    if (saved === false) setSubmitted(false);
   };
 
   const handleReset = () => {
