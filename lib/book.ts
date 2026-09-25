@@ -20,6 +20,13 @@ export interface BookContent {
   sku: string;
   title: string;
   tagline: string;
+  /**
+   * The credit line exactly as the family has given permission for it.
+   * Ray's daughter granted permission for her daughters to be credited by
+   * their MIDDLE names only (25 Sept 2026), and he sent this wording himself.
+   * Their first names must not appear anywhere on the site or in print.
+   */
+  byline: string;
   description: string;
   ageRange: string;
   pageCount: number;
@@ -33,8 +40,9 @@ export const book1: BookContent = {
   sku: "PUEN-CB-001",
   title: "The Geezy Goober's Guide to Icky Sfand",
   tagline: "The Search for the Magic Pen (Volume 1)",
+  byline: "By Ray Puen inspired by Grace and Joy.",
   description:
-    "Deep in the woods of Twist-and-Twirl, words are mysteriously vanishing! Co-created by Publisher Ray Puen and his young granddaughters, Kira Grace and Cayleigh Joy, this interactive adventure features a precise, musical iambic rhythm that grips a child's focus. Designed as a deliberate two-part strategy, Volume 1 captures children's deep affection through high-appeal whimsical adventure coloring blocks, priming their hearts to follow our storybook heroes into future structural paths of honor, kindness, and respect.",
+    "Deep in the woods of Twist-and-Twirl, words are mysteriously vanishing! Co-created by Publisher Ray Puen and his young granddaughters, Grace and Joy, this interactive adventure features a precise, musical iambic rhythm that grips a child's focus. Designed as a deliberate two-part strategy, Volume 1 captures children's deep affection through high-appeal whimsical adventure coloring blocks, priming their hearts to follow our storybook heroes into future structural paths of honor, kindness, and respect.",
   ageRange: "Ages 3–7",
   pageCount: 32,
   dimensions: '8.5" × 8.5" (square, softcover)',

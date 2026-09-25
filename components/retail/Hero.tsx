@@ -19,6 +19,9 @@ export function Hero() {
           <p className="mt-4 max-w-md text-lg text-ink-soft">
             {book1.tagline}
           </p>
+          <p className="mt-2 font-display text-base font-semibold text-ink">
+            {book1.byline}
+          </p>
 
           <div className="mt-4 flex flex-wrap gap-2 text-sm font-semibold text-spruce-dark">
             <span className="rounded-full bg-spruce-light px-3 py-1">
