@@ -10,7 +10,7 @@ import type { VideoView } from "@/lib/videos";
  * produces — above all that the live state embeds the player instead of sending
  * a child off to the host's own site.
  */
-const getVideo = vi.fn<[string], Promise<VideoView>>();
+const getVideo = vi.fn<(slug: string) => Promise<VideoView>>();
 vi.mock("@/lib/videos", () => ({ getVideo: (slug: string) => getVideo(slug) }));
 
 // next/link is a client component; only the anchor it produces matters here.
@@ -42,10 +42,10 @@ const PENDING: VideoView = {
   reason: "not-live",
 };
 
-beforeEach(() => getVideo.mockReset());
+beforeEach(() => { getVideo.mockReset(); });
 
 describe("VideoPage — live", () => {
-  beforeEach(() => getVideo.mockResolvedValue(LIVE));
+  beforeEach(() => { getVideo.mockResolvedValue(LIVE); });
 
   it("embeds the player rather than linking out to it", async () => {
     const html = await render();
@@ -72,7 +72,7 @@ describe("VideoPage — live", () => {
 });
 
 describe("VideoPage — pending", () => {
-  beforeEach(() => getVideo.mockResolvedValue(PENDING));
+  beforeEach(() => { getVideo.mockResolvedValue(PENDING); });
 
   it("shows the waiting screen and no player at all", async () => {
     const html = await render();

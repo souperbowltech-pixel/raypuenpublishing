@@ -9,6 +9,15 @@ const HEALTH_TOKEN = "HEALTH-CHECK";
 
 type Check = { ok: boolean; error?: string };
 
+/**
+ * Every table check reads one row rather than asking for a HEAD count.
+ *
+ * A HEAD response carries no body, so PostgREST has nowhere to put its error:
+ * supabase-js sees no error object and the check passes even when the table does
+ * not exist — which is the single thing these checks exist to catch. Asking for
+ * one row costs the same and actually fails when it should.
+ */
+
 function fail(error: { code?: string; message?: string } | null): Check {
   return { ok: false, error: [error?.code, error?.message].filter(Boolean).join(": ") || "unknown error" };
 }
@@ -28,7 +37,7 @@ export async function GET(req: NextRequest) {
   const checks: Record<string, Check> = {};
 
   if (supabase) {
-    const read = await supabase.from("scout_profiles").select("token", { head: true, count: "exact" });
+    const read = await supabase.from("scout_profiles").select("token").limit(1);
     checks.scoutRead = read.error ? fail(read.error) : { ok: true };
 
     const cols = await supabase.from("scout_profiles").select("friends_completed, book3_sponsored").limit(1);
@@ -53,14 +62,14 @@ export async function GET(req: NextRequest) {
         : { ok: false, error: `wrote ${stamp} but read back ${back.data?.updated_at ?? "nothing"}` };
     }
 
-    const orders = await supabase.from("orders").select("stripe_session_id", { head: true, count: "exact" });
+    const orders = await supabase.from("orders").select("stripe_session_id").limit(1);
     checks.ordersTable = orders.error ? fail(orders.error) : { ok: true };
 
     // Family accounts (registration, sessions and the public share code).
-    const families = await supabase.from("families").select("id", { head: true, count: "exact" });
+    const families = await supabase.from("families").select("id").limit(1);
     checks.familiesTable = families.error ? fail(families.error) : { ok: true };
 
-    const sessions = await supabase.from("family_sessions").select("token_hash", { head: true, count: "exact" });
+    const sessions = await supabase.from("family_sessions").select("token_hash").limit(1);
     checks.familySessionsTable = sessions.error ? fail(sessions.error) : { ok: true };
 
     const shareCodes = await supabase.from("scout_profiles").select("family_id, share_code").limit(1);
@@ -69,7 +78,7 @@ export async function GET(req: NextRequest) {
     // The five video addresses printed inside the book read from this table. The
     // pages fall back to a waiting screen if it is missing, so this check is the
     // only thing that would tell us the migration never reached production.
-    const videos = await supabase.from("videos").select("slug", { head: true, count: "exact" });
+    const videos = await supabase.from("videos").select("slug").limit(1);
     checks.videosTable = videos.error ? fail(videos.error) : { ok: true };
 
     // Re-save an existing row exactly as the app does, to surface write errors
