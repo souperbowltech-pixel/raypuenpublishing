@@ -69,6 +69,12 @@ describe("VideoPage — live", () => {
   it("still offers the way into the sticker album", async () => {
     expect(await render()).toContain('href="/start"');
   });
+
+  it("does not tell a reader to wait for a video that is already playing", async () => {
+    const html = await render();
+    expect(html).not.toContain("While you wait");
+    expect(html).toContain("Start the sticker album");
+  });
 });
 
 describe("VideoPage — pending", () => {
@@ -94,7 +100,9 @@ describe("VideoPage — pending", () => {
   });
 
   it("sends the reader on to register instead of dead-ending", async () => {
-    expect(await render()).toContain('href="/start"');
+    const html = await render();
+    expect(html).toContain('href="/start"');
+    expect(html).toContain("While you wait");
   });
 
   it("prints the address of whichever page it is", async () => {

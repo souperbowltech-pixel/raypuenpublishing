@@ -62,7 +62,9 @@ export async function VideoPage({ slug }: { slug: VideoSlug }) {
 
         <div className="mt-8 rounded-2xl border border-ink/10 bg-paper-deep p-6 text-center">
           <h2 className="font-display text-xl font-bold text-ink">
-            While you wait, start the sticker album
+            {view.state === "live"
+              ? "Start the sticker album"
+              : "While you wait, start the sticker album"}
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-ink-soft">
             Set your Chief Explorer up in under a minute: a sticker for every page coloured, the
