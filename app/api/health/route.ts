@@ -66,6 +66,12 @@ export async function GET(req: NextRequest) {
     const shareCodes = await supabase.from("scout_profiles").select("family_id, share_code").limit(1);
     checks.scoutFamilyColumns = shareCodes.error ? fail(shareCodes.error) : { ok: true };
 
+    // The five video addresses printed inside the book read from this table. The
+    // pages fall back to a waiting screen if it is missing, so this check is the
+    // only thing that would tell us the migration never reached production.
+    const videos = await supabase.from("videos").select("slug", { head: true, count: "exact" });
+    checks.videosTable = videos.error ? fail(videos.error) : { ok: true };
+
     // Re-save an existing row exactly as the app does, to surface write errors
     // that the store would otherwise only log (uses the demo profile's own row).
   }
