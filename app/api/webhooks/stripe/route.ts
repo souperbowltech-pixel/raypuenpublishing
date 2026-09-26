@@ -5,6 +5,7 @@ import { updateScoutAsync } from "@/lib/scout-store";
 import { recordOrder, markOrder } from "@/lib/orders";
 import { alertFailure } from "@/lib/alerts";
 import { isProduction } from "@/lib/supabase";
+import { createPatrolLeader } from "@/lib/patrol-store";
 
 const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
 
@@ -119,6 +120,33 @@ export async function POST(req: NextRequest) {
           email: customerEmail,
         });
       }
+    }
+
+    // 2b. Patrol bundle: $10 creates Patrol Leader record with 3 gift codes
+    if (orderType === "patrol_bundle" && customerEmail) {
+      try {
+        const patrol = await createPatrolLeader(customerEmail, session.id);
+        if (patrol) {
+          console.log(`[Patrol Webhook] Created patrol leader for ${customerEmail} (Token: ${patrol.token})`);
+          await markOrder(session.id, { fulfillmentStatus: "fulfilled", lastError: null });
+        } else {
+          retryNeeded = true;
+          await markOrder(session.id, { fulfillmentStatus: "failed", lastError: "Patrol leader creation failed" });
+        }
+      } catch (err: any) {
+        retryNeeded = true;
+        await markOrder(session.id, { fulfillmentStatus: "failed", lastError: String(err?.message || err) });
+        await alertFailure("Patrol bundle paid but patrol leader creation failed", {
+          session: session.id,
+          email: customerEmail,
+          error: err?.message || err,
+        });
+      }
+    }
+
+    // 2c. Digital Guide purchase fulfillment
+    if (orderType === "guide_digital") {
+      await markOrder(session.id, { fulfillmentStatus: "fulfilled", lastError: null });
     }
 
     // 3. Auto-sync buyer to MailerLite (alert-only: a retry can't fix a bad key/field).

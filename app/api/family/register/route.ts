@@ -43,7 +43,14 @@ export async function POST(req: NextRequest) {
       ? body.ref
       : undefined;
 
-  const result = await registerFamily(email.value, name.value, refCode);
+  const giftCode =
+    typeof body.giftCode === 'string'
+      ? body.giftCode
+      : typeof body.gift === 'string'
+      ? body.gift
+      : undefined;
+
+  const result = await registerFamily(email.value, name.value, refCode, giftCode);
   if (!result.ok) {
     const message =
       result.reason === 'email_taken'

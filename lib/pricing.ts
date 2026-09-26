@@ -8,6 +8,8 @@
  */
 
 export const RETAIL_PRICE = 6.99;
+export const PARENTS_GUIDE_DIGITAL_PRICE = 29.97;
+export const PATROL_BUNDLE_PRICE = 10.0;
 export const CURRENCY = "USD";
 
 export interface SponsorTier {

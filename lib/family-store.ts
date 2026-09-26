@@ -3,6 +3,7 @@ import path from 'path';
 import { supabase, isProduction } from '@/lib/supabase';
 import { alertFailure } from '@/lib/alerts';
 import { getOrCreateScoutLocal } from '@/lib/scout-store';
+import { redeemPatrolGift } from '@/lib/patrol-store';
 import {
   hashSessionToken,
   newScoutToken,
@@ -66,11 +67,15 @@ function toSession(f: LocalFamily): FamilySession {
  *
  * If `referralCode` is passed (from `?ref=GG-XXXXXX`), links this child to the
  * referring scout for the Biblical 700 friend-referral track.
+ *
+ * If `giftCode` is passed (from `?gift=GP-XXXXXX-N`), redeems the Patrol gift
+ * for the sponsoring Patrol Leader.
  */
 export async function registerFamily(
   email: string,
   firstName: string,
-  referralCode?: string
+  referralCode?: string,
+  giftCode?: string
 ): Promise<RegisterResult> {
   const sessionToken = newSessionToken();
   const tokenHash = hashSessionToken(sessionToken);
@@ -106,6 +111,9 @@ export async function registerFamily(
     store.families.push(family);
     store.sessions[tokenHash] = family.id;
     writeLocal(store);
+    if (giftCode) {
+      void redeemPatrolGift(giftCode, family.id);
+    }
     return { ok: true, session: toSession(family), sessionToken };
   }
 
@@ -164,6 +172,10 @@ export async function registerFamily(
   }
 
   getOrCreateScoutLocal(scoutToken, firstName, referrerToken ?? undefined);
+
+  if (giftCode) {
+    void redeemPatrolGift(giftCode, family.id);
+  }
 
   return {
     ok: true,
