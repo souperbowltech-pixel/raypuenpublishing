@@ -1,7 +1,11 @@
 "use client";
 
 import React from "react";
-import { BOOK2_GATE_CONFIG } from "@/lib/gamification";
+import {
+  BOOK2_GATE_CONFIG,
+  getMainPanelCopy,
+  getUnlockedPanelCopy,
+} from "@/lib/gamification";
 
 interface ScoreGateProps {
   totalScore: number;
@@ -86,7 +90,7 @@ export default function ScoreGate({
                 {isBook2Unlocked ? BOOK2_GATE_CONFIG.unlockedPanelTitle : "Academic Points Secured!"}
               </h3>
               <p className="mt-1 text-sm sm:text-base leading-relaxed text-ink-soft">
-                {isBook2Unlocked ? BOOK2_GATE_CONFIG.unlockedPanelCopy : BOOK2_GATE_CONFIG.mainPanelCopy}
+                {isBook2Unlocked ? getUnlockedPanelCopy(scoutName) : getMainPanelCopy(scoutName)}
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -101,7 +105,7 @@ export default function ScoreGate({
                   Print Your Digital Coloring Ribbon
                 </button>
                 <span className="text-xs text-spruce font-medium">
-                  Ribbon verified for Scout {scoutName || "Explorer"}
+                  Ribbon verified for {scoutName ? `Chief Explorer ${scoutName}` : "Chief Explorer"}
                 </span>
               </div>
             </div>

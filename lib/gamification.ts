@@ -33,9 +33,9 @@ export const BOOK2_GATE_CONFIG = {
   unlockedHeaderBanner: "QUEST CAPTAIN! YOU REACHED THE BIBLICAL 700!",
   unlockedPanelTitle: "Biblical 700 Reached!",
   unlockedPanelCopy:
-    "Wonderful work, Scout! You read Book 1, aced your comprehension quiz (400 points) and brought 2 friends into the circle (300 points). Book 2 is now unlocked for you completely free!",
+    "Wonderful work, Chief Explorer! You read Book 1, aced your comprehension quiz (400 points) and brought 2 friends into the circle (300 points). Book 2 is now unlocked for you completely free!",
   mainPanelCopy:
-    "Fantastic job, Scout! You read Book 1, aced your comprehension quiz, and locked in your 400 Academic Points. Your digital coloring ribbon is officially ready to print! To reach the Biblical 700 and unlock Book 2 completely free, you must recruit 2 friends to join the circle.",
+    "Fantastic work, Chief Explorer! You read Book 1, aced your comprehension quiz, and locked in your 400 Academic Points. Your digital coloring ribbon is officially ready to print! To reach the Biblical 700 and unlock Book 2 completely free, you must recruit 2 friends to join the circle.",
   academicPassThreshold: 400,
   friendReferralPoints: 300,
   friendReferralRequirement: REFERRAL_FRIEND_REQUIREMENT,
@@ -43,6 +43,16 @@ export const BOOK2_GATE_CONFIG = {
   unlockThreshold: 700,
   pointsPerQuestion: 100,
 };
+
+export function getMainPanelCopy(name?: string): string {
+  const label = name?.trim() ? `Chief Explorer ${name.trim()}` : "Chief Explorer";
+  return `Fantastic work, ${label}! You read Book 1, aced your comprehension quiz, and locked in your 400 Academic Points. Your digital coloring ribbon is officially ready to print! To reach the Biblical 700 and unlock Book 2 completely free, you must recruit 2 friends to join the circle.`;
+}
+
+export function getUnlockedPanelCopy(name?: string): string {
+  const label = name?.trim() ? `Chief Explorer ${name.trim()}` : "Chief Explorer";
+  return `Wonderful work, ${label}! You read Book 1, aced your comprehension quiz (400 points) and brought 2 friends into the circle (300 points). Book 2 is now unlocked for you completely free!`;
+}
 
 /**
  * The $40 "Grandpa multiplier" (Ray's directive #6): a relative or family friend
@@ -57,7 +67,7 @@ export const GRANDPA_SPONSOR_PRICE = 40.0;
  * of the dashboard. This is Ray's exact approved copy.
  */
 export const BOOK2_CONTINUATION_BANNER =
-  "Hey Scout! Show your favorite completed Book 1 coloring pages to a grandfather, relative, or family friend today! Their support via your secret dashboard link will instantly pre-approve and unlock Book 3 for you early!";
+  "Hey Chief Explorer! Show your favorite completed Book 1 coloring pages to a grandfather, relative, or family friend today! Their support via your secret dashboard link will instantly pre-approve and unlock Book 3 for you early!";
 
 /** Total interactive sticker slots (one per child-facing virtue page of Book 1). */
 export const STICKER_SLOT_COUNT = 19;

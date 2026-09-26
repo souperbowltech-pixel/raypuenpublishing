@@ -184,7 +184,7 @@ export default function Book2DashboardPage() {
               Puen Publishing
             </Link>
             <span className="text-xs font-mono font-bold text-spruce bg-spruce/10 px-2.5 py-0.5 rounded-full">
-              Scout Portal
+              Chief Explorer Portal
             </span>
           </div>
 
@@ -225,7 +225,7 @@ export default function Book2DashboardPage() {
         {/* Welcome Profile Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-paper-deep p-4 sm:p-6 border border-ink/10">
           <div>
-            <span className="eyebrow">Scout Profile</span>
+            <span className="eyebrow">Chief Explorer Profile</span>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-2xl">🧭</span>
               <input
@@ -236,7 +236,7 @@ export default function Book2DashboardPage() {
                   persistUpdate({ scoutName: e.target.value });
                 }}
                 className="font-display text-xl sm:text-2xl font-bold bg-transparent border-b border-dashed border-ink/30 focus:outline-none focus:border-spruce text-ink"
-                title="Click to customize scout name"
+                title="Click to customize Chief Explorer name"
               />
             </div>
           </div>

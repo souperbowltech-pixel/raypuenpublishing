@@ -80,3 +80,14 @@ describe("codes and tokens", () => {
     expect(displayRank("Sam")).toBe("Chief Explorer Sam");
   });
 });
+
+describe("Chief Explorer banners and copy formulas", () => {
+  it("builds dynamic main panel copy with Chief Explorer naming", async () => {
+    const { getMainPanelCopy, getUnlockedPanelCopy } = await import("@/lib/gamification");
+    expect(getMainPanelCopy("Sam")).toContain("Fantastic work, Chief Explorer Sam!");
+    expect(getMainPanelCopy("")).toContain("Fantastic work, Chief Explorer!");
+    expect(getUnlockedPanelCopy("Sam")).toContain("Wonderful work, Chief Explorer Sam!");
+    expect(getUnlockedPanelCopy("")).toContain("Wonderful work, Chief Explorer!");
+  });
+});
+

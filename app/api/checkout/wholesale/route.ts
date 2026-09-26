@@ -53,11 +53,24 @@ export async function POST(req: NextRequest) {
     };
 
     if (tier.isPremiumSponsor) {
+      const line1 = String(shippingAddress?.line1 ?? "").trim();
+      const city = String(shippingAddress?.city ?? "").trim();
+      const state = String(shippingAddress?.state ?? "").trim();
+      const zip = String(shippingAddress?.zip ?? "").trim();
+
+      if (!line1 || !city || !state || !zip) {
+        return NextResponse.json(
+          {
+            error:
+              "A complete shipping address (Street, City, State, and ZIP) is required for Premium Sponsor tiers to deliver your complimentary copy.",
+          },
+          { status: 400 }
+        );
+      }
+
       sessionMetadata.premium_sponsor = "true";
       sessionMetadata.note = "Premium Sponsor: Ship 1 Free Copy";
-      if (shippingAddress) {
-        sessionMetadata.sponsor_shipping = `${shippingAddress.line1}, ${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}`;
-      }
+      sessionMetadata.sponsor_shipping = `${line1}, ${city}, ${state} ${zip}`;
     }
 
     const session = await stripe.checkout.sessions.create({

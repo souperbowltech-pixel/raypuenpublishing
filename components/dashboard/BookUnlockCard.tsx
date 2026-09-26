@@ -30,7 +30,7 @@ const COPY = {
         !
       </>
     ),
-    fulfillmentNote: "Zero-Dollar Peer-Reward Fulfillment Trigger ($0.00 Cost to Scout)",
+    fulfillmentNote: "Zero-Dollar Peer-Reward Fulfillment Trigger ($0.00 Cost to Explorer)",
     cta: "🚀 Confirm Address & Trigger Free Book 2 Printing",
     gifted: "$0.00 (Gifted via Biblical 700 Gate)",
   },
@@ -48,7 +48,7 @@ const COPY = {
         !
       </>
     ),
-    fulfillmentNote: "Sponsored Fulfillment Trigger ($0.00 Cost to Scout — covered by sponsor)",
+    fulfillmentNote: "Sponsored Fulfillment Trigger ($0.00 Cost to Explorer — covered by sponsor)",
     cta: "🚀 Confirm Address & Trigger Sponsored Book 3 Printing",
     gifted: "$0.00 (Covered by the $40 Grandpa Sponsorship)",
   },
@@ -109,7 +109,7 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
         {!PRINT_FULFILLMENT_LIVE ? (
           <div className="mt-5 rounded-xl bg-spruce/10 border border-spruce/30 p-5">
             <h5 className="text-lg font-bold text-spruce-dark font-display">
-              Your free Book {bookNumber} is reserved for Scout {scoutName || "Explorer"}!
+              Your free Book {bookNumber} is reserved for {scoutName ? `Chief Explorer ${scoutName}` : "your Chief Explorer"}!
             </h5>
             <p className="mt-1 text-sm text-ink-soft">
               Printing and shipping open soon. When they do, you&apos;ll confirm your

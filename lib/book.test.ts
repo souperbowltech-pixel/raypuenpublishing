@@ -53,4 +53,9 @@ describe("the granddaughters' credit", () => {
 
     expect(offenders).toEqual([]);
   });
+
+  it("sets book dimensions to confirmed 8.5 x 11 US Letter format", () => {
+    expect(book1.dimensions).toBe('8.5" × 11" (US Letter, softcover)');
+  });
 });
+

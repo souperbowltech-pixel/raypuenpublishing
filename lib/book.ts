@@ -45,7 +45,7 @@ export const book1: BookContent = {
     "Deep in the woods of Twist-and-Twirl, words are mysteriously vanishing! Co-created by Publisher Ray Puen and his young granddaughters, Grace and Joy, this interactive adventure features a precise, musical iambic rhythm that grips a child's focus. Designed as a deliberate two-part strategy, Volume 1 captures children's deep affection through high-appeal whimsical adventure coloring blocks, priming their hearts to follow our storybook heroes into future structural paths of honor, kindness, and respect.",
   ageRange: "Ages 3–7",
   pageCount: 32,
-  dimensions: '8.5" × 8.5" (square, softcover)',
+  dimensions: '8.5" × 11" (US Letter, softcover)',
   coverImage: {
     src: "/placeholders/cover.svg",
     alt: "Front cover of The Geezy Goober's Guide to Icky Sfand",
