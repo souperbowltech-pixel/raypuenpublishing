@@ -1,19 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { publisherBrand } from "@/lib/book";
 
 type Field = "childFirstName" | "parentEmail" | "isParentOrGuardian";
 
-/**
- * Where the QR code inside the cover of Book 1 leads. A parent registers once
- * with the child's first name and their own email, and the child's dashboard
- * opens on this device.
- */
-export default function StartPage() {
+function StartForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref") || searchParams.get("referral") || "";
+
   const [childFirstName, setChildFirstName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
   const [isParentOrGuardian, setIsParentOrGuardian] = useState(false);
@@ -37,7 +35,12 @@ export default function StartPage() {
       const res = await fetch("/api/family/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childFirstName, parentEmail, isParentOrGuardian }),
+        body: JSON.stringify({
+          childFirstName,
+          parentEmail,
+          isParentOrGuardian,
+          referralCode: refCode || undefined,
+        }),
       });
       const data = await res.json();
       if (res.ok && data?.success) {
@@ -64,6 +67,12 @@ export default function StartPage() {
           <p className="mt-3 text-center text-ink-soft">
             Set up your child&apos;s sticker album, quiz and rewards in under a minute.
           </p>
+
+          {refCode && (
+            <div className="mt-4 rounded-xl border border-spruce/30 bg-spruce/10 p-3 text-center text-xs font-bold text-spruce-dark">
+              🧭 Joining via a friend&apos;s Quest Captain invitation!
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
             <div>
@@ -150,5 +159,13 @@ export default function StartPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function StartPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-paper px-4 py-12 sm:py-16" />}>
+      <StartForm />
+    </Suspense>
   );
 }

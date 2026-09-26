@@ -7,6 +7,7 @@ import {
   newSessionToken,
   hashSessionToken,
   displayRank,
+  normalizeShareCode,
   SHARE_CODE_REGEX,
   FIRST_NAME_MAX,
 } from "./family";
@@ -37,6 +38,21 @@ describe("normalizeEmail", () => {
   it("rejects invalid addresses", () => {
     for (const bad of ["", "parent", "parent@", "parent@example", "a b@example.com"]) {
       expect(normalizeEmail(bad).ok).toBe(false);
+    }
+  });
+});
+
+describe("normalizeShareCode", () => {
+  it("normalizes valid GG- codes and bare 6-char codes", () => {
+    expect(normalizeShareCode("GG-7KQ2XM")).toBe("GG-7KQ2XM");
+    expect(normalizeShareCode("  gg-7kq2xm  ")).toBe("GG-7KQ2XM");
+    expect(normalizeShareCode("7KQ2XM")).toBe("GG-7KQ2XM");
+    expect(normalizeShareCode("7kq2xm")).toBe("GG-7KQ2XM");
+  });
+
+  it("rejects invalid share codes", () => {
+    for (const bad of ["", "   ", "GG-12345", "GG-7KQ2XMO", "INVALID", null, undefined, 123456]) {
+      expect(normalizeShareCode(bad)).toBeNull();
     }
   });
 });

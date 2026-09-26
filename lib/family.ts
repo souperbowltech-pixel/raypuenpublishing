@@ -28,6 +28,16 @@ export const SHARE_CODE_REGEX = /^GG-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/;
 
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
 
+/** Normalize and validate a share code, accepting either 'GG-XXXXXX' or bare 'XXXXXX'. */
+export function normalizeShareCode(raw: unknown): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  let code = raw.trim().toUpperCase();
+  if (!code.startsWith("GG-") && code.length === 6) {
+    code = `GG-${code}`;
+  }
+  return SHARE_CODE_REGEX.test(code) ? code : null;
+}
+
 /**
  * A child's first name only (Ray's privacy rule: no last names). Letters from
  * any language plus space, apostrophe and hyphen ("Mary Jane", "O'Neil",

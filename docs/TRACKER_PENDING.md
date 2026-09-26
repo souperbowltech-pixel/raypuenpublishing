@@ -16,7 +16,7 @@ Format:
 
 ## Pending
 
-_(nothing — the board is up to date as of 26 September 2026, board revision 107 / version 17)_
+- [ ] **t16** — Real friend tracking (2 of 3 friends colour Page 1 → 300 pts & Book 2 unlock) — Tested (migration `20260926_add_scout_referrals.sql`, 5 new tests in `lib/referrals.test.ts`, full suite 103 passed, build clean).
 
 ## Board state at the last sync
 

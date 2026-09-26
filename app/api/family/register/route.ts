@@ -34,7 +34,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await registerFamily(email.value, name.value);
+  const refCode =
+    typeof body.referralCode === 'string'
+      ? body.referralCode
+      : typeof body.refCode === 'string'
+      ? body.refCode
+      : typeof body.ref === 'string'
+      ? body.ref
+      : undefined;
+
+  const result = await registerFamily(email.value, name.value, refCode);
   if (!result.ok) {
     const message =
       result.reason === 'email_taken'

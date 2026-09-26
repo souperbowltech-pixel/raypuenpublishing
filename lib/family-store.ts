@@ -8,6 +8,7 @@ import {
   newScoutToken,
   newSessionToken,
   newShareCode,
+  normalizeShareCode,
 } from '@/lib/family';
 
 /** What a signed-in device knows about its family and child. */
@@ -26,7 +27,7 @@ export type RegisterResult =
 // ---------------------------------------------------------------------------
 // Local fallback (development only): data/families.json
 // ---------------------------------------------------------------------------
-interface LocalFamily { id: string; email: string; scoutToken: string; shareCode: string; firstName: string }
+interface LocalFamily { id: string; email: string; scoutToken: string; shareCode: string; firstName: string; referredBy?: string }
 interface LocalStore { families: LocalFamily[]; sessions: Record<string, string> }
 
 const LOCAL_FILE = path.join(process.cwd(), 'data', 'families.json');
@@ -62,11 +63,29 @@ function toSession(f: LocalFamily): FamilySession {
  * that is already registered is refused rather than signed in: until email
  * confirmation exists, typing someone's address must not open their child's
  * dashboard.
+ *
+ * If `referralCode` is passed (from `?ref=GG-XXXXXX`), links this child to the
+ * referring scout for the Biblical 700 friend-referral track.
  */
-export async function registerFamily(email: string, firstName: string): Promise<RegisterResult> {
+export async function registerFamily(
+  email: string,
+  firstName: string,
+  referralCode?: string
+): Promise<RegisterResult> {
   const sessionToken = newSessionToken();
   const tokenHash = hashSessionToken(sessionToken);
   const scoutToken = newScoutToken();
+
+  let referrerToken: string | null = null;
+  if (referralCode) {
+    const cleanCode = normalizeShareCode(referralCode);
+    if (cleanCode) {
+      const referrer = await findScoutByShareCode(cleanCode);
+      if (referrer && referrer.scoutToken !== scoutToken) {
+        referrerToken = referrer.scoutToken;
+      }
+    }
+  }
 
   if (!supabase) {
     if (isProduction) {
@@ -75,8 +94,15 @@ export async function registerFamily(email: string, firstName: string): Promise<
     }
     const store = readLocal();
     if (store.families.some((f) => f.email === email)) return { ok: false, reason: 'email_taken' };
-    const family: LocalFamily = { id: `local-${Date.now()}`, email, scoutToken, shareCode: newShareCode(), firstName };
-    getOrCreateScoutLocal(scoutToken, firstName);
+    const family: LocalFamily = {
+      id: `local-${Date.now()}`,
+      email,
+      scoutToken,
+      shareCode: newShareCode(),
+      firstName,
+      referredBy: referrerToken ?? undefined,
+    };
+    getOrCreateScoutLocal(scoutToken, firstName, referrerToken ?? undefined);
     store.families.push(family);
     store.sessions[tokenHash] = family.id;
     writeLocal(store);
@@ -99,16 +125,29 @@ export async function registerFamily(email: string, firstName: string): Promise<
   let scoutError: { code?: string; message?: string } | null = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     shareCode = newShareCode();
-    const { error } = await supabase.from('scout_profiles').insert({
+    const row: Record<string, unknown> = {
       token: scoutToken,
       scout_name: firstName,
       family_id: family.id,
       share_code: shareCode,
       status: 'In_Progress',
       updated_at: new Date().toISOString(),
-    });
+    };
+    if (referrerToken) {
+      row.referred_by_scout_token = referrerToken;
+    }
+
+    const { error } = await supabase.from('scout_profiles').insert(row);
     scoutError = error;
-    if (!error || error.code !== '23505') break;
+
+    // If the referred_by_scout_token column doesn't exist yet (pre-migration), retry without it.
+    if (error && (error as { code?: string }).code === '42703' && referrerToken) {
+      delete row.referred_by_scout_token;
+      const { error: retryError } = await supabase.from('scout_profiles').insert(row);
+      scoutError = retryError;
+    }
+
+    if (!scoutError || scoutError.code !== '23505') break;
   }
   if (scoutError) {
     await supabase.from('families').delete().eq('id', family.id);
@@ -123,6 +162,8 @@ export async function registerFamily(email: string, firstName: string): Promise<
     void alertFailure('Family registration failed (session insert)', { error: sessionError.message });
     return { ok: false, reason: 'error' };
   }
+
+  getOrCreateScoutLocal(scoutToken, firstName, referrerToken ?? undefined);
 
   return {
     ok: true,

@@ -30,7 +30,7 @@ export default function QuestCaptainBox({
     typeof window !== "undefined"
       ? window.location.origin
       : "https://raypuenpublishing.vercel.app";
-  const referralLink = `${siteUrl}/?ref=${referralCode}`;
+  const referralLink = `${siteUrl}/start?ref=${referralCode}`;
 
   const required = REFERRAL_FRIEND_REQUIREMENT;
   const capacity = REFERRAL_INVITE_CAPACITY;

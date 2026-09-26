@@ -25,6 +25,8 @@ export interface PersistentScoutState {
   /** Grandpa track: a relative's $40 sponsorship unlocks Book 3 free. */
   book3Sponsored: boolean;
   book3Unlocked: boolean;
+  /** Token of the scout who invited this child, if registered via a friend link. */
+  referredBy?: string;
   status: 'In_Progress' | 'Academic_Pass' | 'Unlock_Volume_2';
   updatedAt: string;
 }
@@ -37,6 +39,7 @@ export interface ScoutInput {
   quizScore: number;
   friendsCompleted: number;
   book3Sponsored: boolean;
+  referredBy?: string;
   updatedAt: string;
 }
 
@@ -75,6 +78,7 @@ export function deriveScoutFields(s: ScoutInput): PersistentScoutState {
     book2Unlocked,
     book3Sponsored,
     book3Unlocked: book3Sponsored,
+    referredBy: s.referredBy,
     status,
     updatedAt: s.updatedAt,
   };
@@ -199,6 +203,7 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
           quizScore: Number(data.quiz_score ?? 0),
           friendsCompleted,
           book3Sponsored: Boolean(data.book3_sponsored),
+          referredBy: data.referred_by_scout_token || undefined,
           updatedAt: data.updated_at || new Date().toISOString(),
         }) as PersistentScoutState;
       }
@@ -232,6 +237,7 @@ export async function getOrCreateScoutAsync(token: string, name?: string): Promi
             quizScore: Number(inserted.quiz_score ?? 0),
             friendsCompleted: Number(inserted.friends_completed ?? 0),
             book3Sponsored: Boolean(inserted.book3_sponsored),
+            referredBy: inserted.referred_by_scout_token || undefined,
             updatedAt: inserted.updated_at,
           }) as PersistentScoutState;
         }
@@ -290,6 +296,7 @@ function mergeScout(
   return deriveScoutFields({
     ...merged,
     token: current.token,
+    referredBy: current.referredBy,
     completedPages: sanitizePages(merged.completedPages),
     updatedAt: new Date().toISOString(),
   });
@@ -403,16 +410,19 @@ async function updateScoutInSupabase(
     next = mergeScout(state, partial);
     const outcome = await writeScoutRow(next, expectedUpdatedAt);
 
-    if (outcome.kind === 'written') {
-      return { state: mirrorLocally(next), persisted: true };
-    }
-
-    if (outcome.kind === 'written-without-new-columns') {
-      if (!needsNewColumns) return { state: mirrorLocally(next), persisted: true };
+    if (outcome.kind === 'written' || outcome.kind === 'written-without-new-columns') {
+      const saved = mirrorLocally(next);
+      if (partial.completedPages !== undefined && next.completedPages.includes(1) && next.referredBy) {
+        void recomputeReferrerProgress(next.referredBy);
+      }
+      if (outcome.kind === 'written') {
+        return { state: saved, persisted: true };
+      }
+      if (!needsNewColumns) return { state: saved, persisted: true };
       // The sponsorship/referral value this call existed to store was dropped.
       const error = 'scout_profiles is missing the friends_completed/book3_sponsored columns';
       reportDbProblem('Scout progress partially saved: ' + error);
-      return { state: mirrorLocally(next), persisted: false, error };
+      return { state: saved, persisted: false, error };
     }
 
     if (outcome.kind === 'error') {
@@ -425,6 +435,46 @@ async function updateScoutInSupabase(
   const error = await diagnoseMissedWrite(token);
   reportDbProblem('Scout progress save never landed', { error });
   return { state: mirrorLocally(next), persisted: false, error };
+}
+
+/**
+ * Recomputes how many referred friends of a scout have coloured Page 1,
+ * and updates the referrer's `friendsCompleted` count (clamped to capacity).
+ */
+export async function recomputeReferrerProgress(referrerToken: string): Promise<void> {
+  if (!referrerToken || referrerToken === 'CAPTAIN-RAY-700') return;
+
+  try {
+    let completedCount = 0;
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('scout_profiles')
+        .select('completed_pages')
+        .eq('referred_by_scout_token', referrerToken);
+
+      if (error) {
+        if ((error as { code?: string }).code !== '42703') {
+          console.error('[scout-store] Error fetching referred scouts:', error.message);
+        }
+        return;
+      }
+      if (data) {
+        completedCount = data.filter((row: { completed_pages?: number[] }) =>
+          Array.isArray(row.completed_pages) && row.completed_pages.map(Number).includes(1)
+        ).length;
+      }
+    } else {
+      const store = ensureLocalStore();
+      completedCount = Object.values(store).filter(
+        (s) => s.referredBy === referrerToken && Array.isArray(s.completedPages) && s.completedPages.includes(1)
+      ).length;
+    }
+
+    const clamped = Math.min(REFERRAL_INVITE_CAPACITY, Math.max(0, completedCount));
+    await updateScoutAsync(referrerToken, { friendsCompleted: clamped });
+  } catch (err) {
+    console.error('[scout-store] Failed to recompute referrer progress:', err);
+  }
 }
 
 export async function updateScoutAsync(
@@ -443,7 +493,7 @@ export async function updateScoutAsync(
 }
 
 // Synchronous local helpers
-export function getOrCreateScoutLocal(token: string, name?: string): PersistentScoutState {
+export function getOrCreateScoutLocal(token: string, name?: string, referredBy?: string): PersistentScoutState {
   const store = ensureLocalStore();
   const cleanToken = token.trim() || 'CAPTAIN-RAY-700';
 
@@ -455,8 +505,12 @@ export function getOrCreateScoutLocal(token: string, name?: string): PersistentS
       quizScore: 0,
       friendsCompleted: 0,
       book3Sponsored: false,
+      referredBy,
       updatedAt: new Date().toISOString(),
     });
+    saveLocalStore(store);
+  } else if (referredBy && !store[cleanToken].referredBy) {
+    store[cleanToken].referredBy = referredBy;
     saveLocalStore(store);
   }
 
@@ -476,6 +530,7 @@ export function getOrCreateScoutLocal(token: string, name?: string): PersistentS
         ? REFERRAL_FRIEND_REQUIREMENT
         : 0,
     book3Sponsored: Boolean(rec.book3Sponsored),
+    referredBy: rec.referredBy ?? referredBy,
     updatedAt: rec.updatedAt ?? new Date().toISOString(),
   });
 }
@@ -493,12 +548,18 @@ export function updateScoutLocal(
   const updated: PersistentScoutState = deriveScoutFields({
     ...merged,
     token: scout.token,
+    referredBy: scout.referredBy,
     completedPages: sanitizePages(merged.completedPages),
     updatedAt: new Date().toISOString(),
   }) as PersistentScoutState;
 
   store[scout.token] = updated;
   saveLocalStore(store);
+
+  if (partial.completedPages !== undefined && updated.completedPages.includes(1) && updated.referredBy) {
+    void recomputeReferrerProgress(updated.referredBy);
+  }
+
   return updated;
 }
 
