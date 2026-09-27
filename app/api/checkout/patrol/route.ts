@@ -3,6 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { PATROL_BUNDLE_PRICE } from "@/lib/pricing";
 import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { getSiteOrigin } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -16,10 +17,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      request.headers.get("origin") ||
-      "https://puenpublishing.com";
+    const origin = getSiteOrigin();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],

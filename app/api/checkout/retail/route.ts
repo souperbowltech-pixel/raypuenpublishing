@@ -4,6 +4,7 @@ import { RETAIL_PRICE } from "@/lib/pricing";
 import { BOOK_1_SKU } from "@/lib/checkout";
 import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { getSiteOrigin } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +19,24 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const quantity =
-      Number.isInteger(body.quantity) && body.quantity > 0 ? body.quantity : 1;
+    const body = await request.json().catch(() => ({}));
+    let quantity = 1;
+    if (body.quantity !== undefined) {
+      if (
+        typeof body.quantity !== "number" ||
+        !Number.isInteger(body.quantity) ||
+        body.quantity < 1 ||
+        body.quantity > 50
+      ) {
+        return NextResponse.json(
+          { error: "Quantity must be a whole number between 1 and 50." },
+          { status: 400 }
+        );
+      }
+      quantity = body.quantity;
+    }
 
-    const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      request.headers.get("origin") ||
-      "http://localhost:3000";
+    const origin = getSiteOrigin();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],

@@ -3,6 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { SPONSOR_TIERS } from "@/lib/pricing";
 import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { getSiteOrigin } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -36,10 +37,11 @@ export async function POST(req: NextRequest) {
       tierId === 2 || tierId === 3 ? tierId : 1;
     const tier = SPONSOR_TIERS[normalizedTierId];
 
-    const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      req.headers.get("origin") ||
-      "http://localhost:3000";
+    const origin = getSiteOrigin();
+
+    const institutionName = String(institution?.name ?? "").trim().slice(0, 120);
+    const contactName = String(institution?.contactName ?? "").trim().slice(0, 100);
+    const phone = String(institution?.phone ?? "").trim().slice(0, 30);
 
     const sessionMetadata: Record<string, string> = {
       order_type: "institutional_sponsorship",
@@ -47,9 +49,9 @@ export async function POST(req: NextRequest) {
       tier_name: tier.name,
       books_sponsored: String(tier.booksSponsored),
       total_printed_with_match: String(tier.totalPrintedWithMatch),
-      institution_name: institution?.name || "",
-      contact_name: institution?.contactName || "",
-      phone: institution?.phone || "",
+      institution_name: institutionName,
+      contact_name: contactName,
+      phone: phone,
     };
 
     if (tier.isPremiumSponsor) {

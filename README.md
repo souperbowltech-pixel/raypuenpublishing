@@ -1,154 +1,100 @@
-# Puen Publishing — Storefront (Milestone 1)
+# Puen Publishing — Children's Coloring Book Platform
 
-Frontend and pricing engine for **Puen Publishing**, an independent imprint
-selling children's coloring books. This is **Milestone 1 of 2**. Payment,
-print fulfilment and email integrations (Stripe, IngramSpark, MailerLite) were
-added after Milestone 1. Stripe checkout, the signed webhook, MailerLite sync and
-Supabase persistence are live (sandbox); IngramSpark wiring awaits API access.
-See `RAY_DIRECTIVES_STATUS.md` for current status.
+Production e-commerce and interactive gamification platform for **Puen Publishing**, an educational imprint of New Life Mission Board, Inc. co-created by Ray Puen.
 
-## What's in this milestone
-
-- **Public retail landing page** (`/`) — hero with Book 1's cover, an interior
-  illustration gallery with a lightbox, book details, price, a "Buy Now" CTA,
-  and trust blocks (author, shipping/returns). Mobile-first.
-- **Hidden institutional wholesale portal** (`/institutions`) — not linked in
-  the nav, reachable by direct URL only. Bulk order form with a **live pricing
-  calculator** and a celebratory "reward" state when an order crosses the
-  100-copy threshold (fee waived + free Teacher's Master Manual).
-- **Pricing engine** (`lib/pricing.ts`) — one config file, one pure function,
-  fully unit-tested.
-
-## Tech stack
-
-- [Next.js 14](https://nextjs.org/) (App Router) + TypeScript
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Vitest](https://vitest.dev/) for unit tests
-- Deploys to Vercel with no extra configuration
+Live production site: **[https://puenpublishing.com](https://puenpublishing.com)**
 
 ---
 
-## Setup
+## 🌟 Core Features & Architecture
 
-Requires **Node.js 18.18+** (Node 20+ recommended).
+- **Retail Storefront (`/`)**
+  - Interactive book showcase for *The Geezy Goober's Guide to Icky Sfand: The Search for the Magic Pen (Volume 1)*.
+  - Trim size: 8.5" × 11" US Letter format (32+ pages).
+  - Secure Stripe Checkout ($6.99) with real-time stock and shipping collection.
+
+- **Family Accounts & Chief Explorer Portal (`/start`, `/dashboard/book2`)**
+  - Frictionless passwordless family account onboarding via SHA-256 hashed session cookies (`family_sessions`).
+  - Gamified reading journey with 19 interactive virtue merit-badge stickers (Kindness, Courage, Integrity, etc.).
+  - Academic Comprehension Quiz engine (400 points).
+  - Real 2-of-3 friend referral engine (300 points) unlocking Book 2 completely free upon reaching the Biblical 700 points.
+  - Grandpa Multiplier track ($40 sponsorship) pre-approving Book 3 unlock.
+
+- **Parent's Guide & Chief Scout Patrol Funnel (`/guide`, `/dashboard/patrol`)**
+  - Digital Parent's Guide & Teacher's Master Manual ($29.97 digital edition).
+  - Chief Scout Patrol Leader bundle ($10.00 loss-leader) generating 3 unique gift invitation QR codes (`GP-XXXXXX-1..3`).
+  - Patrol Leader dashboard tracking real family gift redemptions in real time.
+  - Ray's One-Click Approval Gate (`/api/admin/approve-guide`) with cryptographically signed tokens to approve free printed Guide fulfillments.
+
+- **Institutional Sponsorship Portal (`/institutions`)**
+  - Flat-rate packages ($40 / $200 / $400) sponsoring 10 / 48 / 100 copies with a 1:1 publisher match.
+  - Free complimentary author copy shipped for Premium Sponsor tiers (Tiers 2 & 3).
+  - Automatic itemized Stripe invoice generation (`invoice_creation`) for school and church reimbursements.
+
+- **Printed Video Pages (`/v1` … `/v5`)**
+  - Five printed addresses embedded in Book 1 connecting to dynamic database-driven video records in Supabase (`videos` table).
+  - Fallback "video on its way" presentation screens so printed QR codes never 404.
+
+- **Print-Ready Sticker Sheet PDF (`/api/stickers/sheet`)**
+  - Dynamic streaming 8.5" × 11" US Letter PDF with all 19 merit badges laid out for home-printing on adhesive paper.
+
+- **Health & Diagnostics (`/api/health`)**
+  - Live 8-point connectivity probe verifying database read/write, schema migrations, and table integrity.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework:** [Next.js 14](https://nextjs.org/) (App Router, Server Components, Route Handlers) + TypeScript 5
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) with custom storybook design system tokens
+- **Database & Storage:** [Supabase](https://supabase.com/) (PostgreSQL with RLS) + local fallback store
+- **Payments:** [Stripe](https://stripe.com/) Checkout Sessions & Signed Webhook Handlers
+- **PDF Generation:** [pdf-lib](https://pdf-lib.js.org/)
+- **QR Code Generation:** [qrcode](https://www.npmjs.com/package/qrcode)
+- **Testing:** [Vitest](https://vitest.dev/) (110+ unit & integration tests)
+- **CI / CD:** GitHub Actions (`.github/workflows/ci.yml`) + Vercel Deployment
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 20+
+- npm 10+
+
+### Installation & Local Development
 
 ```bash
-npm install        # install dependencies
-npm run dev        # start the dev server at http://localhost:3000
+# Install dependencies
+npm install
+
+# Run local development server
+npm run dev
 ```
 
-Other scripts:
+Open [http://localhost:3000](http://localhost:3000) to view the storefront.
+
+### Quality & Verification Suite
 
 ```bash
-npm run build      # production build
-npm run start      # run the production build
-npm run lint       # eslint
-npm test           # run the pricing unit tests once
-npm run test:watch # run tests in watch mode
-```
+# Run all unit and integration tests
+npm test
 
-The retail page is at `/`. The hidden wholesale portal is at
-[`/institutions`](http://localhost:3000/institutions).
+# Run TypeScript typecheck
+npm run typecheck
 
-> **Buy / Submit buttons:** In Milestone 1 these call stub functions
-> (`initiateRetailCheckout` / `initiateWholesaleCheckout`) that build the order
-> payload and **log it to the browser console**. Open DevTools → Console to see
-> the exact payload a backend will receive in Milestone 2. No payment is taken.
+# Run Next.js linter
+npm run lint
 
----
-
-## How to change prices  (no coding experience needed)
-
-**All prices live in one place:** [`lib/pricing.ts`](lib/pricing.ts), at the
-top of the file in the `PRICING` block. Edit only the numbers:
-
-```ts
-export const RETAIL_PRICE = 6.99;          // public price per book
-export const WHOLESALE_UNIT_PRICE = 4.19;  // bulk price per book
-export const DIGITAL_FEE = 20.00;          // fee on small bulk orders
-export const FREE_MANUAL_THRESHOLD = 100;  // copies needed to unlock the reward
-```
-
-Rules for editing:
-
-- Use plain numbers (dollars). **No `$` signs and no commas** — write `1000`,
-  not `$1,000`.
-- The whole site (retail price, wholesale calculator, the "40% off" label, the
-  reward threshold) updates automatically from these four numbers.
-- After changing a price, run `npm test` to confirm everything still adds up.
-
-> ⚠️ The **100-copy threshold** is the basis of the institutional sales pitch.
-> If you change `FREE_MANUAL_THRESHOLD`, the boundary tests in
-> `lib/pricing.test.ts` are written for `100` and will need their numbers
-> updated to match.
-
----
-
-## How to swap in the real book images
-
-Placeholder art lives in [`public/placeholders/`](public/placeholders/). To use
-real images, **replace those files, keeping the same file names** — nothing else
-needs to change:
-
-| File | Used for |
-| --- | --- |
-| `cover.svg` | Book 1 front cover (hero) |
-| `interior-1.svg` … `interior-4.svg` | Interior page gallery |
-| `author.svg` | Author portrait |
-
-Two ways to do it:
-
-1. **Easiest** — save your real images with the exact same names (e.g. replace
-   `cover.svg` with a file also named `cover.svg`). Any web format works
-   (`.jpg`, `.png`, `.webp`, `.svg`).
-2. **If you use different file names / formats** — drop your files in
-   `public/placeholders/` and update the paths in one file:
-   [`lib/book.ts`](lib/book.ts) (the `book1` and `author` objects). All text
-   copy for the book also lives in `lib/book.ts`.
-
-> Placeholder text throughout the site is marked `[PLACEHOLDER ...]`. Search for
-> that tag in `lib/book.ts` to find everything that needs real copy.
-
----
-
-## Project structure
-
-```
-app/
-  layout.tsx              # fonts + global shell
-  page.tsx                # retail landing page (composes the sections)
-  institutions/page.tsx   # hidden wholesale portal (noindex)
-  globals.css             # Tailwind + design-system component classes
-components/
-  retail/                 # Hero, BuyBox, gallery, details, author, shipping
-  institutions/           # WholesaleForm + live PricingCalculator
-  ui/Lightbox.tsx         # accessible image lightbox
-lib/
-  pricing.ts              # ← the single source of truth for all pricing
-  pricing.test.ts         # unit tests (incl. the 99/100/101 boundary)
-  checkout.ts             # initiateRetail/WholesaleCheckout stubs + payloads
-  book.ts                 # book content, copy, image paths (edit here)
-public/placeholders/      # swappable placeholder images
-.env.example              # every variable Milestone 2 will need
+# Run production build
+npm run build
 ```
 
 ---
 
-## Milestone 2 (not built yet)
+## 🔒 Security & Reliability Guarantees
 
-`.env.example` documents every variable the integrations need (Stripe, IngramSpark,
-MailerLite, Supabase). The integration points are already isolated:
-
-- **`lib/checkout.ts`** — replace the `console.log` in each stub with a real
-  request. The payload shapes (`RetailOrderPayload`, `WholesaleOrderPayload`)
-  are backend-ready and include the full pricing breakdown.
-- **`lib/pricing.ts`** — pricing math stays here; the backend can import
-  `calculateWholesalePrice` to re-verify totals server-side before charging.
-
-## Notes / constraints honoured
-
-- No `localStorage` / `sessionStorage` anywhere.
-- Stripe, MailerLite and Supabase are integrated server-side (see `app/api`); the IngramSpark print integration is not built yet.
-- All book copy is obvious placeholder text (`[PLACEHOLDER ...]`).
-- Pricing logic is deliberately simple, readable, and thoroughly tested.
-```
+1. **Origin Header Enforcement (SEC-01):** Stripe checkout return URLs strictly derive from authoritative site origin (`NEXT_PUBLIC_SITE_URL`), preventing client-controlled phishing redirects.
+2. **Rate Limiter Edge IP Protection (SEC-02):** Prioritizes Vercel Edge `x-real-ip` to prevent header spoofing on public endpoints.
+3. **Optimistic Concurrency & Idempotency:** Scout state and family sessions use versioning and optimistic concurrency with retry logic.
+4. **Data Isolation & Secrets:** Private scout tokens and database service keys are strictly server-side and never exposed to client bundles.

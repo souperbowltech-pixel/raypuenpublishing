@@ -6,6 +6,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { DEMO_SCOUT_TOKEN, SHARE_CODE_REGEX } from "@/lib/family";
 import { findScoutByShareCode } from "@/lib/family-store";
 import { getOrCreateScoutAsync } from "@/lib/scout-store";
+import { getSiteOrigin } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -46,10 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This sponsor link isn't valid. Please ask the family for a new one." }, { status: 400 });
     }
 
-    const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      req.headers.get("origin") ||
-      "http://localhost:3000";
+    const origin = getSiteOrigin();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],

@@ -21,7 +21,13 @@ Format:
 - [ ] **t11** — Chief Explorer naming consistency across banners, profiles, gamification strings, and tests — Tested (helpers in `lib/gamification.ts`, `ScoreGate.tsx`, `BookUnlockCard.tsx`, `family.test.ts`).
 - [ ] **t35** — GitHub Actions CI workflow (`.github/workflows/ci.yml`) running `npm ci`, `lint`, `typecheck`, `test`, `build` — Tested.
 - [ ] **t37** — Server-side shipping address validation for wholesale Tiers 2 & 3 in `app/api/checkout/wholesale/route.ts` — Tested.
+- [ ] **SEC-01** — Origin header enforcement for Stripe returns via `lib/site.ts:getSiteOrigin()` across all checkout routes — Tested.
+- [ ] **SEC-02** — Rate limiter Vercel edge IP spoofing protection via `x-real-ip` priority in `lib/rate-limit.ts` — Tested.
+- [ ] **BUG-05** — Order recording and MailerLite subscriber sync in sponsor confirmation fallback route (`/api/checkout/sponsor/confirm`) — Tested.
+- [ ] **SEC-04 / SEC-08** — Retail quantity bounds validation (1..50) and wholesale metadata length limits — Tested.
+- [ ] **OPS-02** — Modern production Next.js 14 / Supabase architecture documentation in `README.md` — Tested.
 - [ ] **Book Trim Size** — Storefront dimensions updated to 8.5" × 11" (US Letter, softcover) per Ray's confirmation — Tested (`lib/book.test.ts`).
+
 
 ## Board state at the last sync
 

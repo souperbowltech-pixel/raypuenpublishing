@@ -3,6 +3,8 @@ import { stripe } from "@/lib/stripe";
 import { updateScoutAsync } from "@/lib/scout-store";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { alertFailure } from "@/lib/alerts";
+import { recordOrder, markOrder } from "@/lib/orders";
+import { addSubscriberToMailerLite } from "@/lib/mailerlite";
 
 export const dynamic = "force-dynamic";
 
@@ -46,12 +48,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, paid: false });
     }
 
+    const customerEmail = session.customer_details?.email || session.customer_email || "";
+    const customerName = session.customer_details?.name || "";
+
+    // Record the order if it wasn't recorded yet (idempotent upsert on stripeSessionId)
+    await recordOrder({
+      stripeSessionId: session.id,
+      orderType: "grandpa_sponsorship",
+      customerEmail,
+      customerName,
+      amountTotal: session.amount_total,
+      currency: session.currency,
+      scoutToken,
+      metadata: session.metadata || {},
+    });
+
     const result = await updateScoutAsync(scoutToken, { book3Sponsored: true });
 
     if (!result.persisted) {
       // The sponsor has already paid, so never tell them it failed — say the
       // unlock is still finishing, and make sure a human is told about it.
-      await alertFailure('Sponsorship paid but the Book 3 unlock was not saved', {
+      await markOrder(session.id, {
+        fulfillmentStatus: "failed",
+        lastError: result.error || "Book 3 unlock was not saved",
+      });
+      await alertFailure("Sponsorship paid but the Book 3 unlock was not saved", {
         session: sessionId,
         error: result.error,
       });
@@ -61,6 +82,24 @@ export async function POST(req: NextRequest) {
         unlockPending: true,
         scoutName: result.state.scoutName,
       });
+    }
+
+    await markOrder(session.id, { fulfillmentStatus: "fulfilled", lastError: null });
+
+    if (customerEmail) {
+      try {
+        await addSubscriberToMailerLite({
+          email: customerEmail,
+          name: customerName,
+          groupId: process.env.MAILERLITE_RETAIL_GROUP_ID,
+          fields: {
+            order_type: "grandpa_sponsorship",
+            scout_token: scoutToken,
+          },
+        });
+      } catch (e) {
+        console.error("[Sponsor Confirm MailerLite sync failed]:", e);
+      }
     }
 
     // The sponsor's browser only learns the child's first name, never the token.
