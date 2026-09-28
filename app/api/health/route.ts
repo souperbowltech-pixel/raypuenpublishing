@@ -81,6 +81,25 @@ export async function GET(req: NextRequest) {
     const videos = await supabase.from("videos").select("slug").limit(1);
     checks.videosTable = videos.error ? fail(videos.error) : { ok: true };
 
+    // The referral column decides whether a real friend referral is recorded at
+    // all. `getScout` reads the row with select('*'), so a missing column is
+    // invisible there: registration keeps working and the referral is silently
+    // dropped. This check is the only thing that would catch it.
+    const referrals = await supabase.from("scout_profiles").select("referred_by_scout_token").limit(1);
+    checks.scoutReferralColumn = referrals.error ? fail(referrals.error) : { ok: true };
+
+    // The Parent's Guide / Chief Scout Patrol funnel. Without these tables a
+    // paid $10 Patrol cannot issue its gift codes and the free printed guide
+    // cannot be claimed or approved.
+    const leaders = await supabase.from("patrol_leaders").select("id").limit(1);
+    checks.patrolLeadersTable = leaders.error ? fail(leaders.error) : { ok: true };
+
+    const gifts = await supabase.from("patrol_gifts").select("id").limit(1);
+    checks.patrolGiftsTable = gifts.error ? fail(gifts.error) : { ok: true };
+
+    const approvals = await supabase.from("guide_approvals").select("id").limit(1);
+    checks.guideApprovalsTable = approvals.error ? fail(approvals.error) : { ok: true };
+
     // Re-save an existing row exactly as the app does, to surface write errors
     // that the store would otherwise only log (uses the demo profile's own row).
   }
