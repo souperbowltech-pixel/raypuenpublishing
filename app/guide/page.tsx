@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { SiteHeader } from "@/components/retail/SiteHeader";
 import { SiteFooter } from "@/components/retail/SiteFooter";
-import { PARENTS_GUIDE_DIGITAL_PRICE, PATROL_BUNDLE_PRICE, formatCurrency } from "@/lib/pricing";
+import { PARENTS_GUIDE_DIGITAL_PRICE, PARENTS_GUIDE_DIGITAL_LIVE, PATROL_BUNDLE_PRICE, formatCurrency } from "@/lib/pricing";
 
 export default function ParentsGuidePage() {
   const [loadingType, setLoadingType] = useState<"digital" | "patrol" | null>(null);
@@ -63,7 +63,9 @@ export default function ParentsGuidePage() {
                   Digital Edition
                 </span>
                 <h3 className="text-2xl font-bold font-display text-ink">
-                  Instant Master PDF Download
+                  {PARENTS_GUIDE_DIGITAL_LIVE
+                    ? "Instant Master PDF Download"
+                    : "The Master PDF — coming soon"}
                 </h3>
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="text-4xl font-black font-display text-ink">
@@ -83,7 +85,10 @@ export default function ParentsGuidePage() {
                     <span className="text-spruce font-bold">✓</span> Printable virtue worksheets for all 19 badges
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="text-spruce font-bold">✓</span> Instant download link delivered immediately
+                    <span className="text-spruce font-bold">✓</span>{" "}
+                    {PARENTS_GUIDE_DIGITAL_LIVE
+                      ? "Instant download link delivered immediately"
+                      : "Being finalised by the publisher — not on sale yet"}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="text-spruce font-bold">✓</span> Unlimited home &amp; family printing license
@@ -94,10 +99,14 @@ export default function ParentsGuidePage() {
               <button
                 type="button"
                 onClick={() => handleCheckout("digital")}
-                disabled={loadingType !== null}
+                disabled={!PARENTS_GUIDE_DIGITAL_LIVE || loadingType !== null}
                 className="btn-primary w-full mt-8 py-3.5 text-base"
               >
-                {loadingType === "digital" ? "Connecting to Checkout…" : "Get Digital Guide ($29.97)"}
+                {!PARENTS_GUIDE_DIGITAL_LIVE
+                  ? "Not on sale yet"
+                  : loadingType === "digital"
+                    ? "Connecting to Checkout…"
+                    : "Get Digital Guide ($29.97)"}
               </button>
             </div>
 

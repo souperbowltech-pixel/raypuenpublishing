@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { PARENTS_GUIDE_DIGITAL_PRICE } from "@/lib/pricing";
+import { PARENTS_GUIDE_DIGITAL_PRICE, PARENTS_GUIDE_DIGITAL_LIVE } from "@/lib/pricing";
 import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { getSiteOrigin } from "@/lib/site";
@@ -8,6 +8,15 @@ import { getSiteOrigin } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  // Closed until the Guide can actually be delivered (see PARENTS_GUIDE_DIGITAL_LIVE).
+  // Enforced here and not only on the page, because a hidden button is not a rule.
+  if (!PARENTS_GUIDE_DIGITAL_LIVE) {
+    return NextResponse.json(
+      { error: "The digital Parent's Guide is not on sale yet." },
+      { status: 503 }
+    );
+  }
+
   const limit = rateLimit(`checkout-guide:${clientIp(request)}`, 10, 60_000);
   if (!limit.ok) {
     return NextResponse.json(

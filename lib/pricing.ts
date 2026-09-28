@@ -9,6 +9,24 @@
 
 export const RETAIL_PRICE = 6.99;
 export const PARENTS_GUIDE_DIGITAL_PRICE = 29.97;
+
+/**
+ * The digital Parent's Guide is built but **cannot be delivered yet**: the PDF
+ * does not exist (Ray is still on his second draft, confirmed 28 Sept 2026) and
+ * nothing in this codebase can email a download link to a buyer.
+ *
+ * Selling it would take money for a file we cannot send — the same class of
+ * false promise as the checkout bug fixed in September. It stays closed until
+ * **all three** of these are true:
+ *   1. the Guide PDF is delivered and hosted behind a per-buyer link;
+ *   2. an email path exists that actually reaches the buyer (tracker t32);
+ *   3. `/checkout/success` has a branch for `guide_digital`, so nobody is told a
+ *      digital file "ships in 2-3 business days".
+ *
+ * The $10 Chief Scout Patrol bundle is unaffected: its gift codes are real and
+ * are issued immediately.
+ */
+export const PARENTS_GUIDE_DIGITAL_LIVE = false;
 export const PATROL_BUNDLE_PRICE = 10.0;
 export const CURRENCY = "USD";
 
