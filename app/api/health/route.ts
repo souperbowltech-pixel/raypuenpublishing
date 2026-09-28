@@ -94,7 +94,8 @@ export async function GET(req: NextRequest) {
     const leaders = await supabase.from("patrol_leaders").select("id").limit(1);
     checks.patrolLeadersTable = leaders.error ? fail(leaders.error) : { ok: true };
 
-    const gifts = await supabase.from("patrol_gifts").select("id").limit(1);
+    // patrol_gifts is keyed by the gift code itself, not an id.
+    const gifts = await supabase.from("patrol_gifts").select("code").limit(1);
     checks.patrolGiftsTable = gifts.error ? fail(gifts.error) : { ok: true };
 
     const approvals = await supabase.from("guide_approvals").select("id").limit(1);
