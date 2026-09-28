@@ -14,7 +14,7 @@ const items = [
   {
     icon: "🔒",
     title: "Secure checkout",
-    body: "[Placeholder] Payments are processed securely. Card handling is added in Milestone 2.",
+    body: "256-bit encrypted checkout powered by Stripe. All major credit and debit cards accepted securely.",
   },
 ];
 

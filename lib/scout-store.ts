@@ -7,6 +7,7 @@ import {
   REFERRAL_FRIEND_REQUIREMENT,
   REFERRAL_INVITE_CAPACITY,
 } from '@/lib/gamification';
+import { DEMO_SCOUT_TOKEN } from '@/lib/family';
 
 export interface PersistentScoutState {
   token: string;
@@ -86,8 +87,8 @@ export function deriveScoutFields(s: ScoutInput): PersistentScoutState {
 
 // In-memory fallback map (handles serverless environments where fs is read-only)
 const memoryStore: Record<string, PersistentScoutState> = {
-  'CAPTAIN-RAY-700': deriveScoutFields({
-    token: 'CAPTAIN-RAY-700',
+  [DEMO_SCOUT_TOKEN]: deriveScoutFields({
+    token: DEMO_SCOUT_TOKEN,
     scoutName: 'Scout Explorer',
     completedPages: [],
     quizScore: 0,
@@ -166,7 +167,7 @@ function saveLocalStore(data: Record<string, PersistentScoutState>) {
 }
 
 export async function getOrCreateScoutAsync(token: string, name?: string): Promise<PersistentScoutState> {
-  const cleanToken = token.trim() || 'CAPTAIN-RAY-700';
+  const cleanToken = token.trim() || DEMO_SCOUT_TOKEN;
 
   if (!supabase && isProduction) {
     reportDbProblem('Database not configured on the live site: scout progress is not being saved');
@@ -442,7 +443,7 @@ async function updateScoutInSupabase(
  * and updates the referrer's `friendsCompleted` count (clamped to capacity).
  */
 export async function recomputeReferrerProgress(referrerToken: string): Promise<void> {
-  if (!referrerToken || referrerToken === 'CAPTAIN-RAY-700') return;
+  if (!referrerToken || referrerToken === DEMO_SCOUT_TOKEN) return;
 
   try {
     let completedCount = 0;
@@ -495,7 +496,7 @@ export async function updateScoutAsync(
 // Synchronous local helpers
 export function getOrCreateScoutLocal(token: string, name?: string, referredBy?: string): PersistentScoutState {
   const store = ensureLocalStore();
-  const cleanToken = token.trim() || 'CAPTAIN-RAY-700';
+  const cleanToken = token.trim() || DEMO_SCOUT_TOKEN;
 
   if (!store[cleanToken]) {
     store[cleanToken] = deriveScoutFields({

@@ -4,9 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { GRANDPA_SPONSOR_PRICE } from "@/lib/gamification";
 import { publisherBrand } from "@/lib/book";
-
-const SHARE_CODE_REGEX = /^GG-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/;
-const DEMO_TOKEN = "CAPTAIN-RAY-700";
+import { DEMO_SCOUT_TOKEN, SHARE_CODE_REGEX } from "@/lib/family";
 
 // "unlock-pending": the payment definitely succeeded, but writing the unlock did
 // not. Telling this sponsor Book 3 is unlocked would be exactly the kind of
@@ -30,7 +28,7 @@ export default function SponsorLandingPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setCode((params.get("code") || "").trim().toUpperCase());
-    setDemoToken(params.get("token") === DEMO_TOKEN ? DEMO_TOKEN : "");
+    setDemoToken(params.get("token") === DEMO_SCOUT_TOKEN ? DEMO_SCOUT_TOKEN : "");
     setScoutName((params.get("scout") || "").replace(/[<>]/g, "").slice(0, 30));
 
     const sessionId = params.get("session_id");

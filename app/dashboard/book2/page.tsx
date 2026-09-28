@@ -11,8 +11,7 @@ import GrandpaSponsorCard from "@/components/dashboard/GrandpaSponsorCard";
 import Book2ContinuationBanner from "@/components/dashboard/Book2ContinuationBanner";
 import PageStickersGrid from "@/components/dashboard/PageStickersGrid";
 import { BOOK2_GATE_CONFIG } from "@/lib/gamification";
-
-const DEMO_TOKEN = "CAPTAIN-RAY-700";
+import { DEMO_SCOUT_TOKEN as DEMO_TOKEN } from "@/lib/family";
 
 export default function Book2DashboardPage() {
   const router = useRouter();
