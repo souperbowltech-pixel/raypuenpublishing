@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   createPatrolLeader,
   getPatrolLeaderByToken,
+  getPatrolTokenBySession,
   redeemPatrolGift,
   submitGuideClaim,
   reviewGuideApproval,
@@ -125,5 +126,35 @@ describe("Parent's Guide & Patrol Funnel (t12–t15)", () => {
     const rej = await reviewGuideApproval(claim.approvalToken!, "reject");
     expect(rej.ok).toBe(true);
     expect(rej.status).toBe("rejected");
+  });
+});
+
+describe("a paid Patrol can be found from its Stripe session", () => {
+  it("returns the token that was created for that session", async () => {
+    const sessionId = `cs_test_delivery_${Date.now()}`;
+    const created = await createPatrolLeader(`delivery-${Date.now()}@example.com`, sessionId);
+    expect(created).not.toBeNull();
+
+    const token = await getPatrolTokenBySession(sessionId);
+    expect(token).toBe(created!.token);
+  });
+
+  it("returns null for a session that has no patrol, rather than guessing", async () => {
+    expect(await getPatrolTokenBySession(`cs_test_never_paid_${Date.now()}`)).toBeNull();
+  });
+
+  it("returns null for an empty session id", async () => {
+    expect(await getPatrolTokenBySession("")).toBeNull();
+  });
+
+  it("does not hand back one buyer's token for another buyer's session", async () => {
+    const a = `cs_test_a_${Date.now()}`;
+    const b = `cs_test_b_${Date.now()}`;
+    const leaderA = await createPatrolLeader(`a-${Date.now()}@example.com`, a);
+    const leaderB = await createPatrolLeader(`b-${Date.now()}@example.com`, b);
+
+    expect(await getPatrolTokenBySession(a)).toBe(leaderA!.token);
+    expect(await getPatrolTokenBySession(b)).toBe(leaderB!.token);
+    expect(leaderA!.token).not.toBe(leaderB!.token);
   });
 });

@@ -193,6 +193,40 @@ export async function createPatrolLeader(
 /**
  * Retrieves a Patrol Leader along with their 3 gift codes and any guide claim status.
  */
+/**
+ * The Patrol token that belongs to a paid Stripe session.
+ *
+ * This is how a parent who has just paid actually receives their Patrol: the
+ * webhook creates the leader and the gift codes, and the checkout success page
+ * reads the token back with the session id the buyer was redirected with.
+ * Without it the token exists only in a server log and the $10 bundle sells
+ * something its buyer can never reach.
+ *
+ * Returns null when the webhook has not landed yet, which the caller must treat
+ * as "not ready", never as "did not happen".
+ */
+export async function getPatrolTokenBySession(stripeSessionId: string): Promise<string | null> {
+  if (!stripeSessionId) return null;
+
+  if (!supabase) {
+    if (isProduction) return null;
+    const store = readLocal();
+    return store.leaders.find((l) => l.stripeSessionId === stripeSessionId)?.token ?? null;
+  }
+
+  const { data, error } = await supabase
+    .from('patrol_leaders')
+    .select('token')
+    .eq('stripe_session_id', stripeSessionId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[patrol] could not look up the patrol for a paid session', error.message);
+    return null;
+  }
+  return data?.token ?? null;
+}
+
 export async function getPatrolLeaderByToken(token: string): Promise<PatrolLeaderDetails | null> {
   if (!token) return null;
 
