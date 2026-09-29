@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import {
   BOOK2_GATE_CONFIG,
   getMainPanelCopy,
@@ -85,7 +86,7 @@ export default function ScoreGate({
         <div className="mt-6 rounded-xl border border-spruce/30 bg-spruce/10 p-5">
           <div className="flex items-start gap-3.5">
             <div className="text-2xl sm:text-3xl">🎖️</div>
-            <div>
+            <div className="min-w-0 flex-1">
               <h3 className="text-base sm:text-lg font-bold text-spruce-dark font-display">
                 {isBook2Unlocked ? BOOK2_GATE_CONFIG.unlockedPanelTitle : "Academic Points Secured!"}
               </h3>
@@ -109,6 +110,15 @@ export default function ScoreGate({
                 </span>
               </div>
             </div>
+
+            {/* The book being worked toward, in the illustrator's real artwork. */}
+            <Image
+              src="/book2-cover.jpg"
+              alt="Front cover of The Wiggly Wump's Whistling Waves to Icky Sfand, Volume 2"
+              width={721}
+              height={946}
+              className="hidden h-32 w-auto shrink-0 rounded-lg shadow-card sm:block"
+            />
           </div>
         </div>
       )}
