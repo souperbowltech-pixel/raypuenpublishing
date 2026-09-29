@@ -16,6 +16,29 @@ Format:
 
 ## Pending
 
+### 29 Sept — done today
+
+- [x] **Book 2 cover is live** (t19). Sarah's wrap arrived; the front was cropped out and is now shown
+  on the dashboard, in the continuation banner and in the progress panel. 721x946, 206 KB, commit
+  `b3e67dd`, verified live. **Print is separate**: her file is ~180 DPI across the wrap where
+  IngramSpark needs 300, and a re-export has been requested (`WAITING_ON_RAY.md` R9).
+- [x] **The $10 Patrol can now reach its buyer** (commit `19f79be`). It used to create the gift codes
+  and write the token only to the server log, while telling the buyer a digital product would be
+  "dispatched within 2-3 business days". The success page now hands over the Patrol link, looked up
+  from the Stripe session, and says "still being set up" rather than claiming failure when the
+  webhook has not landed. 9 tests, 3 mutations caught.
+  **Still unverified:** a real Stripe test payment has not been run against it. The branch is proven
+  by tests, not by a live purchase. The user can confirm with a $10 test-mode checkout.
+- [x] **The digital Guide is closed** (commit `0b559bd`) until the PDF exists, an email path exists,
+  and the success page has a `guide_digital` branch. Refused server-side, not just hidden.
+
+### Known weakness worth remembering
+
+The local dev store is one JSON file (`data/patrols.json`) and vitest runs test **files** in
+parallel, so two files that both create patrols will clobber each other. All store-touching patrol
+tests therefore live in `lib/patrol.test.ts`. Adding them elsewhere reintroduces the flake.
+
+
 ### Found on 28 Sept while verifying the 26-27 Sept work (add these to the board)
 
 - [ ] **NEW / CRITICAL — the Parent's Guide is sold but cannot be delivered.** `/guide` is live and
