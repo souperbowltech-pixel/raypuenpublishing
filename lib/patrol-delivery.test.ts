@@ -24,7 +24,7 @@ describe("the checkout success page treats a Patrol as digital", () => {
 
   it("never shows the printing and dispatch promises for a Patrol", () => {
     // The fulfilment block is what claims "dispatched within 2-3 business days".
-    expect(page).toContain("{isPaid && !isPatrol && (");
+    expect(page).toContain("{isPaid && !isPatrol && !isGuide && (");
     expect(page).toContain("Dispatched directly to your address within 2–3 business days");
   });
 
@@ -44,3 +44,31 @@ describe("the checkout success page treats a Patrol as digital", () => {
     );
   });
 });
+
+describe("the checkout success page treats the digital Guide as digital too", () => {
+  const page = fs.readFileSync(
+    path.join(path.resolve(__dirname, ".."), "app/checkout/success/page.tsx"),
+    "utf8"
+  );
+
+  it("never shows printing and dispatch for a Guide order", () => {
+    expect(page).toContain("{isPaid && !isPatrol && !isGuide && (");
+  });
+
+  it("promises the email only while the Guide is actually being issued", () => {
+    // The claim and the flag have to travel together: the sentence about a
+    // download link must sit inside the PARENTS_GUIDE_DIGITAL_LIVE branch.
+    const claim = "on its way to the email address you used at checkout";
+    const at = page.indexOf(claim);
+    expect(at).toBeGreaterThan(-1);
+    // Look only at the conditional immediately before the sentence. Searching
+    // the whole file would pass on the import line alone, which is a test that
+    // cannot fail.
+    expect(page.slice(Math.max(0, at - 200), at)).toContain("PARENTS_GUIDE_DIGITAL_LIVE");
+  });
+
+  it("says plainly that nothing will arrive while it is closed", () => {
+    expect(page).toContain("nothing will arrive by email today");
+  });
+});
+

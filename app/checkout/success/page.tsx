@@ -3,6 +3,7 @@ import { publisherBrand } from "@/lib/book";
 import { stripe } from "@/lib/stripe";
 import { confirmationFromPaymentStatus, type CheckoutConfirmation } from "@/lib/checkout-status";
 import { getPatrolTokenBySession } from "@/lib/patrol-store";
+import { PARENTS_GUIDE_DIGITAL_LIVE } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function CheckoutSuccessPage({
   let confirmation: CheckoutConfirmation = "unknown";
   let isWholesale = false;
   let isPatrol = false;
+  let isGuide = false;
   let patrolToken: string | null = null;
 
   // Ask Stripe what actually happened. Anyone can open this URL with any
@@ -31,6 +33,7 @@ export default async function CheckoutSuccessPage({
       const orderType = session.metadata?.order_type || session.metadata?.channel || "retail";
       isWholesale = orderType === "institutional_sponsorship";
       isPatrol = orderType === "patrol_bundle";
+      isGuide = orderType === "guide_digital";
 
       // A Patrol buyer receives nothing by email, so the token they just paid
       // for is handed to them here. It can be missing for a few seconds while
@@ -70,6 +73,10 @@ export default async function CheckoutSuccessPage({
               ? "We have received your institutional sponsorship. An itemised invoice for your records is being emailed to your contact address along with your payment receipt, and our team will follow up from there."
               : isPatrol
               ? "Your payment has been received and your Chief Scout Patrol is ready. Your three gift invitations are waiting in your Patrol hub."
+              : isGuide
+              ? PARENTS_GUIDE_DIGITAL_LIVE
+                ? "Your payment has been received. The Parent's Guide is on its way to the email address you used at checkout, as a download link."
+                : "Your payment has been received and recorded. The digital Guide is not being issued yet, so nothing will arrive by email today — we will contact you personally about it."
               : "Your payment has been successfully processed. Your coloring book is now being queued for printing and fulfillment."
             : confirmation === "unpaid"
             ? "Stripe has not recorded a completed payment for this order yet. If you closed the payment page before finishing, you can pick up where you left off from the storefront — and if you believe you were charged, email us and we'll check it for you."
@@ -110,7 +117,7 @@ export default async function CheckoutSuccessPage({
         )}
 
         {/* Fulfilment promises appear only when Stripe confirms the payment. */}
-        {isPaid && !isPatrol && (
+        {isPaid && !isPatrol && !isGuide && (
           <div className="my-6 rounded-xl bg-ink/5 p-4 text-left text-sm text-ink space-y-2">
             <p className="font-bold">What happens next?</p>
             <ul className="list-disc list-inside space-y-1 text-ink-soft">
