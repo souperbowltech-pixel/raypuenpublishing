@@ -6,6 +6,7 @@ import { recordOrder, markOrder } from "@/lib/orders";
 import { alertFailure } from "@/lib/alerts";
 import { isProduction } from "@/lib/supabase";
 import { createPatrolLeader } from "@/lib/patrol-store";
+import { sendPatrolReceipt } from "@/lib/notifications";
 
 const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
 
@@ -127,8 +128,25 @@ export async function POST(req: NextRequest) {
       try {
         const patrol = await createPatrolLeader(customerEmail, session.id);
         if (patrol) {
-          console.log(`[Patrol Webhook] Created patrol leader for ${customerEmail} (Token: ${patrol.token})`);
+          // The token is deliberately not logged: a log line is enough to open
+          // somebody's Patrol (AUDIT SEC-05).
+          console.log(`[Patrol Webhook] Created a patrol leader for session ${session.id}`);
           await markOrder(session.id, { fulfillmentStatus: "fulfilled", lastError: null });
+
+          // The buyer's copy. The checkout success page shows the same link, so
+          // a failure here costs them the email, not the Patrol — which is why
+          // the order stays fulfilled either way.
+          const receipt = await sendPatrolReceipt({
+            to: customerEmail,
+            token: patrol.token,
+            giftCodes: patrol.giftCodes,
+          });
+          if (!receipt.sent) {
+            await alertFailure("Patrol created but the receipt email did not go out", {
+              session: session.id,
+              reason: receipt.reason,
+            });
+          }
         } else {
           retryNeeded = true;
           await markOrder(session.id, { fulfillmentStatus: "failed", lastError: "Patrol leader creation failed" });

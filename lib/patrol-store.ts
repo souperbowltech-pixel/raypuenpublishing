@@ -3,6 +3,7 @@ import path from 'path';
 import { randomBytes } from 'crypto';
 import { supabase, isProduction } from '@/lib/supabase';
 import { alertFailure } from '@/lib/alerts';
+import { sendGuideApprovalRequest } from '@/lib/notifications';
 import { normalizeEmail } from '@/lib/family';
 
 export interface ShippingAddress {
@@ -369,6 +370,36 @@ export async function redeemPatrolGift(
  * Submit shipping address for the Free Printed Parent's Guide reward.
  * Sets status to 'claimed' and creates a pending approval record for Ray.
  */
+/**
+ * Tell Ray a free printed Guide is waiting for him.
+ *
+ * Email first, because that is the only channel that actually reaches him. If
+ * email is not configured or the send fails, the approval URL still goes to the
+ * alert webhook and the server log, so a claim can never vanish silently — but
+ * nobody should mistake that fallback for having told him.
+ */
+async function notifyGuideClaim(
+  leaderEmail: string,
+  recipientName: string,
+  shippingAddress: ShippingAddress,
+  approvalToken: string
+): Promise<void> {
+  const result = await sendGuideApprovalRequest({
+    patrolLeaderEmail: leaderEmail,
+    recipientName,
+    shippingAddress,
+    approvalToken,
+  });
+
+  if (result.sent) return;
+
+  void alertFailure('Free Parent Guide claim could not be emailed for approval', {
+    reason: result.reason,
+    recipient: recipientName,
+    approvalToken,
+  });
+}
+
 export async function submitGuideClaim(
   patrolToken: string,
   recipientName: string,
@@ -405,11 +436,7 @@ export async function submitGuideClaim(
     store.approvals.push(approval);
     writeLocal(store);
 
-    void alertFailure('New Free Parent Guide Claim Submitted (Pending Ray Approval)', {
-      leaderEmail: details.leader.email,
-      recipient: recipientName,
-      approvalUrl: `https://puenpublishing.com/api/admin/approve-guide?token=${approvalToken}&action=approve`,
-    });
+    await notifyGuideClaim(details.leader.email, recipientName, shippingAddress, approvalToken);
 
     return { ok: true, approvalToken };
   }
@@ -432,12 +459,7 @@ export async function submitGuideClaim(
     .update({ status: 'claimed', updated_at: now })
     .eq('id', details.leader.id);
 
-  // Send failure/incident alert containing the 1-click approval URL
-  void alertFailure('New Free Parent Guide Claim Submitted (Pending Ray Approval)', {
-    leaderEmail: details.leader.email,
-    recipient: recipientName,
-    approvalUrl: `https://puenpublishing.com/api/admin/approve-guide?token=${approvalToken}&action=approve`,
-  });
+  await notifyGuideClaim(details.leader.email, recipientName, shippingAddress, approvalToken);
 
   return { ok: true, approvalToken };
 }
