@@ -11,6 +11,12 @@ export default defineConfig({
   esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts", "lib/**/*.test.tsx", "components/**/*.test.tsx"],
+    include: [
+      "lib/**/*.test.ts",
+      "lib/**/*.test.tsx",
+      "components/**/*.test.tsx",
+      // API routes, so the one that moves money is covered too (AUDIT TEST-01).
+      "app/**/*.test.ts",
+    ],
   },
 });
