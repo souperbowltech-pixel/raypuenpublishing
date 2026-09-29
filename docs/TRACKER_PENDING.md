@@ -16,6 +16,28 @@ Format:
 
 ## Pending
 
+### 29-30 Sept — A1, A4 and A3 done
+
+- [x] **A1 — email exists** (`148d7a1`, `f395eb0`). `lib/email.ts` speaks to Resend directly, with an
+  8s deadline, and reports `sent: true` only against a real message id. `lib/notifications.ts` adds
+  the two messages that were missing: the Patrol receipt (hub link + three gift codes, sent from the
+  webhook) and **Ray's free-guide approval**, which previously reached nobody at all. Both are inert
+  until `RESEND_API_KEY` and `EMAIL_FROM` are set in Vercel — **still the user's step**, along with
+  the Resend account and the DNS records on `send.puenpublishing.com` (never the root domain, which
+  carries the info@ mailbox).
+  Two things fell out of writing it: Resend echoes the API key inside a 401 body, so provider error
+  text is now scrubbed before it can reach a log; and the webhook was logging the patrol token,
+  which is enough on its own to open somebody's Patrol (AUDIT SEC-05).
+- [x] **A4 — a digital Guide is not a parcel** (`04f00ab`). `guide_digital` fell through to the retail
+  branch and promised printing and 2-3 day dispatch. It now has its own wording, and the promise of
+  an emailed download sits inside the `PARENTS_GUIDE_DIGITAL_LIVE` branch so the two cannot drift.
+- [x] **A3 — the Stripe webhook is tested** (`8828692`), closing the audit's last CRITICAL gap
+  (TEST-01). 14 tests; all passed first time, so each rule was then deliberately broken and every
+  mutation turned the suite red. `vitest.config.ts` now picks up `app/**/*.test.ts`.
+
+**165 tests pass.** Remaining from the A-list: A2 (Ray's admin view), A5 (the rest of the audit),
+A6 (the Oct 4 delivery).
+
 ### 29 Sept — done today
 
 - [x] **Book 2 cover is live** (t19). Sarah's wrap arrived; the front was cropped out and is now shown
