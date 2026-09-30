@@ -3,6 +3,9 @@
  */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Long enough for a slow API, short enough that a paid order is never held up. */
+const MAILERLITE_TIMEOUT_MS = 6_000;
+
 export async function addSubscriberToMailerLite(params: {
   email: string;
   name?: string;
@@ -45,15 +48,27 @@ export async function addSubscriberToMailerLite(params: {
     if (withFields && hasFields) {
       payload.fields = subscriberFields;
     }
-    const res = await fetch("https://connect.mailerlite.com/api/subscribers", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    // A newsletter sync must never hold a paid webhook open. Without a deadline
+    // a hung MailerLite would keep the Stripe webhook waiting until the platform
+    // killed the whole function, and the order processing after it would never
+    // run (AUDIT BUG-04).
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), MAILERLITE_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch("https://connect.mailerlite.com/api/subscribers", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
     const data = await res.json().catch(() => null);
     return { res, data };
   }

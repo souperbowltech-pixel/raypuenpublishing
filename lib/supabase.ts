@@ -17,7 +17,25 @@ export const usingServiceRole = Boolean(serviceRoleKey);
  * that fetch — which silently served stale rows: a child's progress was written
  * but read back from a cached snapshot. Every database call must bypass it.
  */
-const noStoreFetch: typeof fetch = (input, init) => fetch(input, { ...init, cache: 'no-store' });
+/**
+ * Every database call also gets a deadline. supabase-js has no timeout of its
+ * own, so a stalled connection would hang a page render or a webhook until the
+ * platform killed the function — with no error to act on (AUDIT BUG-04). An
+ * aborted call surfaces as an ordinary error, which every caller already
+ * handles, so this changes nothing except how long the worst case lasts.
+ */
+const DB_TIMEOUT_MS = 8_000;
+
+export const noStoreFetch: typeof fetch = (input, init) => {
+  // Respect a caller's own signal if it set one; otherwise impose ours.
+  if (init?.signal) return fetch(input, { ...init, cache: 'no-store' });
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DB_TIMEOUT_MS);
+  return fetch(input, { ...init, cache: 'no-store', signal: controller.signal }).finally(() =>
+    clearTimeout(timer)
+  );
+};
 
 export const supabase = supabaseUrl && supabaseKey
   ? createClient(supabaseUrl, supabaseKey, {
