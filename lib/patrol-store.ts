@@ -467,6 +467,62 @@ export async function submitGuideClaim(
 /**
  * Ray's One-Click Approval / Rejection handler.
  */
+export interface PendingGuideClaim {
+  approvalToken: string;
+  recipientName: string;
+  shippingAddress: ShippingAddress;
+  leaderEmail: string;
+  createdAt: string;
+}
+
+/**
+ * Every free printed Guide waiting for Ray to decide, oldest first.
+ *
+ * His approval is half of the anti-fraud rule he chose, and until now the only
+ * way to reach a claim was the one-click link in an email. If that email never
+ * arrives — no key configured, a spam folder, a deleted message — the claim is
+ * invisible. This is the list that does not depend on a message getting through.
+ */
+export async function listPendingGuideClaims(): Promise<PendingGuideClaim[]> {
+  if (!supabase) {
+    if (isProduction) return [];
+    const store = readLocal();
+    return store.approvals
+      .filter((a) => a.status === 'pending')
+      .map((a) => ({
+        approvalToken: a.approvalToken,
+        recipientName: a.recipientName,
+        shippingAddress: a.shippingAddress,
+        leaderEmail: store.leaders.find((l) => l.id === a.patrolLeaderId)?.email ?? 'unknown',
+        createdAt: a.createdAt,
+      }))
+      .sort((x, y) => x.createdAt.localeCompare(y.createdAt));
+  }
+
+  const { data, error } = await supabase
+    .from('guide_approvals')
+    .select('approval_token, recipient_name, shipping_address, created_at, patrol_leaders(email)')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('[patrol] could not list pending guide claims', error.message);
+    return [];
+  }
+
+  return (data || []).map((row: any) => ({
+    approvalToken: row.approval_token,
+    recipientName: row.recipient_name,
+    shippingAddress: row.shipping_address,
+    // PostgREST returns the joined row as an object or a one-element array
+    // depending on how it infers the relationship; handle both.
+    leaderEmail:
+      (Array.isArray(row.patrol_leaders) ? row.patrol_leaders[0]?.email : row.patrol_leaders?.email) ??
+      'unknown',
+    createdAt: row.created_at,
+  }));
+}
+
 export async function reviewGuideApproval(
   approvalToken: string,
   action: 'approve' | 'reject'
