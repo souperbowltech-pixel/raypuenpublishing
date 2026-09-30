@@ -16,6 +16,30 @@ Format:
 
 ## Pending
 
+### 30 Sept — A2 done, A5 started
+
+- [x] **A2 — Ray's admin view** (`c830eeb`). `/admin` lists every pending free-Guide claim; shut by
+  default (no `ADMIN_TOKEN`, no admin view), key exchanged for an httpOnly cookie through a form POST
+  so it never sits in a URL, compared in constant time, stored as a hash.
+  **It also fixed a real hazard:** approval used to happen on **GET**, so any mail scanner, antivirus
+  link-checker or chat preview could approve a claim before Ray saw it. GET now only shows a
+  confirmation page; the decision needs the POST. Verified live.
+- [x] **A5 / SEC-05 — personal data out of logs and alerts** (`8c1152e`). Seven alert payloads and
+  two log lines in the Stripe webhook carried a customer's address or a scout token, and alerts are
+  POSTed to a chat webhook where they would sit forever. Both are redacted now. The order row and
+  the MailerLite subscriber deliberately keep the real values, and a test holds that line.
+- [x] **A5 / BUG-04 — deadlines on the database and MailerLite** (`9f78017`). Neither had one, and a
+  call without a deadline hangs rather than fails: a stalled MailerLite would hold a paid webhook
+  open until the platform killed it, with every remaining step unrun. 8s for the database at the one
+  fetch every query passes through, 6s for MailerLite.
+  *Worth remembering:* the first version of those tests read the source for strings and passed with
+  the timeout deleted. They now stub fetch and prove the abort fires.
+
+**192 tests pass.** Still open in A5: BUG-08 (the email regex written three times), SEC-03 (account
+enumeration on registration), SEC-06 (the demo profile is a public write target), SEC-07 (health
+discloses infrastructure detail), FE-05, FE-06 (lightbox focus), PERF-01, OPS-04.
+Then A6, the Oct 4 delivery.
+
 ### 29-30 Sept — A1, A4 and A3 done
 
 - [x] **A1 — email exists** (`148d7a1`, `f395eb0`). `lib/email.ts` speaks to Resend directly, with an
