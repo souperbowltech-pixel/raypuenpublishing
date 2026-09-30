@@ -1,8 +1,8 @@
+import { isEmailAddress } from "@/lib/family";
+
 /**
  * MailerLite integration helper for Puen Publishing.
  */
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 /** Long enough for a slow API, short enough that a paid order is never held up. */
 const MAILERLITE_TIMEOUT_MS = 6_000;
 
@@ -19,7 +19,7 @@ export async function addSubscriberToMailerLite(params: {
   }
 
   const email = params.email.trim().toLowerCase();
-  if (!EMAIL_REGEX.test(email)) {
+  if (!isEmailAddress(email)) {
     console.error("[MailerLite] Invalid email address, skipping sync:", params.email);
     return null;
   }

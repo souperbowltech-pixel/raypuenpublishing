@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseConfigSummary } from "@/lib/supabase";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { ADMIN_COOKIE, isAdminCookie, isAdminKey } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -106,8 +107,29 @@ export async function GET(req: NextRequest) {
   }
 
   const ok = config.configured && Object.values(checks).every((c) => c.ok);
-  return NextResponse.json(
-    { ok, database: config, checks, checkedAt: new Date().toISOString() },
-    { status: ok ? 200 : 503, headers: { "Cache-Control": "no-store" } }
-  );
+
+  /**
+   * Anyone may ask whether the site is well; only we may ask how it is built.
+   *
+   * The full answer names the database host, which key is in use and what shape
+   * it has, and quotes database errors verbatim — enough to map the schema and
+   * to know what to attack (AUDIT SEC-07). A stranger gets the verdict and the
+   * names of the checks, which is all an uptime monitor needs.
+   */
+  const detailed =
+    isAdminCookie(req.cookies.get(ADMIN_COOKIE)?.value) ||
+    isAdminKey(req.headers.get("x-admin-key"));
+
+  const body = detailed
+    ? { ok, database: config, checks, checkedAt: new Date().toISOString() }
+    : {
+        ok,
+        checks: Object.fromEntries(Object.entries(checks).map(([name, c]) => [name, { ok: c.ok }])),
+        checkedAt: new Date().toISOString(),
+      };
+
+  return NextResponse.json(body, {
+    status: ok ? 200 : 503,
+    headers: { "Cache-Control": "no-store" },
+  });
 }

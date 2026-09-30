@@ -4,10 +4,9 @@ import { SPONSOR_TIERS } from "@/lib/pricing";
 import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { getSiteOrigin } from "@/lib/site";
+import { isEmailAddress } from "@/lib/family";
 
 export const dynamic = "force-dynamic";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   // Rate limit: 10 requests / minute / IP
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     // Validate the contact email.
     const email = String(institution?.email ?? "").trim().toLowerCase();
-    if (!EMAIL_REGEX.test(email)) {
+    if (!isEmailAddress(email)) {
       return NextResponse.json(
         { error: "A valid contact email is required." },
         { status: 400 }

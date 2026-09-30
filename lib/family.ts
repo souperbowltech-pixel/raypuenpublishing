@@ -20,7 +20,20 @@ export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 365; // one school year an
 
 export const FIRST_NAME_MAX = 30;
 const EMAIL_MAX = 254;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/**
+ * The one definition of what an email address looks like here.
+ *
+ * It lived in three places with two different rules — family.ts required a
+ * two-character top-level domain, the other two did not — so the same address
+ * could be accepted at checkout and rejected at registration (AUDIT BUG-08).
+ * The stricter rule wins: it is the one the parent-facing form already used.
+ */
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** True when this is an address we are willing to send to or store. */
+export function isEmailAddress(value: unknown): value is string {
+  return typeof value === "string" && value.length <= EMAIL_MAX && EMAIL_REGEX.test(value);
+}
 
 /** Unambiguous characters for codes people read off paper (no 0/O, 1/I/L). */
 const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
