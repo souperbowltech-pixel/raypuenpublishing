@@ -7,6 +7,7 @@ import { alertFailure } from "@/lib/alerts";
 import { isProduction } from "@/lib/supabase";
 import { createPatrolLeader } from "@/lib/patrol-store";
 import { sendPatrolReceipt } from "@/lib/notifications";
+import { redactEmail, redactToken } from "@/lib/redact";
 
 const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
 
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     const customerName = session.customer_details?.name || undefined;
     const orderType = session.metadata?.order_type || "retail";
 
-    console.log(`[Stripe Webhook] Order completed: ${session.id} (${orderType}) for ${customerEmail}`);
+    console.log(`[Stripe Webhook] Order completed: ${session.id} (${orderType}) for ${redactEmail(customerEmail)}`);
 
     const grandpaToken =
       orderType === "grandpa_sponsorship" && TOKEN_REGEX.test(session.metadata?.scout_token || "")
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
       await alertFailure("Paid order not saved: database not configured on the live site", {
         session: session.id,
         orderType,
-        email: customerEmail,
+        email: redactEmail(customerEmail),
       });
     }
     if (!recorded.ok && !recorded.skipped) {
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
       await alertFailure("Paid order could not be saved", {
         session: session.id,
         orderType,
-        email: customerEmail,
+        email: redactEmail(customerEmail),
         error: recorded.error,
       });
     }
@@ -97,11 +98,11 @@ export async function POST(req: NextRequest) {
             });
             await alertFailure("Grandpa sponsorship paid but Book 3 unlock was not saved", {
               session: session.id,
-              email: customerEmail,
+              email: redactEmail(customerEmail),
               error: result.error,
             });
           } else {
-            console.log(`[Grandpa Sponsor] Book 3 unlocked for scout ${grandpaToken}`);
+            console.log(`[Grandpa Sponsor] Book 3 unlocked for scout ${redactToken(grandpaToken)}`);
             await markOrder(session.id, { fulfillmentStatus: "fulfilled", lastError: null });
           }
         } catch (err: any) {
@@ -109,8 +110,8 @@ export async function POST(req: NextRequest) {
           await markOrder(session.id, { fulfillmentStatus: "failed", lastError: String(err?.message || err) });
           await alertFailure("Grandpa sponsorship paid but Book 3 unlock failed", {
             session: session.id,
-            scoutToken: grandpaToken,
-            email: customerEmail,
+            scoutToken: redactToken(grandpaToken),
+            email: redactEmail(customerEmail),
             error: err?.message || err,
           });
         }
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
         await markOrder(session.id, { fulfillmentStatus: "failed", lastError: "Missing/invalid scout_token" });
         await alertFailure("Grandpa sponsorship paid but scout_token is missing/invalid", {
           session: session.id,
-          email: customerEmail,
+          email: redactEmail(customerEmail),
         });
       }
     }
@@ -156,7 +157,7 @@ export async function POST(req: NextRequest) {
         await markOrder(session.id, { fulfillmentStatus: "failed", lastError: String(err?.message || err) });
         await alertFailure("Patrol bundle paid but patrol leader creation failed", {
           session: session.id,
-          email: customerEmail,
+          email: redactEmail(customerEmail),
           error: err?.message || err,
         });
       }
@@ -186,7 +187,7 @@ export async function POST(req: NextRequest) {
       if (process.env.MAILERLITE_API_KEY && !synced?.data?.id) {
         await alertFailure("MailerLite sync failed for a paid order", {
           session: session.id,
-          email: customerEmail,
+          email: redactEmail(customerEmail),
         });
       }
     }

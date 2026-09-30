@@ -1,4 +1,7 @@
 import { normalizeEmail } from "@/lib/family";
+import { redactEmail } from "@/lib/redact";
+
+export { redactEmail };
 
 /**
  * One-to-one transactional email.
@@ -43,16 +46,6 @@ const TIMEOUT_MS = 8_000;
 /** True when both the key and the sending address are present. */
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
-}
-
-/**
- * An address safe to put in a log: the domain, and the first character only.
- * A child's family address must never be written out in full (AUDIT SEC-05).
- */
-export function redactEmail(address: string): string {
-  const at = address.lastIndexOf("@");
-  if (at < 1) return "(invalid)";
-  return `${address[0]}***${address.slice(at)}`;
 }
 
 /**

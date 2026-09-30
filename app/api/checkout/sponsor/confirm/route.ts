@@ -3,6 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { updateScoutAsync } from "@/lib/scout-store";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { alertFailure } from "@/lib/alerts";
+import { redactEmail } from "@/lib/redact";
 import { recordOrder, markOrder } from "@/lib/orders";
 import { addSubscriberToMailerLite } from "@/lib/mailerlite";
 
