@@ -103,7 +103,7 @@ None of these require Ray's input to fix; all are in code we already control.
 | FE-05 | MEDIUM | Frontend | `BookUnlockCard`'s gated branch has no backend call — false "dispatched" claim will reappear if the flag flips without also wiring fulfilment | components/dashboard/BookUnlockCard.tsx:68-71,198 | S | HIGH | **FIXED 2026-10-01** — `lib/fulfillment.ts` now owns the flag and `dispatchPrintOrder`; the card awaits it and the "Dispatched" block renders only from an order reference the printer returned, so flipping the flag alone cannot produce the false claim |
 | OPS-03 | MEDIUM | Code Health | Demo token `CAPTAIN-RAY-700` re-typed as a literal in 4 places instead of importing the constant | lib/scout-store.ts:85,165,318; app/dashboard/book2/page.tsx:15; app/sponsor/page.tsx:9 | S | HIGH | **FIXED** — verified 2026-10-01: the literal now appears only in `lib/family.ts`, and `lib/copy-hygiene.test.ts` fails if it is re-typed anywhere in `app`, `components` or `lib` |
 | OPS-04 | MEDIUM | Code Health | Print-vendor docs mismatch: `.env.local` has Lulu vars, README/.env.example say IngramSpark, neither is wired into code | .env.local (names only); README.md:5-7; .env.example:32-35 | S | MEDIUM | **RESOLVED 2026-10-01** — vendor confirmed: Ray's own directive (`RAY_DIRECTIVES_STATUS.md:56`) says drop Lulu, use IngramSpark. No mismatch remains in the repository: `README.md` names no vendor, `.env.example:29-31` says IngramSpark, nothing reads `process.env.LULU_*`, and `lib/lulu.ts` is gone. The only remnant is three dead `LULU_*` names in the untracked `.env.local`, which is the operator's to delete — and whose values are already on the rotate list in `PROJECT_STATUS_AND_HANDOVER_REPORT.md:19` |
-| OPS-05 | MEDIUM | Ops | No structured alerting beyond an optional webhook URL; several failure paths only `console.error` | lib/alerts.ts:14-15; lib/family-store.ts:153,165 | M | HIGH | OPEN |
+| OPS-05 | MEDIUM | Ops | No structured alerting beyond an optional webhook URL; several failure paths only `console.error` | lib/alerts.ts:14-15; lib/family-store.ts:153,165 | M | HIGH | **FIXED 2026-10-01** — session and scout lookup failures in `lib/family-store.ts` route to `alertFailure`; `lib/alerts.ts` falls back to email (via `lib/notifications` and `lib/email`) when `ALERT_WEBHOOK_URL` is unset; pinned by `lib/alerts.test.ts` and `lib/family-store.test.ts` |
 | SEC-03 | LOW | Security | Account enumeration via family-registration error message/status code | app/api/family/register/route.ts:38-46 | S | HIGH | OPEN |
 | SEC-04 | LOW | Security | Retail checkout quantity has no upper bound and silently coerces invalid input to 1 instead of rejecting | app/api/checkout/retail/route.ts:22-23 | S | HIGH | **FIXED** — verified 2026-10-01: whole number bounds (1–50) and 400 rejection were implemented in commit 7dad223; pinned by `app/api/checkout/retail/route.test.ts` |
 | SEC-05 | LOW | Security | Customer email + scout token written to logs and the outbound alert webhook | app/api/webhooks/stripe/route.ts:42,87,92-97 | S | HIGH | **FIXED 2026-09-30** — `lib/redact.ts` redacts both before anything is logged or POSTed |
@@ -685,6 +685,11 @@ registration silently failing), the only trace may be a Vercel function log nobo
 **Fix:** Confirm `ALERT_WEBHOOK_URL` is actually set in production; extend `alertFailure`
 coverage to the family-store.ts session-lookup error paths; consider failing loudly at boot in
 production if the alert URL is unset (mirroring the `isProduction` pattern in `lib/supabase.ts`).
+
+**Resolution (2026-10-01):**
+1. Extended `alertFailure` coverage in `lib/family-store.ts` to both session lookup and scout lookup DB failure paths.
+2. In `lib/alerts.ts`, when `ALERT_WEBHOOK_URL` is not configured, `alertFailure` falls back to transactional email to the administrator (`approvalRecipient()`) via `lib/notifications` and `lib/email` so production failures never silently disappear.
+3. Fully pinned by unit tests in `lib/alerts.test.ts` and `lib/family-store.test.ts`.
 
 ---
 

@@ -17,13 +17,7 @@ ago. Where the two disagree, this file is right and `AUDIT.md` is being correcte
 
 ## A. Ready to work on now, in this order
 
-Each item says what is wrong, why it matters, and where it lives. The order is by what a real
-customer or a real child would feel first, not by what is easiest.
-
-### 1. OPS-05 - some failures are only ever a console line
-
-`lib/alerts.ts:14-15`, `lib/family-store.ts:153,165`. `lib/notifications.ts` and `lib/email.ts`
-now exist, so these paths finally have somewhere real to report to.
+All items in Section A have been resolved and pinned with tests.
 
 ---
 
@@ -112,5 +106,6 @@ Verified in the code on 1 October 2026, whatever the status column in `AUDIT.md`
 | SEC-08 | Wholesale metadata length capped for institution name, contact, phone, and shipping address fields (verified 2026-10-01: institution/contact/phone capped in commit `7dad223`; shipping address capped in `app/api/checkout/wholesale/route.ts`; pinned by `app/api/checkout/wholesale/route.test.ts`) |
 | TEST-02 | Business logic tested: `deriveScoutFields` (`lib/scout-store.test.ts`), `SPONSOR_TIERS` (`lib/pricing.test.ts`), `resolveScoutAccess` authorization boundary (`lib/scout-access.test.ts`), and `gradeQuiz` scoring (`lib/gamification.test.ts`) |
 | TEST-01 | All API routes tested: Stripe webhook, all checkout routes (wholesale, retail, sponsor, sponsor-confirm, patrol, guide), family auth lifecycle (register, me, logout), scout progress (state, update), and health diagnostics |
+| OPS-05 | `alertFailure` email fallback via `lib/notifications` + `lib/email` when webhook is unset; `family-store.ts` session and scout lookup DB failures routed to `alertFailure` (pinned in `lib/alerts.test.ts` and `lib/family-store.test.ts`) |
 
 `lib/copy-hygiene.test.ts` fails if OPS-03, FE-07 or the link rule is ever undone.

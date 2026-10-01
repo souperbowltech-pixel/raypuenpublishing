@@ -212,7 +212,10 @@ export async function getFamilySession(sessionToken: string | undefined): Promis
     .eq('token_hash', tokenHash)
     .maybeSingle();
   if (error || !row) {
-    if (error) console.error('[family-store] session lookup failed', error.message);
+    if (error) {
+      console.error('[family-store] session lookup failed', error.message);
+      void alertFailure('Family session lookup failed', { error: error.message });
+    }
     return null;
   }
 
@@ -224,7 +227,10 @@ export async function getFamilySession(sessionToken: string | undefined): Promis
     .limit(1)
     .maybeSingle();
   if (scoutError || !scout) {
-    if (scoutError) console.error('[family-store] scout lookup failed', scoutError.message);
+    if (scoutError) {
+      console.error('[family-store] scout lookup failed', scoutError.message);
+      void alertFailure('Family scout lookup failed', { error: scoutError.message });
+    }
     return null;
   }
 
