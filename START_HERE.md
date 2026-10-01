@@ -132,3 +132,10 @@ If the documents and `git log` disagree with anybody's memory, the repository wi
 If you are an agent about to change a file in this repository, read
 [docs/AGENT_RULES.md](docs/AGENT_RULES.md) first. It sets the scope, the test standard
 (every new test must be proven able to fail), and the one command you must never run.
+
+[docs/BACKLOG.md](docs/BACKLOG.md) is the work queue: one item at a time, in order, with
+statuses verified against the code rather than copied from the audit.
+
+Before writing anything to the client, read
+[docs/CLIENT_COMMUNICATION.md](docs/CLIENT_COMMUNICATION.md). Nothing goes to him without the
+operator sending it, and every claim about the product is checked against the code first.
