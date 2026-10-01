@@ -102,7 +102,7 @@ None of these require Ray's input to fix; all are in code we already control.
 | FE-04 | MEDIUM | Frontend | `PricingCalculator` + `calculateWholesalePrice` are dead code; README still calls it "live" | components/institutions/PricingCalculator.tsx; README.md:124 | S | HIGH | **FIXED 2026-09-23** — component deleted and the whole per-copy pricing model removed from `lib/pricing.ts`; its 19 tests were replaced with tests of the tiers actually charged |
 | FE-05 | MEDIUM | Frontend | `BookUnlockCard`'s gated branch has no backend call — false "dispatched" claim will reappear if the flag flips without also wiring fulfilment | components/dashboard/BookUnlockCard.tsx:68-71,198 | S | HIGH | **FIXED 2026-10-01** — `lib/fulfillment.ts` now owns the flag and `dispatchPrintOrder`; the card awaits it and the "Dispatched" block renders only from an order reference the printer returned, so flipping the flag alone cannot produce the false claim |
 | OPS-03 | MEDIUM | Code Health | Demo token `CAPTAIN-RAY-700` re-typed as a literal in 4 places instead of importing the constant | lib/scout-store.ts:85,165,318; app/dashboard/book2/page.tsx:15; app/sponsor/page.tsx:9 | S | HIGH | **FIXED** — verified 2026-10-01: the literal now appears only in `lib/family.ts`, and `lib/copy-hygiene.test.ts` fails if it is re-typed anywhere in `app`, `components` or `lib` |
-| OPS-04 | MEDIUM | Code Health | Print-vendor docs mismatch: `.env.local` has Lulu vars, README/.env.example say IngramSpark, neither is wired into code | .env.local (names only); README.md:5-7; .env.example:32-35 | S | MEDIUM | OPEN — needs confirmation of current vendor |
+| OPS-04 | MEDIUM | Code Health | Print-vendor docs mismatch: `.env.local` has Lulu vars, README/.env.example say IngramSpark, neither is wired into code | .env.local (names only); README.md:5-7; .env.example:32-35 | S | MEDIUM | **RESOLVED 2026-10-01** — vendor confirmed: Ray's own directive (`RAY_DIRECTIVES_STATUS.md:56`) says drop Lulu, use IngramSpark. No mismatch remains in the repository: `README.md` names no vendor, `.env.example:29-31` says IngramSpark, nothing reads `process.env.LULU_*`, and `lib/lulu.ts` is gone. The only remnant is three dead `LULU_*` names in the untracked `.env.local`, which is the operator's to delete — and whose values are already on the rotate list in `PROJECT_STATUS_AND_HANDOVER_REPORT.md:19` |
 | OPS-05 | MEDIUM | Ops | No structured alerting beyond an optional webhook URL; several failure paths only `console.error` | lib/alerts.ts:14-15; lib/family-store.ts:153,165 | M | HIGH | OPEN |
 | SEC-03 | LOW | Security | Account enumeration via family-registration error message/status code | app/api/family/register/route.ts:38-46 | S | HIGH | OPEN |
 | SEC-04 | LOW | Security | Retail checkout quantity has no upper bound and silently coerces invalid input to 1 instead of rejecting | app/api/checkout/retail/route.ts:22-23 | S | HIGH | OPEN |
@@ -906,7 +906,9 @@ importers anywhere in the repo.
   `SPONSOR_TIERS` model? Affects whether FE-03/FE-04's fix should be "wire it up" or "delete it."
 - **Is `ALERT_WEBHOOK_URL` actually configured in the live environment?** Materially changes
   OPS-05's real severity.
-- **Which print vendor is actually current — Lulu or IngramSpark?** (OPS-04). Current evidence
+- ~~**Which print vendor is actually current — Lulu or IngramSpark?** (OPS-04)~~ — **answered:**
+  IngramSpark, per Ray's directive recorded in `RAY_DIRECTIVES_STATUS.md:56`. Original note:
+  Current evidence
   from `PROJECT_REFERENCE.md` points to IngramSpark being correct and Lulu being stale, but this
   should be confirmed rather than assumed.
 - **The "Stripe test keys exposed in git history" claim (PROGRESS.md task t09)** could not be
