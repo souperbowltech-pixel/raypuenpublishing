@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
       phone: phone,
     };
 
+    // Premium Sponsor tiers (Tier 2 $200 and Tier 3 $400) include a complimentary copy.
+    // Enforce shipping address server-side so an order cannot be taken with nowhere
+    // to ship the promised copies (API-03).
     if (tier.isPremiumSponsor) {
       const line1 = String(shippingAddress?.line1 ?? "").trim();
       const city = String(shippingAddress?.city ?? "").trim();
