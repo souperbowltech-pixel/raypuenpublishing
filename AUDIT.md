@@ -97,7 +97,7 @@ None of these require Ray's input to fix; all are in code we already control.
 | BUG-05 | MEDIUM | Correctness | Sponsor-confirm fallback path never records an order or syncs MailerLite | app/api/checkout/sponsor/confirm/route.ts | S | HIGH | OPEN |
 | BUG-06 | MEDIUM | Correctness | Real (non-demo) friend-referral counting is not implemented | app/api/scout/update/route.ts:78-93 | L | HIGH | **FIXED 2026-09-26** — real friend referral tracking via share-code registration + Page 1 trigger, capped at 3, 2 needed for 300 pts & Book 2 unlock |
 | PERF-01 | MEDIUM | Scalability | Local fallback stores diverge per serverless instance; undocumented, plus a redundant mirror write | lib/scout-store.ts:84-94,152-162,307-310; lib/family-store.ts:29-52 | S/M | HIGH | OPEN |
-| API-03 | MEDIUM | API/Integration | Wholesale checkout doesn't require a shipping address server-side for Premium tiers | app/api/checkout/wholesale/route.ts:55-61 | S | HIGH | OPEN |
+| API-03 | MEDIUM | API/Integration | Wholesale checkout doesn't require a shipping address server-side for Premium tiers | app/api/checkout/wholesale/route.ts:55-61 | S | HIGH | **FIXED** — verified 2026-10-01: the server-side guard already existed (added in 94a2b3b), and `app/api/checkout/wholesale/route.test.ts` now exercises and pins it |
 | FE-03 | MEDIUM | Frontend | `initiateWholesaleCheckout` is dead code whose payload contract has drifted from the live route | lib/checkout.ts:107-137 | S | HIGH | **FIXED 2026-09-23** — removed along with its unused payload types |
 | FE-04 | MEDIUM | Frontend | `PricingCalculator` + `calculateWholesalePrice` are dead code; README still calls it "live" | components/institutions/PricingCalculator.tsx; README.md:124 | S | HIGH | **FIXED 2026-09-23** — component deleted and the whole per-copy pricing model removed from `lib/pricing.ts`; its 19 tests were replaced with tests of the tiers actually charged |
 | FE-05 | MEDIUM | Frontend | `BookUnlockCard`'s gated branch has no backend call — false "dispatched" claim will reappear if the flag flips without also wiring fulfilment | components/dashboard/BookUnlockCard.tsx:68-71,198 | S | HIGH | **FIXED 2026-10-01** — `lib/fulfillment.ts` now owns the flag and `dispatchPrintOrder`; the card awaits it and the "Dispatched" block renders only from an order reference the printer returned, so flipping the flag alone cannot produce the false claim |
@@ -537,7 +537,7 @@ local-mirror write when the Supabase write already succeeded.
 ---
 
 ### API-03 — Wholesale checkout doesn't require a shipping address server-side for Premium tiers
-**Severity:** MEDIUM · **Category:** API/Integration · **Effort:** S · **Confidence:** HIGH
+**Severity:** MEDIUM · **Category:** API/Integration · **Effort:** S · **Confidence:** HIGH · **Status:** FIXED (verified 2026-10-01)
 
 **Location:** `app/api/checkout/wholesale/route.ts:55-61`
 
@@ -549,7 +549,7 @@ it never rejects a Premium-tier request that's missing one.
 $200/$400 order with no address to ship the promised free copy to, with no error anywhere.
 
 **Fix:** Reject (400) when `tier.isPremiumSponsor` is true and `shippingAddress` is
-missing/incomplete, mirroring the client-side check server-side.
+missing/incomplete, mirroring the client-side check server-side. (Verified 2026-10-01: guard already present in route, pinned by `app/api/checkout/wholesale/route.test.ts`).
 
 ---
 

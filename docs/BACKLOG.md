@@ -20,62 +20,34 @@ ago. Where the two disagree, this file is right and `AUDIT.md` is being correcte
 Each item says what is wrong, why it matters, and where it lives. The order is by what a real
 customer or a real child would feel first, not by what is easiest.
 
-### 1. PERF-01 - the fallback stores diverge, and one write is wasted
-
-`lib/scout-store.ts:89` and `lib/family-store.ts:36` hold per-instance copies of a child's
-progress, with no warning anywhere that they do - unlike `lib/rate-limit.ts:1-8`, which says so
-plainly about itself. When Supabase is unset or briefly failing, two concurrent requests answered
-by different instances mutate disjoint copies, so a child's progress can appear to reset depending
-on which instance takes the next request. It gets worse with traffic, not better.
-
-Separately, `lib/scout-store.ts:415` writes the local mirror even when Supabase has just accepted
-the write. On Vercel the filesystem is read-only, so that write is attempted, fails and is
-swallowed; where it does succeed it leaves a local copy that a later fallback read would serve as
-though it were current.
-
-Document both stores in the voice of `rate-limit.ts`, and skip the mirror on the success path
-only. The calls at lines 431 and 438 must stay exactly as they are - on those paths the local copy
-is the only copy there is.
-
-### 2. API-03 - a $200 or $400 order can be taken with nowhere to ship it
-
-`app/api/checkout/wholesale/route.ts:55-61`. `WholesaleForm.tsx` enforces "Tier 2 and 3 require a
-shipping address" in the browser, and the route does not enforce it at all: it attaches
-`sponsor_shipping` to Stripe metadata when present and never rejects a Premium-tier request
-without one. Any direct call, retry tool or future client-side bug produces a paid premium order
-with no address to ship the promised copies to, and no error anywhere.
-
-Reject with 400 when `tier.isPremiumSponsor` is true and the address is missing or incomplete.
-This is the most expensive thing on the list.
-
-### 3. BUG-05 - the sponsor fallback takes the money and records nothing
+### 1. BUG-05 - the sponsor fallback takes the money and records nothing
 
 `app/api/checkout/sponsor/confirm/route.ts`. The fallback path never calls `recordOrder` or
 `markOrder` and never syncs MailerLite, so a sponsorship confirmed down that path leaves no order
 row behind. `recordOrder` upserts on `stripe_session_id`, so letting both paths write is safe.
 
-### 4. SEC-04 - retail quantity is unbounded and silently rewritten
+### 2. SEC-04 - retail quantity is unbounded and silently rewritten
 
 `app/api/checkout/retail/route.ts:22-23`. An invalid quantity is coerced to 1 rather than
 rejected, and there is no upper bound at all. Reject bad input with 400 and cap the quantity.
 
-### 5. SEC-08 - wholesale metadata is accepted unchecked
+### 3. SEC-08 - wholesale metadata is accepted unchecked
 
 `app/api/checkout/wholesale/route.ts:50-61`. Institution name, phone and address reach Stripe
 metadata with no validation and no length cap. Stripe enforces its own metadata limits, so an
 oversized field fails the charge instead of the request - which is the wrong place to find out.
 
-### 6. TEST-02 - two pieces of business logic have no tests at all
+### 4. TEST-02 - two pieces of business logic have no tests at all
 
 `gradeQuiz` and `resolveScoutAccess` are untested. `SPONSOR_TIERS` is already covered by
 `lib/pricing.test.ts`. Do `resolveScoutAccess` first: it is an authorisation boundary.
 
-### 7. TEST-01 - eleven of twelve API routes have no tests
+### 5. TEST-01 - eleven of twelve API routes have no tests
 
 Only `app/api/webhooks/stripe/route.test.ts` exists. The checkout routes come next, because they
 are the ones that move money.
 
-### 8. OPS-05 - some failures are only ever a console line
+### 6. OPS-05 - some failures are only ever a console line
 
 `lib/alerts.ts:14-15`, `lib/family-store.ts:153,165`. `lib/notifications.ts` and `lib/email.ts`
 now exist, so these paths finally have somewhere real to report to.
@@ -160,5 +132,7 @@ Verified in the code on 1 October 2026, whatever the status column in `AUDIT.md`
 | OPS-03 | The demo token is written down only in `lib/family.ts` |
 | OPS-04 | Vendor confirmed as IngramSpark by Ray's own directive; no mismatch left in the repository |
 | Links | No file in `app`, `components` or `lib` hands out the hosting platform's host name |
+| PERF-01 | Fallback stores document per-instance divergence on serverless; mirror write skipped on DB success path and retained on error/dropped-column fallback paths (pinned in `lib/fallback-stores.test.ts`) |
+| API-03 | Wholesale checkout enforces shipping address server-side for Premium tiers (verified 2026-10-01: guard was already present in `app/api/checkout/wholesale/route.ts:56-70`; pinned by `app/api/checkout/wholesale/route.test.ts`) |
 
 `lib/copy-hygiene.test.ts` fails if OPS-03, FE-07 or the link rule is ever undone.
