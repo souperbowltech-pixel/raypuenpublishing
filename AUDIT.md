@@ -109,7 +109,7 @@ None of these require Ray's input to fix; all are in code we already control.
 | SEC-05 | LOW | Security | Customer email + scout token written to logs and the outbound alert webhook | app/api/webhooks/stripe/route.ts:42,87,92-97 | S | HIGH | **FIXED 2026-09-30** — `lib/redact.ts` redacts both before anything is logged or POSTed |
 | SEC-06 | LOW | Security | Demo token's shared record is an unauthenticated public write target | lib/scout-access.ts:14-18; lib/scout-store.ts:84-94 | S | HIGH | OPEN |
 | SEC-07 | LOW | Security | `/api/health` discloses infrastructure fingerprinting details, unauthenticated | app/api/health/route.ts; lib/supabase.ts:39-69 | S | HIGH | **FIXED 2026-09-30** — a stranger gets the verdict and the check names; the host, key kind and database errors need the admin cookie or key |
-| SEC-08 | LOW | Security | Wholesale metadata fields (institution name, phone, address) accepted with no validation/length cap | app/api/checkout/wholesale/route.ts:50-61 | S | MEDIUM | OPEN |
+| SEC-08 | LOW | Security | Wholesale metadata fields (institution name, phone, address) accepted with no validation/length cap | app/api/checkout/wholesale/route.ts:50-61 | S | MEDIUM | **FIXED** — verified 2026-10-01: institution name (120), contact name (100), and phone (30) were capped in commit 7dad223; shipping address fields (line1 120, city 60, state 30, zip 20) capped in `app/api/checkout/wholesale/route.ts`; pinned by `app/api/checkout/wholesale/route.test.ts` |
 | BUG-07 | LOW | Correctness | Two sequential, non-atomic upserts in `updateScoutAsync` can leave a briefly half-updated row | lib/scout-store.ts:266-301 | S | HIGH | **FIXED 2026-09-23** — merged into one write (required by BUG-02's concurrency guard), with a 42703 fallback for un-migrated databases |
 | BUG-08 | LOW | Correctness | Email regex duplicated 3× with an inconsistent TLD-length rule | lib/family.ts:23; lib/mailerlite.ts:4; app/api/checkout/wholesale/route.ts:9 | S | HIGH | **FIXED 2026-09-30** — one `EMAIL_REGEX`/`isEmailAddress` exported from `lib/family.ts` |
 | FE-06 | LOW | Frontend | Lightbox modal lacks focus trapping / focus management (accessibility) | components/ui/Lightbox.tsx:31-113 | S | HIGH | **FIXED 2026-10-01** — focus moves in on open and back to the trigger on close, and Tab cycles inside the dialog via `lib/focus-trap.ts` |
@@ -777,6 +777,8 @@ or length cap.
 today; oversized values could fail the Stripe API call (metadata has a ~500-char limit).
 
 **Fix:** Trim and cap length for each field, mirroring the pattern already used for `email`.
+
+**Resolution (2026-10-01):** Institution name (120), contact name (100), and phone (30) were capped in commit `7dad223`. Shipping address fields (`line1` 120, `city` 60, `state` 30, `zip` 20) are capped in `app/api/checkout/wholesale/route.ts` ensuring `sessionMetadata.sponsor_shipping` (max 235 chars) comfortably satisfies Stripe's 500-char metadata limits. Pinned by `app/api/checkout/wholesale/route.test.ts`.
 
 ---
 

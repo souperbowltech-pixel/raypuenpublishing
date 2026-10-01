@@ -57,10 +57,10 @@ export async function POST(req: NextRequest) {
     // Enforce shipping address server-side so an order cannot be taken with nowhere
     // to ship the promised copies (API-03).
     if (tier.isPremiumSponsor) {
-      const line1 = String(shippingAddress?.line1 ?? "").trim();
-      const city = String(shippingAddress?.city ?? "").trim();
-      const state = String(shippingAddress?.state ?? "").trim();
-      const zip = String(shippingAddress?.zip ?? "").trim();
+      const line1 = String(shippingAddress?.line1 ?? "").trim().slice(0, 120);
+      const city = String(shippingAddress?.city ?? "").trim().slice(0, 60);
+      const state = String(shippingAddress?.state ?? "").trim().slice(0, 30);
+      const zip = String(shippingAddress?.zip ?? "").trim().slice(0, 20);
 
       if (!line1 || !city || !state || !zip) {
         return NextResponse.json(

@@ -164,4 +164,57 @@ describe("POST /api/checkout/wholesale (API-03 shipping address enforcement)", (
       "123 Schoolhouse Rd, Springfield, OR 97477"
     );
   });
+
+  describe("SEC-08: Wholesale metadata validation and length capping", () => {
+    it("caps institution name (120), contact name (100), and phone (30) in session metadata", async () => {
+      const oversizedInstitution = {
+        name: "A".repeat(200),
+        contactName: "B".repeat(150),
+        email: "principal@springfield.edu",
+        phone: "C".repeat(50),
+      };
+
+      const req = buildRequest({
+        tierId: 1,
+        institution: oversizedInstitution,
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+
+      const sessionArgs = createSessionMock.mock.calls[0][0];
+      expect(sessionArgs.metadata.institution_name).toBe("A".repeat(120));
+      expect(sessionArgs.metadata.institution_name.length).toBe(120);
+      expect(sessionArgs.metadata.contact_name).toBe("B".repeat(100));
+      expect(sessionArgs.metadata.contact_name.length).toBe(100);
+      expect(sessionArgs.metadata.phone).toBe("C".repeat(30));
+      expect(sessionArgs.metadata.phone.length).toBe(30);
+
+      expect(sessionArgs.invoice_creation?.invoice_data?.custom_fields?.[0]?.value).toBe("A".repeat(30));
+    });
+
+    it("caps shipping address line1 (120), city (60), state (30), and zip (20) in sponsor_shipping metadata", async () => {
+      const oversizedAddress = {
+        line1: "L".repeat(150),
+        city: "C".repeat(100),
+        state: "S".repeat(50),
+        zip: "Z".repeat(30),
+      };
+
+      const req = buildRequest({
+        tierId: 2,
+        institution: validInstitution,
+        shippingAddress: oversizedAddress,
+      });
+
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+
+      const sessionArgs = createSessionMock.mock.calls[0][0];
+      const expectedShipping = `${"L".repeat(120)}, ${"C".repeat(60)}, ${"S".repeat(30)} ${"Z".repeat(20)}`;
+      expect(sessionArgs.metadata.sponsor_shipping).toBe(expectedShipping);
+      expect(sessionArgs.metadata.sponsor_shipping.length).toBe(235);
+    });
+  });
 });
+

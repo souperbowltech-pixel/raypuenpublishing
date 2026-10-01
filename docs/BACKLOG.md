@@ -20,23 +20,17 @@ ago. Where the two disagree, this file is right and `AUDIT.md` is being correcte
 Each item says what is wrong, why it matters, and where it lives. The order is by what a real
 customer or a real child would feel first, not by what is easiest.
 
-### 1. SEC-08 - wholesale metadata is accepted unchecked
-
-`app/api/checkout/wholesale/route.ts:50-61`. Institution name, phone and address reach Stripe
-metadata with no validation and no length cap. Stripe enforces its own metadata limits, so an
-oversized field fails the charge instead of the request - which is the wrong place to find out.
-
-### 2. TEST-02 - two pieces of business logic have no tests at all
+### 1. TEST-02 - two pieces of business logic have no tests at all
 
 `gradeQuiz` and `resolveScoutAccess` are untested. `SPONSOR_TIERS` is already covered by
 `lib/pricing.test.ts`. Do `resolveScoutAccess` first: it is an authorisation boundary.
 
-### 3. TEST-01 - eleven of twelve API routes have no tests
+### 2. TEST-01 - eleven of twelve API routes have no tests
 
 Only `app/api/webhooks/stripe/route.test.ts` exists. The checkout routes come next, because they
 are the ones that move money.
 
-### 4. OPS-05 - some failures are only ever a console line
+### 3. OPS-05 - some failures are only ever a console line
 
 `lib/alerts.ts:14-15`, `lib/family-store.ts:153,165`. `lib/notifications.ts` and `lib/email.ts`
 now exist, so these paths finally have somewhere real to report to.
@@ -125,5 +119,6 @@ Verified in the code on 1 October 2026, whatever the status column in `AUDIT.md`
 | API-03 | Wholesale checkout enforces shipping address server-side for Premium tiers (verified 2026-10-01: guard was already present in `app/api/checkout/wholesale/route.ts:56-70`; pinned by `app/api/checkout/wholesale/route.test.ts`) |
 | BUG-05 | Sponsor-confirm fallback records order, marks fulfillment, and syncs MailerLite (verified 2026-10-01: implemented in commit `7dad223`; pinned by `app/api/checkout/sponsor/confirm/route.test.ts`) |
 | SEC-04 | Retail quantity capped at 1..50, invalid values rejected with 400 (verified 2026-10-01: implemented in commit `7dad223`; pinned by `app/api/checkout/retail/route.test.ts`) |
+| SEC-08 | Wholesale metadata length capped for institution name, contact, phone, and shipping address fields (verified 2026-10-01: institution/contact/phone capped in commit `7dad223`; shipping address capped in `app/api/checkout/wholesale/route.ts`; pinned by `app/api/checkout/wholesale/route.test.ts`) |
 
 `lib/copy-hygiene.test.ts` fails if OPS-03, FE-07 or the link rule is ever undone.
