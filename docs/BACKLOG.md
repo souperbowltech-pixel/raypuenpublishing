@@ -20,34 +20,28 @@ ago. Where the two disagree, this file is right and `AUDIT.md` is being correcte
 Each item says what is wrong, why it matters, and where it lives. The order is by what a real
 customer or a real child would feel first, not by what is easiest.
 
-### 1. BUG-05 - the sponsor fallback takes the money and records nothing
-
-`app/api/checkout/sponsor/confirm/route.ts`. The fallback path never calls `recordOrder` or
-`markOrder` and never syncs MailerLite, so a sponsorship confirmed down that path leaves no order
-row behind. `recordOrder` upserts on `stripe_session_id`, so letting both paths write is safe.
-
-### 2. SEC-04 - retail quantity is unbounded and silently rewritten
+### 1. SEC-04 - retail quantity is unbounded and silently rewritten
 
 `app/api/checkout/retail/route.ts:22-23`. An invalid quantity is coerced to 1 rather than
 rejected, and there is no upper bound at all. Reject bad input with 400 and cap the quantity.
 
-### 3. SEC-08 - wholesale metadata is accepted unchecked
+### 2. SEC-08 - wholesale metadata is accepted unchecked
 
 `app/api/checkout/wholesale/route.ts:50-61`. Institution name, phone and address reach Stripe
 metadata with no validation and no length cap. Stripe enforces its own metadata limits, so an
 oversized field fails the charge instead of the request - which is the wrong place to find out.
 
-### 4. TEST-02 - two pieces of business logic have no tests at all
+### 3. TEST-02 - two pieces of business logic have no tests at all
 
 `gradeQuiz` and `resolveScoutAccess` are untested. `SPONSOR_TIERS` is already covered by
 `lib/pricing.test.ts`. Do `resolveScoutAccess` first: it is an authorisation boundary.
 
-### 5. TEST-01 - eleven of twelve API routes have no tests
+### 4. TEST-01 - eleven of twelve API routes have no tests
 
 Only `app/api/webhooks/stripe/route.test.ts` exists. The checkout routes come next, because they
 are the ones that move money.
 
-### 6. OPS-05 - some failures are only ever a console line
+### 5. OPS-05 - some failures are only ever a console line
 
 `lib/alerts.ts:14-15`, `lib/family-store.ts:153,165`. `lib/notifications.ts` and `lib/email.ts`
 now exist, so these paths finally have somewhere real to report to.
@@ -134,5 +128,6 @@ Verified in the code on 1 October 2026, whatever the status column in `AUDIT.md`
 | Links | No file in `app`, `components` or `lib` hands out the hosting platform's host name |
 | PERF-01 | Fallback stores document per-instance divergence on serverless; mirror write skipped on DB success path and retained on error/dropped-column fallback paths (pinned in `lib/fallback-stores.test.ts`) |
 | API-03 | Wholesale checkout enforces shipping address server-side for Premium tiers (verified 2026-10-01: guard was already present in `app/api/checkout/wholesale/route.ts:56-70`; pinned by `app/api/checkout/wholesale/route.test.ts`) |
+| BUG-05 | Sponsor-confirm fallback records order, marks fulfillment, and syncs MailerLite (verified 2026-10-01: implemented in commit `7dad223`; pinned by `app/api/checkout/sponsor/confirm/route.test.ts`) |
 
 `lib/copy-hygiene.test.ts` fails if OPS-03, FE-07 or the link rule is ever undone.

@@ -53,7 +53,7 @@ None of these require Ray's input to fix; all are in code we already control.
 | Family accounts (register, session cookie, dashboard) | **Done** | `app/start/page.tsx`, `app/api/family/*`, `lib/family-store.ts` |
 | Scout gamification (points, quiz, sticker album, Book 2/3 unlock) | **Partial — real friend-referral not implemented** | `lib/gamification.ts`, `lib/scout-store.ts`; see BUG-06 |
 | Sticker sheet PDF generation | **Done** | `app/api/stickers/sheet/route.ts`, `lib/stickers.ts` |
-| Grandpa $40 sponsorship → Book 3 unlock | **Partial — fallback path has a gap** | `app/api/checkout/sponsor/*`; see BUG-05 |
+| Grandpa $40 sponsorship → Book 3 unlock | **Done** | `app/api/checkout/sponsor/*`; BUG-05 resolved |
 | MailerLite buyer sync | **Done, but double-fires** | `lib/mailerlite.ts`; see BUG-03 |
 | Print fulfilment (IngramSpark) | **Not started (intentionally gated)** | `PRINT_FULFILLMENT_LIVE = false` in `lib/fulfillment.ts`; FE-05 fixed the landmine that was in the gated branch |
 | Institutional per-unit pricing calculator | **Dead code — not wired to any page** | `components/institutions/PricingCalculator.tsx`, `lib/checkout.ts:initiateWholesaleCheckout`; see FE-03, FE-04 |
@@ -94,7 +94,7 @@ None of these require Ray's input to fix; all are in code we already control.
 | SEC-02 | MEDIUM | Security | Rate limiter is per-instance and its IP extraction trusts a spoofable header | lib/rate-limit.ts:15,41-49 | M | HIGH | OPEN |
 | BUG-03 | MEDIUM | Correctness | MailerLite sync fires twice per order with no idempotency guard | app/checkout/success/page.tsx:16-46; app/api/webhooks/stripe/route.ts:108-130 | S | MEDIUM | **FIXED 2026-09-23** (duplicate sync removed from the success page; the webhook is now the single source) |
 | BUG-04 | MEDIUM | Correctness | No timeout on any external call (Supabase, Stripe, MailerLite) | lib/supabase.ts:20; lib/stripe.ts:8-10; lib/mailerlite.ts:48-58 | S | HIGH | PARTIAL — Stripe done (8s + 1 retry); Supabase and MailerLite still open |
-| BUG-05 | MEDIUM | Correctness | Sponsor-confirm fallback path never records an order or syncs MailerLite | app/api/checkout/sponsor/confirm/route.ts | S | HIGH | OPEN |
+| BUG-05 | MEDIUM | Correctness | Sponsor-confirm fallback path never records an order or syncs MailerLite | app/api/checkout/sponsor/confirm/route.ts | S | HIGH | **FIXED** — verified 2026-10-01: order recording and MailerLite sync were implemented in commit 7dad223; pinned by `app/api/checkout/sponsor/confirm/route.test.ts` |
 | BUG-06 | MEDIUM | Correctness | Real (non-demo) friend-referral counting is not implemented | app/api/scout/update/route.ts:78-93 | L | HIGH | **FIXED 2026-09-26** — real friend referral tracking via share-code registration + Page 1 trigger, capped at 3, 2 needed for 300 pts & Book 2 unlock |
 | PERF-01 | MEDIUM | Scalability | Local fallback stores diverge per serverless instance; undocumented, plus a redundant mirror write | lib/scout-store.ts:84-94,152-162,307-310; lib/family-store.ts:29-52 | S/M | HIGH | OPEN |
 | API-03 | MEDIUM | API/Integration | Wholesale checkout doesn't require a shipping address server-side for Premium tiers | app/api/checkout/wholesale/route.ts:55-61 | S | HIGH | **FIXED** — verified 2026-10-01: the server-side guard already existed (added in 94a2b3b), and `app/api/checkout/wholesale/route.test.ts` now exercises and pins it |
@@ -478,7 +478,7 @@ MailerLite fetch; pass `{ timeout: <ms> }` to the `Stripe` constructor.
 ---
 
 ### BUG-05 — Sponsor-confirm fallback path never records an order or syncs MailerLite
-**Severity:** MEDIUM · **Category:** Correctness · **Effort:** S · **Confidence:** HIGH
+**Severity:** MEDIUM · **Category:** Correctness · **Effort:** S · **Confidence:** HIGH · **Status:** FIXED (verified 2026-10-01)
 
 **Location:** `app/api/checkout/sponsor/confirm/route.ts`
 
@@ -492,7 +492,7 @@ zero financial record and the sponsor is never added to MailerLite — while the
 full success, so nobody notices.
 
 **Fix:** Have this route also call `recordOrder`/`markOrder` (and the MailerLite sync),
-mirroring the webhook for the same `order_type`.
+mirroring the webhook for the same `order_type`. (Verified 2026-10-01: implemented in commit `7dad223`; pinned by `app/api/checkout/sponsor/confirm/route.test.ts`).
 
 ---
 
