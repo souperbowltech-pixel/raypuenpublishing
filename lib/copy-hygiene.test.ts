@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { DEMO_SCOUT_TOKEN } from "@/lib/family";
+import { getSiteOrigin } from "@/lib/site";
 
 /**
  * AUDIT OPS-03 and FE-07 — two things that were fixed quietly and could come
@@ -59,5 +60,22 @@ describe("nothing on the storefront still calls itself a placeholder", () => {
       read(f).includes("Milestone 2")
     );
     expect(offenders).toEqual([]);
+  });
+});
+
+describe("nothing hands out the hosting platform's address", () => {
+  it("builds share and referral links from the brand's own domain", () => {
+    // Two dashboard cards hard-coded raypuenpublishing.vercel.app as their
+    // server-render fallback, so a link a child copied could carry the platform
+    // host instead of puenpublishing.com. The same address reached a printed
+    // institutional covenant, where it would die the day the site is moved.
+    const offenders = sourceFiles("app", "components", "lib")
+      .filter((f) => !/\.test\.tsx?$/.test(f))
+      .filter((f) => read(f).includes("vercel.app"));
+    expect(offenders).toEqual([]);
+  });
+
+  it("has one authoritative origin to fall back to", () => {
+    expect(getSiteOrigin()).not.toContain("vercel.app");
   });
 });

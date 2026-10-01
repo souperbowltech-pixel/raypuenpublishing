@@ -5,6 +5,7 @@ import {
   REFERRAL_FRIEND_REQUIREMENT,
   REFERRAL_INVITE_CAPACITY,
 } from "@/lib/gamification";
+import { getSiteOrigin } from "@/lib/site";
 
 interface QuestCaptainBoxProps {
   /** How many of the invited friends (0–3) have coloured their Page 1. */
@@ -26,10 +27,9 @@ export default function QuestCaptainBox({
   showDemoControls = false,
 }: QuestCaptainBoxProps) {
   const [copied, setCopied] = useState(false);
-  const siteUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://raypuenpublishing.vercel.app";
+  // See GrandpaSponsorCard: a referral link must carry the brand's own domain,
+  // not the hosting platform's.
+  const siteUrl = typeof window !== "undefined" ? window.location.origin : getSiteOrigin();
   const referralLink = `${siteUrl}/start?ref=${referralCode}`;
 
   const required = REFERRAL_FRIEND_REQUIREMENT;

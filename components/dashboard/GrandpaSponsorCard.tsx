@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { GRANDPA_SPONSOR_PRICE } from "@/lib/gamification";
 import SponsorQRCode from "@/components/dashboard/SponsorQRCode";
+import { getSiteOrigin } from "@/lib/site";
 
 interface GrandpaSponsorCardProps {
   /** The child's public share code (GG-…); the private token never reaches the page. */
@@ -48,8 +49,9 @@ export default function GrandpaSponsorCard({ shareCode, scoutName, demoToken }: 
     currency: "USD",
   }).format(GRANDPA_SPONSOR_PRICE);
 
-  const origin =
-    typeof window !== "undefined" ? window.location.origin : "https://raypuenpublishing.vercel.app";
+  // Never the hosting platform's own host name: this link is copied into
+  // messages and printed on paper, and that address dies the day the site moves.
+  const origin = typeof window !== "undefined" ? window.location.origin : getSiteOrigin();
   const sponsorLink = `${origin}/sponsor?${demoToken ? `token=${encodeURIComponent(demoToken)}` : `code=${encodeURIComponent(shareCode)}`}${
     scoutName ? `&scout=${encodeURIComponent(scoutName)}` : ""
   }`;

@@ -3,7 +3,9 @@
 **Date:** Monday, September 14, 2026  
 **Client:** Ray Puen (Regency Press / Puen Publishing / New Life Mission Board, Inc.)  
 **Lead Engineer:** Huzaifah  
-**Live Production URL:** [https://raypuenpublishing.vercel.app](https://raypuenpublishing.vercel.app)  
+**Live Production URL:** [https://puenpublishing.com](https://puenpublishing.com) — the
+`raypuenpublishing.vercel.app` deployment still answers, but it is the hosting platform's
+address and must never appear in print or in a link given to a customer.  
 **GitHub Repository:** `https://github.com/souperbowltech-pixel/raypuenpublishing` (Branch: `main`)
 
 ---
