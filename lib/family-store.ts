@@ -31,6 +31,15 @@ export type RegisterResult =
 interface LocalFamily { id: string; email: string; scoutToken: string; shareCode: string; firstName: string; referredBy?: string }
 interface LocalStore { families: LocalFamily[]; sessions: Record<string, string> }
 
+/**
+ * Local file and in-memory fallback store for family registrations and sessions.
+ *
+ * NOTE: this state is per-instance (per serverless lambda) with LOCAL_FILE
+ * beside it. It is a development convenience and a last-resort cushion when
+ * Supabase is unavailable, not durable storage. When two instances diverge
+ * under traffic, they mutate disjoint copies, causing a child's progress or
+ * session to appear to reset depending on which instance answers the next request.
+ */
 const LOCAL_FILE = path.join(process.cwd(), 'data', 'families.json');
 const memory: LocalStore = { families: [], sessions: {} };
 

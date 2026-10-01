@@ -85,7 +85,15 @@ export function deriveScoutFields(s: ScoutInput): PersistentScoutState {
   };
 }
 
-// In-memory fallback map (handles serverless environments where fs is read-only)
+/**
+ * In-memory fallback map (handles serverless environments where fs is read-only).
+ *
+ * NOTE: this is per-instance (per serverless lambda) state held in memory. It
+ * is a development convenience and a last-resort cushion when the database is
+ * unavailable, not durable storage. Two concurrent requests answered by
+ * different instances mutate disjoint copies, so a child's progress can appear
+ * to reset depending on which instance takes the next request.
+ */
 const memoryStore: Record<string, PersistentScoutState> = {
   [DEMO_SCOUT_TOKEN]: deriveScoutFields({
     token: DEMO_SCOUT_TOKEN,
@@ -412,18 +420,22 @@ async function updateScoutInSupabase(
     const outcome = await writeScoutRow(next, expectedUpdatedAt);
 
     if (outcome.kind === 'written' || outcome.kind === 'written-without-new-columns') {
-      const saved = mirrorLocally(next);
+      // When the database accepts all columns written, there is no need to mirror locally.
+      // On Vercel the filesystem is read-only so the write fails anyway; where it
+      // succeeds it leaves a stale local copy that a later fallback read might serve.
+      // On the error, never-landed, and dropped-columns paths, the local copy is the
+      // only copy where unsaved state survives.
       if (partial.completedPages !== undefined && next.completedPages.includes(1) && next.referredBy) {
         void recomputeReferrerProgress(next.referredBy);
       }
       if (outcome.kind === 'written') {
-        return { state: saved, persisted: true };
+        return { state: next, persisted: true };
       }
-      if (!needsNewColumns) return { state: saved, persisted: true };
+      if (!needsNewColumns) return { state: next, persisted: true };
       // The sponsorship/referral value this call existed to store was dropped.
       const error = 'scout_profiles is missing the friends_completed/book3_sponsored columns';
       reportDbProblem('Scout progress partially saved: ' + error);
-      return { state: saved, persisted: false, error };
+      return { state: mirrorLocally(next), persisted: false, error };
     }
 
     if (outcome.kind === 'error') {

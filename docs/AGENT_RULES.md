@@ -71,10 +71,19 @@ reason). Every rule below is there to stop the fifth.
 
 ## 5. Git
 
-- **Do not commit. Do not push. Do not create a branch or a tag. Do not deploy.** Leave
-  your work in the working tree exactly as it stands; it is reviewed before it lands.
-- Do not run `git checkout`, `git reset`, `git stash`, `git clean`, or anything else that
-  discards work.
+- Commit only after tsc, lint and the full suite all exit 0, and after every
+  mutation in the task has been run and recorded.
+- One commit per task. Never mix two backlog items in one commit.
+- Message format: a short subject line in the existing style of this repo's
+  log - read `git log -8` first and match it. Then a body that says what was
+  wrong, why it mattered, and which mutations were run against it. Do not
+  write a bullet list of files changed; the diff already says that.
+- End every commit message with exactly this line:
+      Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+- Push to origin main.
+- Still never: `git checkout`, `git reset`, `git stash`, `git clean`, force
+  push, or amend someone else's commit.
+- Still never run `npm run build`.
 
 ## 6. The code itself
 
