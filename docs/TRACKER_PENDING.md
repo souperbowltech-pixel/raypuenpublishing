@@ -40,6 +40,32 @@ enumeration on registration), SEC-06 (the demo profile is a public write target)
 discloses infrastructure detail), FE-05, FE-06 (lightbox focus), PERF-01, OPS-04.
 Then A6, the Oct 4 delivery.
 
+### 1 Oct — FE-06 and FE-05, with a second agent doing the typing
+
+Work is now split: Antigravity makes the change under `docs/AGENT_RULES.md`, and it is verified
+here against the working tree rather than against its own report.
+
+- **FE-06 — the Lightbox holds focus.** Focus moves into the dialog on open and back to the
+  thumbnail on close; Tab and Shift+Tab cycle inside it. The index arithmetic is pure, in
+  `lib/focus-trap.ts`, because this repo's test environment is plain Node with no DOM and none
+  may be added.
+  *Worth remembering:* the first round's six tests covered the arithmetic and nothing else — the
+  whole Tab branch could be deleted from the component with the suite still green.
+  `components/ui/Lightbox.test.tsx` was added for that, and two of its mutations survived the
+  first attempt (`e.shiftKey` not passed through, and the query widened to the whole document).
+  `docs/AGENT_RULES.md` now ends every task with "delete your own change and watch the suite go
+  red".
+- **FE-05 — "Dispatched" cannot be claimed any more.** `lib/fulfillment.ts` owns
+  `PRINT_FULFILLMENT_LIVE`, `DISPATCH_ENDPOINT` (null — the route does not exist) and
+  `dispatchPrintOrder`, modelled on `lib/email.ts`: a 10s deadline, and `dispatched: true` only
+  when the printer returns a non-empty order reference. The card awaits it and prints that
+  reference, so flipping the flag on its own can no longer tell a family their book is being
+  printed. Six independent mutations were run against it here, including throwing the whole
+  component change away; all failed the suite.
+
+**229 tests pass.** Still open in A5: SEC-03 and SEC-06 (both deliberately deferred, reasons
+below), OPS-03, FE-07, OPS-04, PERF-01. Then A6, the Oct 4 delivery.
+
 ### 29-30 Sept — A1, A4 and A3 done
 
 - [x] **A1 — email exists** (`148d7a1`, `f395eb0`). `lib/email.ts` speaks to Resend directly, with an

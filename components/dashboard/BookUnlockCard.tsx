@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-
-/**
- * Automatic print-and-ship is switched on once IngramSpark is connected. Until
- * then the card never collects an address it can't use or claims a dispatch
- * that didn't happen: it tells the family the free book is reserved.
- */
-const PRINT_FULFILLMENT_LIVE = false;
+import {
+  PRINT_FULFILLMENT_LIVE,
+  dispatchPrintOrder,
+  type ShippingAddress,
+  type DispatchOutcome,
+} from "@/lib/fulfillment";
 
 interface BookUnlockCardProps {
   scoutName: string;
@@ -56,7 +55,8 @@ const COPY = {
 
 export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCardProps) {
   const copy = COPY[bookNumber];
-  const [addressConfirmed, setAddressConfirmed] = useState(false);
+  const [dispatch, setDispatch] = useState<DispatchOutcome | null>(null);
+  const [sending, setSending] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     recipient: "",
     addressLine1: "",
@@ -65,9 +65,15 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
     zip: "",
   });
 
-  const handleConfirmShipping = (e: React.FormEvent) => {
+  const handleConfirmShipping = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAddressConfirmed(true);
+    setSending(true);
+    try {
+      const result = await dispatchPrintOrder(shippingAddress, bookNumber);
+      setDispatch(result);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -117,7 +123,7 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
               you at no cost.
             </p>
           </div>
-        ) : !addressConfirmed ? (
+        ) : !dispatch?.dispatched ? (
           <form onSubmit={handleConfirmShipping} className="mt-5 space-y-4">
             <p className="text-sm font-semibold text-ink">
               Please confirm the shipping destination for Scout <span className="text-clay font-bold">{scoutName || "Explorer"}</span>:
@@ -183,9 +189,17 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
               </div>
             </div>
 
+            {dispatch && !dispatch.dispatched && (
+              <p className="text-sm font-semibold text-clay">{dispatch.message}</p>
+            )}
+
             <div className="pt-2">
-              <button type="submit" className="btn-primary w-full sm:w-auto text-base">
-                {copy.cta}
+              <button
+                type="submit"
+                disabled={sending}
+                className="btn-primary w-full sm:w-auto text-base"
+              >
+                {sending ? "Sending..." : copy.cta}
               </button>
             </div>
           </form>
@@ -202,7 +216,7 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
                   <strong>{shippingAddress.recipient}</strong> at {shippingAddress.addressLine1}, {shippingAddress.city}, {shippingAddress.state} {shippingAddress.zip}.
                 </p>
                 <p className="mt-2 text-xs font-bold text-spruce">
-                  Tracking &amp; confirmation will be sent to the Scout Captain email. Total billed: {copy.gifted}.
+                  Order reference {dispatch.reference}. Tracking &amp; confirmation will be sent to the Scout Captain email. Total billed: {copy.gifted}.
                 </p>
               </div>
             </div>
