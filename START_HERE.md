@@ -126,3 +126,9 @@ If the documents and `git log` disagree with anybody's memory, the repository wi
 > `RAY_CLIENT_COMMUNICATION_LOG.md` and `WAITING_ON_RAY.md` in the parent folder.
 > Check `https://puenpublishing.com/api/health`. Then tell me the current state in five lines and
 > what you think the next task should be — do not start building until I answer.
+
+## Rules for agents
+
+If you are an agent about to change a file in this repository, read
+[docs/AGENT_RULES.md](docs/AGENT_RULES.md) first. It sets the scope, the test standard
+(every new test must be proven able to fail), and the one command you must never run.
