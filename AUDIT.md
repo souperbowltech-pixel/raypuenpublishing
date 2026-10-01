@@ -105,7 +105,7 @@ None of these require Ray's input to fix; all are in code we already control.
 | OPS-04 | MEDIUM | Code Health | Print-vendor docs mismatch: `.env.local` has Lulu vars, README/.env.example say IngramSpark, neither is wired into code | .env.local (names only); README.md:5-7; .env.example:32-35 | S | MEDIUM | **RESOLVED 2026-10-01** — vendor confirmed: Ray's own directive (`RAY_DIRECTIVES_STATUS.md:56`) says drop Lulu, use IngramSpark. No mismatch remains in the repository: `README.md` names no vendor, `.env.example:29-31` says IngramSpark, nothing reads `process.env.LULU_*`, and `lib/lulu.ts` is gone. The only remnant is three dead `LULU_*` names in the untracked `.env.local`, which is the operator's to delete — and whose values are already on the rotate list in `PROJECT_STATUS_AND_HANDOVER_REPORT.md:19` |
 | OPS-05 | MEDIUM | Ops | No structured alerting beyond an optional webhook URL; several failure paths only `console.error` | lib/alerts.ts:14-15; lib/family-store.ts:153,165 | M | HIGH | OPEN |
 | SEC-03 | LOW | Security | Account enumeration via family-registration error message/status code | app/api/family/register/route.ts:38-46 | S | HIGH | OPEN |
-| SEC-04 | LOW | Security | Retail checkout quantity has no upper bound and silently coerces invalid input to 1 instead of rejecting | app/api/checkout/retail/route.ts:22-23 | S | HIGH | OPEN |
+| SEC-04 | LOW | Security | Retail checkout quantity has no upper bound and silently coerces invalid input to 1 instead of rejecting | app/api/checkout/retail/route.ts:22-23 | S | HIGH | **FIXED** — verified 2026-10-01: whole number bounds (1–50) and 400 rejection were implemented in commit 7dad223; pinned by `app/api/checkout/retail/route.test.ts` |
 | SEC-05 | LOW | Security | Customer email + scout token written to logs and the outbound alert webhook | app/api/webhooks/stripe/route.ts:42,87,92-97 | S | HIGH | **FIXED 2026-09-30** — `lib/redact.ts` redacts both before anything is logged or POSTed |
 | SEC-06 | LOW | Security | Demo token's shared record is an unauthenticated public write target | lib/scout-access.ts:14-18; lib/scout-store.ts:84-94 | S | HIGH | OPEN |
 | SEC-07 | LOW | Security | `/api/health` discloses infrastructure fingerprinting details, unauthenticated | app/api/health/route.ts; lib/supabase.ts:39-69 | S | HIGH | **FIXED 2026-09-30** — a stranger gets the verdict and the check names; the host, key kind and database errors need the admin cookie or key |
@@ -692,7 +692,7 @@ the "continue where you left off" case out-of-band via email instead of in the H
 ---
 
 ### SEC-04 — Unbounded, silently-coerced retail checkout quantity
-**Severity:** LOW · **Category:** Security · **Effort:** S · **Confidence:** HIGH
+**Severity:** LOW · **Category:** Security · **Effort:** S · **Confidence:** HIGH · **Status:** FIXED (verified 2026-10-01)
 
 **Location:** `app/api/checkout/retail/route.ts:22-23`
 
@@ -704,7 +704,7 @@ instead of being rejected.
 Stripe itself would reject them); the silent coercion is also inconsistent with this codebase's
 own "fail loudly" principle used elsewhere (webhook, health check).
 
-**Fix:** Cap `quantity` to a sane maximum (e.g. 50) and return 400 above it or for invalid input.
+**Fix:** Cap `quantity` to a sane maximum (e.g. 50) and return 400 above it or for invalid input. (Verified 2026-10-01: implemented in commit `7dad223`; pinned by `app/api/checkout/retail/route.test.ts`).
 
 ---
 
