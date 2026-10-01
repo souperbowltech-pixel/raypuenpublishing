@@ -89,7 +89,7 @@ None of these require Ray's input to fix; all are in code we already control.
 | FE-02 | HIGH | Frontend | Dashboard silently shows zeroed progress on fetch failure; optimistic sticker toggle can drift from server state | app/dashboard/book2/page.tsx:42-98 | M | HIGH | **FIXED 2026-09-23** |
 | OPS-01 | HIGH | Ops | No CI — quality gate only exists as a gitignored local hook | (absence of) .github/workflows; .gitignore:34 | S | HIGH | OPEN |
 | OPS-02 | HIGH | Code Health | README.md describes a stale "Milestone 1, stub checkout" state | README.md:1-8,53-56,137-153 | S | HIGH | OPEN |
-| TEST-02 | HIGH | Tests | Business-critical lib logic (scoring, unlock, auth boundary, real charged pricing tiers) untested; test effort instead sits on dead code | lib/scout-store.ts, lib/scout-access.ts, lib/gamification.ts, lib/family-store.ts, lib/pricing.ts:SPONSOR_TIERS | L | HIGH | PARTIAL — `deriveScoutFields` thresholds fully covered; `resolveScoutAccess`, `gradeQuiz`, `SPONSOR_TIERS`, `family-store` still open |
+| TEST-02 | HIGH | Tests | Business-critical lib logic (scoring, unlock, auth boundary, real charged pricing tiers) untested; test effort instead sits on dead code | lib/scout-store.ts, lib/scout-access.ts, lib/gamification.ts, lib/family-store.ts, lib/pricing.ts:SPONSOR_TIERS | L | HIGH | **FIXED** — verified 2026-10-01: `deriveScoutFields` in `lib/scout-store.test.ts`, `SPONSOR_TIERS` in `lib/pricing.test.ts`, `resolveScoutAccess` auth boundary in `lib/scout-access.test.ts`, and `gradeQuiz` scoring in `lib/gamification.test.ts` |
 | SEC-01 | MEDIUM | Security | Stripe success/cancel URL falls back to an unvalidated client `Origin` header | app/api/checkout/{retail,sponsor,wholesale}/route.ts | S | HIGH | OPEN |
 | SEC-02 | MEDIUM | Security | Rate limiter is per-instance and its IP extraction trusts a spoofable header | lib/rate-limit.ts:15,41-49 | M | HIGH | OPEN |
 | BUG-03 | MEDIUM | Correctness | MailerLite sync fires twice per order with no idempotency guard | app/checkout/success/page.tsx:16-46; app/api/webhooks/stripe/route.ts:108-130 | S | MEDIUM | **FIXED 2026-09-23** (duplicate sync removed from the success page; the webhook is now the single source) |
@@ -386,6 +386,12 @@ untested, while real test investment sits on a component that isn't wired into a
 
 **Fix:** Add unit tests for `deriveScoutFields` and `resolveScoutAccess` first (pure functions,
 same style as `pricing.test.ts`), then `SPONSOR_TIERS`/wholesale checkout and webhook idempotency.
+
+**Resolution (2026-10-01):** Unit tests now pin all business-critical lib logic:
+- `deriveScoutFields` scoring thresholds, quiz pass, and unlock state in `lib/scout-store.test.ts`.
+- `SPONSOR_TIERS` pricing tiers in `lib/pricing.test.ts`.
+- `resolveScoutAccess` demo profile vs. family session authorization boundary and cookie management in `lib/scout-access.test.ts`.
+- `gradeQuiz` server-side comprehension grading and question structure in `lib/gamification.test.ts`.
 
 ---
 
