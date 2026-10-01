@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import type { GalleryImage } from "@/lib/book";
+import { FOCUSABLE_SELECTOR, nextFocusIndex } from "@/lib/focus-trap";
 
 interface LightboxProps {
   images: GalleryImage[];
@@ -17,6 +18,7 @@ interface LightboxProps {
  */
 export function Lightbox({ images, index, onClose, onNavigate }: LightboxProps) {
   const isOpen = index !== null;
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const goPrev = useCallback(() => {
     if (index === null) return;
@@ -31,20 +33,48 @@ export function Lightbox({ images, index, onClose, onNavigate }: LightboxProps) 
   useEffect(() => {
     if (!isOpen) return;
 
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowLeft") goPrev();
-      else if (e.key === "ArrowRight") goNext();
-    }
+    const previous = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus();
 
-    document.addEventListener("keydown", onKey);
     // Prevent background scroll while the lightbox is open.
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
+      if (previous && document.contains(previous)) {
+        previous.focus();
+      }
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onClose();
+      } else if (e.key === "ArrowLeft") {
+        goPrev();
+      } else if (e.key === "ArrowRight") {
+        goNext();
+      } else if (e.key === "Tab" && dialogRef.current) {
+        const list = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+        );
+        const current = list.indexOf(document.activeElement as HTMLElement);
+        const next = nextFocusIndex(list.length, current, e.shiftKey);
+        if (next >= 0) {
+          e.preventDefault();
+          list[next].focus();
+        }
+      }
+    }
+
+    document.addEventListener("keydown", onKey);
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
     };
   }, [isOpen, onClose, goPrev, goNext]);
 
@@ -53,6 +83,8 @@ export function Lightbox({ images, index, onClose, onNavigate }: LightboxProps) 
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label="Illustration preview"
