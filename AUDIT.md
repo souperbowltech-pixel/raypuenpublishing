@@ -82,7 +82,7 @@ None of these require Ray's input to fix; all are in code we already control.
 |---|---|---|---|---|---|---|---|
 | BUG-01 | CRITICAL | Correctness | `updateScoutAsync` reports success even when the DB write fails | lib/scout-store.ts:248-313 | M | HIGH | **FIXED 2026-09-23** |
 | FE-01 | CRITICAL | Frontend | Checkout success page confirms payment/dispatch with no payment-status check | app/checkout/success/page.tsx:17-77 | S | HIGH | **FIXED 2026-09-23** |
-| TEST-01 | CRITICAL | Tests | Zero test coverage for all 12 API routes, including the Stripe webhook | app/api/**/route.ts | L | HIGH | PARTIAL — scout-store + checkout-status covered (17 new tests, mutation-verified); webhook route tests still open |
+| TEST-01 | CRITICAL | Tests | Zero test coverage for all 12 API routes, including the Stripe webhook | app/api/**/route.ts | L | HIGH | **FIXED** — verified 2026-10-01: tests now cover Stripe webhook (`app/api/webhooks/stripe/route.test.ts`), all checkout routes (`wholesale`, `retail`, `sponsor`, `sponsor/confirm`, `patrol`, `guide`), family auth lifecycle (`app/api/family/routes.test.ts`), scout progress routes (`app/api/scout/routes.test.ts`), and health diagnostics (`app/api/health/route.test.ts`) |
 | BUG-02 | HIGH | Correctness | Read-modify-write race on scout progress can lose updates | lib/scout-store.ts:252-263; app/dashboard/book2/page.tsx:91-98 | L | HIGH | **FIXED 2026-09-23** (optimistic concurrency + retry) |
 | API-01 | HIGH | API/Integration | Success page blocks on Stripe+MailerLite with no timeout — can hang | app/checkout/success/page.tsx:17-46; lib/stripe.ts; lib/mailerlite.ts | M | HIGH | PARTIAL — Stripe timeout added and the blocking MailerLite call removed; MailerLite/Supabase timeouts still open (BUG-04) |
 | API-02 | HIGH | API/Integration | Wholesale success copy claims an invoice/email was sent — not implemented | app/checkout/success/page.tsx:62 | M | HIGH | **FIXED 2026-09-23** — Stripe `invoice_creation` enabled on the wholesale session, so the claim is now true. ⚠️ Depends on "Email finalized invoices" being ON in the Stripe dashboard (Settings → Billing → Invoices) — confirm before launch |
@@ -229,6 +229,13 @@ reaches production.
 **Fix:** At minimum, add integration tests for: webhook signature rejection, one
 `checkout.session.completed` test per `order_type` (asserting the order row and, for Grandpa
 sponsorship, the unlock), and the family register → session-cookie → `/api/family/me` round trip.
+
+**Resolution (2026-10-01):** Comprehensive test suites now cover all checkout, payment, auth, scout progress, and diagnostic API routes:
+- Stripe webhook signature, idempotency, retry, and unlock in `app/api/webhooks/stripe/route.test.ts`
+- All money-handling checkout routes: wholesale (`app/api/checkout/wholesale/route.test.ts`), retail (`app/api/checkout/retail/route.test.ts`), sponsor (`app/api/checkout/sponsor/route.test.ts`), sponsor-confirm (`app/api/checkout/sponsor/confirm/route.test.ts`), patrol bundle (`app/api/checkout/patrol/route.test.ts`), and guide (`app/api/checkout/guide/route.test.ts`)
+- Family account registration, session cookie handling, `/api/family/me`, and logout in `app/api/family/routes.test.ts`
+- Scout state non-disclosure, progress update sanitization, server-side derivation, and save-failure 503 rollbacks in `app/api/scout/routes.test.ts`
+- Infrastructure health check and SEC-07 privacy boundary in `app/api/health/route.test.ts`
 
 ---
 

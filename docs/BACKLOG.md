@@ -20,12 +20,7 @@ ago. Where the two disagree, this file is right and `AUDIT.md` is being correcte
 Each item says what is wrong, why it matters, and where it lives. The order is by what a real
 customer or a real child would feel first, not by what is easiest.
 
-### 1. TEST-01 - eleven of twelve API routes have no tests
-
-Only `app/api/webhooks/stripe/route.test.ts` exists. The checkout routes come next, because they
-are the ones that move money.
-
-### 2. OPS-05 - some failures are only ever a console line
+### 1. OPS-05 - some failures are only ever a console line
 
 `lib/alerts.ts:14-15`, `lib/family-store.ts:153,165`. `lib/notifications.ts` and `lib/email.ts`
 now exist, so these paths finally have somewhere real to report to.
@@ -116,5 +111,6 @@ Verified in the code on 1 October 2026, whatever the status column in `AUDIT.md`
 | SEC-04 | Retail quantity capped at 1..50, invalid values rejected with 400 (verified 2026-10-01: implemented in commit `7dad223`; pinned by `app/api/checkout/retail/route.test.ts`) |
 | SEC-08 | Wholesale metadata length capped for institution name, contact, phone, and shipping address fields (verified 2026-10-01: institution/contact/phone capped in commit `7dad223`; shipping address capped in `app/api/checkout/wholesale/route.ts`; pinned by `app/api/checkout/wholesale/route.test.ts`) |
 | TEST-02 | Business logic tested: `deriveScoutFields` (`lib/scout-store.test.ts`), `SPONSOR_TIERS` (`lib/pricing.test.ts`), `resolveScoutAccess` authorization boundary (`lib/scout-access.test.ts`), and `gradeQuiz` scoring (`lib/gamification.test.ts`) |
+| TEST-01 | All API routes tested: Stripe webhook, all checkout routes (wholesale, retail, sponsor, sponsor-confirm, patrol, guide), family auth lifecycle (register, me, logout), scout progress (state, update), and health diagnostics |
 
 `lib/copy-hygiene.test.ts` fails if OPS-03, FE-07 or the link rule is ever undone.
