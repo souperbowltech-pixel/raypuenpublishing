@@ -56,6 +56,14 @@ reason). Every rule below is there to stop the fifth.
   4. Run again and record the exit code (expect 0).
   Report the exact mutation you made and both exit codes. Use exit codes, not a
   screenshot of output — colour escape codes make the text unreliable.
+- **Test the fix, not only a helper you extracted.** Moving logic into a pure function and
+  testing that proves the arithmetic is right. It proves nothing about whether the component
+  or route still calls it. On FE-06 the entire keyboard branch could be deleted from the
+  component and all six new tests stayed green.
+  So, as a final step on every task: **delete your whole change from the file it was meant to
+  fix**, run `npx vitest run`, and record the exit code. If it is still 0, your tests do not
+  guard the fix and the task is not finished. Restore the file and report that exit code in
+  the MUTATION PROOF section alongside the others.
 - Prefer a test that **exercises behaviour** over one that reads source for a string.
   Three tests in this repo passed with the feature deleted because they only searched
   text. If a string check is genuinely the only option, say so in the report and write a
