@@ -74,6 +74,7 @@ reason). Every rule below is there to stop the fifth.
 - Commit only after tsc, lint and the full suite all exit 0, and after every
   mutation in the task has been run and recorded.
 - One commit per task. Never mix two backlog items in one commit.
+- Never `git add -A` or `git add .` in this repository; stage files by name, every time.
 - Message format: a short subject line in the existing style of this repo's
   log - read `git log -8` first and match it. Then a body that says what was
   wrong, why it mattered, and which mutations were run against it. Do not

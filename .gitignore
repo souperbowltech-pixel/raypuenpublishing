@@ -37,5 +37,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Raw client hand-offs (kept locally, not in the repo)
+# Raw client hand-offs and conversation logs (kept locally, never in the repo)
 /files from ray/
+docs/sourceoftruth.txt
+sourceoftruth*
