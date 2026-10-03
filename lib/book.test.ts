@@ -57,5 +57,14 @@ describe("the granddaughters' credit", () => {
   it("sets book dimensions to confirmed 8.5 x 11 US Letter format", () => {
     expect(book1.dimensions).toBe('8.5" × 11" (US Letter, softcover)');
   });
+
+  it("points to an existing cover image file in the public directory", () => {
+    expect(book1.coverImage.src).toBe("/book1-cover.jpg");
+    const publicPath = path.resolve(__dirname, "..", "public", book1.coverImage.src.replace(/^\//, ""));
+    expect(fs.existsSync(publicPath)).toBe(true);
+  });
 });
+
+
+
 

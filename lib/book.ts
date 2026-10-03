@@ -47,7 +47,7 @@ export const book1: BookContent = {
   pageCount: 32,
   dimensions: '8.5" × 11" (US Letter, softcover)',
   coverImage: {
-    src: "/placeholders/cover.svg",
+    src: "/book1-cover.jpg",
     alt: "Front cover of The Geezy Goober's Guide to Icky Sfand",
   },
   activeEdition: {
