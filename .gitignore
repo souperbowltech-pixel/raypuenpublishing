@@ -41,3 +41,4 @@ next-env.d.ts
 /files from ray/
 docs/sourceoftruth.txt
 sourceoftruth*
+/delivery_screenshots/
