@@ -58,20 +58,20 @@ export const book1: BookContent = {
   },
   gallery: [
     {
-      src: "/placeholders/interior-1.svg",
-      alt: "Interior page 1 — meadow scene",
+      src: "/interior/interior-1.jpg",
+      alt: "Book 1 interior — The Woods of Twist-and-Twirl",
     },
     {
-      src: "/placeholders/interior-2.svg",
-      alt: "Interior page 2 — friendly fox",
+      src: "/interior/interior-2.jpg",
+      alt: "Book 1 interior — The Geezy Goober walking",
     },
     {
-      src: "/placeholders/interior-3.svg",
-      alt: "Interior page 3 — under the sea",
+      src: "/interior/interior-3.jpg",
+      alt: "Book 1 interior — The Geezy Goober saying Icky sfand",
     },
     {
-      src: "/placeholders/interior-4.svg",
-      alt: "Interior page 4 — hot air balloon",
+      src: "/interior/interior-4.jpg",
+      alt: "Book 1 interior — Shaking head in confusion",
     },
   ],
 };
