@@ -124,3 +124,12 @@ cited code directly, merged overlapping findings, and wrote `AUDIT.md`. No code 
 audit was read-only per `CLAUDE.md` section 12. Also committed `CLAUDE.md`/`ARCHITECTURE.md`/
 `PROGRESS.md` to git, and created `RAY_CLIENT_COMMUNICATION_LOG.md` (parent folder) to track
 client communication.
+
+## Phase 4 (2026-10-09) — printable sticker sheet
+
+| Item | Change |
+|---|---|
+| Sticker sheet | `public/stickers.pdf`, served at `puenpublishing.com/stickers.pdf`. One US Letter page at 300 DPI carrying all 19 virtue badges, numbered, with a 1 inch gap and dashed cutting guides around each so a parent can cut them out for gummed paper. The address is printed in the Parent's Guide, so **the path must never change** — when badges 20 to 25 arrive from Aymen, replace the file at the same path rather than adding a second one. Generated from `public/stickers/slot-01..19.png`. |
+
+**Open:** the book is moving from 19 virtues to 25. Six more badges are owed by Aymen
+(the guide already names them). When they land, regenerate this sheet at the same path.
