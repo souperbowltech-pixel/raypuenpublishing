@@ -20,7 +20,10 @@ const sendPatrolReceipt = vi.fn();
 const addSubscriberToMailerLite = vi.fn();
 const alertFailure = vi.fn();
 
-vi.mock("@/lib/stripe", () => ({ stripe: stripeMock }));
+vi.mock("@/lib/stripe", () => ({
+  // The routes now refuse to run on the build-time placeholder key.
+  isStripeConfigured: () => true,
+  STRIPE_NOT_CONFIGURED_MESSAGE: "Payments are not configured. Please try again shortly.", stripe: stripeMock }));
 vi.mock("@/lib/orders", () => ({
   recordOrder: (...a: unknown[]) => recordOrder(...a),
   markOrder: (...a: unknown[]) => markOrder(...a),

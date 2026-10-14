@@ -8,6 +8,9 @@ const findScoutByShareCodeMock = vi.fn();
 const getOrCreateScoutAsyncMock = vi.fn();
 
 vi.mock("@/lib/stripe", () => ({
+  // The routes now refuse to run on the build-time placeholder key.
+  isStripeConfigured: () => true,
+  STRIPE_NOT_CONFIGURED_MESSAGE: "Payments are not configured. Please try again shortly.",
   stripe: {
     checkout: {
       sessions: {

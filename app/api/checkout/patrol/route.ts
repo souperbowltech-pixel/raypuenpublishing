@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { stripe, isStripeConfigured, STRIPE_NOT_CONFIGURED_MESSAGE } from "@/lib/stripe";
 import { PATROL_BUNDLE_PRICE } from "@/lib/pricing";
 import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
@@ -8,6 +8,16 @@ import { getSiteOrigin } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  // Never let the build-time placeholder key reach a paying customer: fail
+  // honestly instead of surfacing an opaque Stripe authentication error.
+  if (!isStripeConfigured()) {
+    console.error("[checkout/patrol] STRIPE_SECRET_KEY is not configured.");
+    return NextResponse.json(
+      { error: STRIPE_NOT_CONFIGURED_MESSAGE },
+      { status: 503 }
+    );
+  }
+
   const limit = rateLimit(`checkout-patrol:${clientIp(request)}`, 10, 60_000);
   if (!limit.ok) {
     return NextResponse.json(

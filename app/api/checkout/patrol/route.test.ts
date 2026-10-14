@@ -5,6 +5,9 @@ import { PATROL_BUNDLE_PRICE } from "@/lib/pricing";
 const createSessionMock = vi.fn();
 
 vi.mock("@/lib/stripe", () => ({
+  // The routes now refuse to run on the build-time placeholder key.
+  isStripeConfigured: () => true,
+  STRIPE_NOT_CONFIGURED_MESSAGE: "Payments are not configured. Please try again shortly.",
   stripe: {
     checkout: {
       sessions: {

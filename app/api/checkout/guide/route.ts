@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { stripe, isStripeConfigured, STRIPE_NOT_CONFIGURED_MESSAGE } from "@/lib/stripe";
 import { PARENTS_GUIDE_DIGITAL_PRICE, PARENTS_GUIDE_DIGITAL_LIVE } from "@/lib/pricing";
 import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
@@ -13,6 +13,16 @@ export async function POST(request: NextRequest) {
   if (!PARENTS_GUIDE_DIGITAL_LIVE) {
     return NextResponse.json(
       { error: "The digital Parent's Guide is not on sale yet." },
+      { status: 503 }
+    );
+  }
+
+  // Never let the build-time placeholder key reach a paying customer: fail
+  // honestly instead of surfacing an opaque Stripe authentication error.
+  if (!isStripeConfigured()) {
+    console.error("[checkout/guide] STRIPE_SECRET_KEY is not configured.");
+    return NextResponse.json(
+      { error: STRIPE_NOT_CONFIGURED_MESSAGE },
       { status: 503 }
     );
   }
