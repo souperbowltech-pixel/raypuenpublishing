@@ -43,14 +43,56 @@ with him present. An assistant never types a bank or tax identifier into a form.
 3. Stripe dashboard, turn the **Test mode** toggle **off**.
 4. Developers, API keys, copy the **Secret key** (`sk_live_...`).
 5. Developers, Webhooks, **Add endpoint**:
-   - URL: `https://puenpublishing.com/api/webhooks/stripe`
+   - URL: **`https://www.puenpublishing.com/api/webhooks/stripe`**
    - Event: **`checkout.session.completed`** only. Nothing else is handled
      (`app/api/webhooks/stripe/route.ts:39`), so subscribing to more just creates noise.
+
+   **The `www` is not optional, and leaving it off cost us a failed test on 19 October.** Both
+   `raypuenpublishing.vercel.app` and the bare `puenpublishing.com` answer a webhook POST with a
+   **308 redirect** to the www host. **Stripe does not follow redirects**, so it records a failure
+   and the event is never delivered. Verified by hand:
+
+   ```
+   raypuenpublishing.vercel.app/api/webhooks/stripe  -> 308
+   puenpublishing.com/api/webhooks/stripe            -> 308
+   www.puenpublishing.com/api/webhooks/stripe        -> 400 "Missing stripe-signature header"
+   ```
+
+   The 400 is the correct answer: the endpoint is alive and refusing an unsigned request.
 6. Copy that endpoint's **Signing secret** (`whsec_...`). **It is different from the test one.**
    Using the test secret against live traffic fails every signature check and silently drops
    every paid order.
 7. Vercel, Project, Settings, Environment Variables, set both values for **Production**.
 8. Vercel, Deployments, **Redeploy**. Environment changes do not apply to a running deployment.
+
+### 1.4b The $10 Patrol flow is now proven end to end. 20 October 2026.
+
+Open since September: the paid Patrol branch had unit tests but had never survived a real payment.
+It has now, in test mode, and it failed the first time for a reason worth keeping:
+
+**The webhook was pointed at `raypuenpublishing.vercel.app`, which answers a POST with a 308
+redirect. Stripe does not follow redirects**, so every event failed. The dashboard showed a 100%
+error rate that nobody had looked at. Changing the destination to the **www** host fixed it. See the
+box in step 5: the bare `puenpublishing.com` would have failed in exactly the same way.
+
+What the second attempt proved, all four links in the chain:
+
+| Step | Result |
+|---|---|
+| Payment | Taken by Stripe |
+| Webhook delivery | 200 |
+| `patrol_leaders` row and the hub page | Created, opens, tracker reads 0 / 3 |
+| Three gift codes | `GP-QR365V-1`, `-2`, `-3` |
+| Receipt email | **Delivered**, confirmed in the Resend log |
+
+**Had this not been tested, going live would have taken real money and created nothing.** No order
+row, no gift codes, no email, and a buyer left on "Your Patrol is being set up" forever, while the
+Stripe dashboard showed the payment as successful. That is the shape of failure that runs for months
+before anybody complains.
+
+The same webhook misconfiguration would have applied to retail, wholesale and sponsor orders.
+
+---
 
 ### 1.5 Proving it, which is not optional
 

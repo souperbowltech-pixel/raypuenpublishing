@@ -42,3 +42,7 @@ next-env.d.ts
 docs/sourceoftruth.txt
 sourceoftruth*
 /delivery_screenshots/
+
+# Local tooling and client-file analysis. Large, derived, and not part of the product.
+/.video-tools/
+/analysis/
