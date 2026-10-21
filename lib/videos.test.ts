@@ -25,8 +25,11 @@ const live = (over: Partial<VideoRow> = {}): VideoRow => ({
 });
 
 describe("VIDEO_SLUGS", () => {
-  it("is exactly the five addresses that go in the book", () => {
-    expect(VIDEO_SLUGS).toEqual(["v1", "v2", "v3", "v4", "v5"]);
+  it("is exactly the addresses that go in the book", () => {
+    // v1 to v5 are the story videos; v6 is the welcome film at the front.
+    // Every one of these is printed, so removing one breaks paper that is
+    // already in a child's hands.
+    expect(VIDEO_SLUGS).toEqual(["v1", "v2", "v3", "v4", "v5", "v6"]);
   });
 });
 
@@ -35,7 +38,7 @@ describe("isVideoSlug", () => {
     for (const slug of VIDEO_SLUGS) expect(isVideoSlug(slug)).toBe(true);
   });
 
-  it.each(["v0", "v6", "V1", "v1 ", " v1", "", "v1/../admin", "v1?x=1", "1", "videos"])(
+  it.each(["v0", "v7", "V1", "v1 ", " v1", "", "v1/../admin", "v1?x=1", "1", "videos"])(
     "rejects %j",
     (value) => {
       expect(isVideoSlug(value)).toBe(false);

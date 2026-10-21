@@ -2,10 +2,12 @@ import { supabase } from "@/lib/supabase";
 import { alertFailure } from "@/lib/alerts";
 
 /**
- * The five video addresses printed inside the colouring book.
+ * The video addresses printed inside the colouring book.
  *
- * `puenpublishing.com/v1` ... `/v5` go on paper — a QR code plus a typed line at
- * the bottom of a book page — so the addresses can never change. What plays
+ * `puenpublishing.com/v1` ... `/v6` go on paper — a QR code plus a typed line at
+ * the bottom of a book page — so the addresses can never change. v1 to v5 are the
+ * story videos; v6 is the welcome film, which sits at the foot of the opening page
+ * rather than at a section end. What plays
  * behind each one is a row in `public.videos`, so swapping a video is one edit in
  * the Supabase table editor: no code change, no deploy, no reprint.
  *
@@ -13,7 +15,7 @@ import { alertFailure } from "@/lib/alerts";
  * Every failure — no row, no table, no database, a bad id, a slow query —
  * resolves to the friendly "on its way" screen, never to a 404 or an error.
  */
-export const VIDEO_SLUGS = ["v1", "v2", "v3", "v4", "v5"] as const;
+export const VIDEO_SLUGS = ["v1", "v2", "v3", "v4", "v5", "v6"] as const;
 export type VideoSlug = (typeof VIDEO_SLUGS)[number];
 
 export type VideoProvider = "none" | "youtube" | "cloudflare" | "bunny" | "vimeo";
@@ -25,6 +27,7 @@ const DEFAULT_TITLE: Record<VideoSlug, string> = {
   v3: "Video 3",
   v4: "Video 4",
   v5: "Video 5",
+  v6: "Welcome",
 };
 
 /** Shape of a `public.videos` row as PostgREST returns it. */
