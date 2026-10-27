@@ -6,6 +6,136 @@ what we owe the client and what the operator must do by hand._
 
 ---
 
+## 0. 23 to 24 October 2026: Book 1 is not print ready, and the tiers do not cover printing
+
+Ray sent the corrected interior, the cover, the shipment letter and his IngramSpark screenshot in
+one day, and asked for approval on all of it. Nothing here is approved yet. Every item below was
+measured from the files, not judged by eye.
+
+### 0.1 The interior, `files from ray/231026/Book 1 complete (1).pdf`
+
+| Finding | Detail |
+|---|---|
+| **Copyright page is blank** | Page 3 carries the frame, the word Copyright and an empty ISBN rule. No notice, no year, no publisher, no rights reserved. The wording was sent on 15 Oct and never placed |
+| **35 pages, an odd count** | A perfect bound interior must be even. IngramSpark will reject it. Recommend 36, which also leaves room for the welcome square |
+| **No welcome video square** | Agreed on 21 Oct that `/v6` sits at the foot of the This Journey Belongs to page. That page has no frame |
+| **Resolution below spec** | 29 of 35 pages run 245 to 266 DPI against a 300 minimum. Page 31, which carries a QR frame, is **199 DPI** |
+| **Mixed colour spaces** | Pages 1, 10, 18, 25, 33, 34 are CMYK at 360 DPI. The other 29 are RGB at roughly 250. One file should be one colour space |
+| **Produced in Canva by "Aymane"** | The PDF metadata names Aymane as author, not Sarah. Every page is a flat image at its own arbitrary pixel size, so there is no text layer anywhere and no vector line art |
+
+Two places where the printed book promises what the system does not do:
+
+- **Page 34** says registering two friends unlocks Book 2 free. `BOOK2_GATE_CONFIG` opens Book 2 at
+  **700 points**; two friends earn **300**. The other 400 come from the quiz. A child following that
+  page exactly will not receive Book 2.
+- **The book has 25 character traits. `STICKER_SLOT_COUNT` is 19.** A child colouring all 25 pages
+  runs out of album slots at 19.
+
+**Good news worth keeping:** all six QR frames are drawn and correctly placed, Video 1 to 3 on the
+three Teamwork Challenge pages, Video 4 on Gratitude, Video 5 on the jingle page and registration on
+the Secret Scout Club page. The Teamwork Challenge page **is** the adult colouring page, which
+settles Sarah's question and confirms Ray was right.
+
+### 0.2 The cover, `files from ray/231026/book 1 cover 4k.png`
+
+| Finding | Detail |
+|---|---|
+| **The printed web address is the old one** | The Pay-It-Forward panel reads `raypuenpublishing.vercel.app/institutions`. It must be `puenpublishing.com/institutions`. This is permanent once printed |
+| **Cover title does not match the title page** | Cover: *Volume 1: The Search for the Magic Pen*. Interior title page: *The Geezy Goober's Guide to Icky Sfand, Volume 1*. These must agree, and must match the ISBN registration |
+| **Typo in the sales copy** | "to prevent by market bleed-through" should read marker bleed-through |
+| **Institutional text on the retail cover** | The Covenant panel tells the reader the volume "was fully sponsored and gifted to your local educational network" and that they may "retain 100% of the funds raised from selling this book". Print on demand has one cover per ISBN, so every retail buyer reads this |
+| **236 DPI** | 4096 x 2635 px. A 36 page wrap at 8.5 x 11 needs about **5202 x 3375** to reach 300 DPI |
+| **Not built on the IngramSpark template** | The proportions are close but not exact, and spine width depends on the final page count, which is still undecided. The cover cannot be finished before the interior count is fixed |
+| Ages claim | "Perfect for independent readers ages 3 to 7" contradicts the read-aloud line beside it. A three year old is not an independent reader |
+
+Correct as drawn: the blank spine is right at this page count, and the barcode sits on its own white
+panel as IngramSpark requires. ISBN **978-0-9795930-1-7** is on the artwork.
+
+### 0.3 The sponsor tiers do not cover the cost of printing
+
+Read from `lib/pricing.ts` on 23 Oct. Every tier prices a printed book at almost exactly two dollars:
+
+| Tier | Price | Books printed | Per book |
+|---|---|---|---|
+| 1 Community Seed | $40 | 20 | **$2.00** |
+| 2 Co-Op Multiplier | $200 | 96 | **$2.08**, plus a free copy posted to the sponsor |
+| 3 Kingdom Multiplier | $400 | 200 | **$2.00**, plus a free copy posted to the sponsor |
+
+Two dollars is below the old black and white estimate of $2.20, and that estimate predates the
+current specification. So **if the real print cost lands above $2.00, every sponsorship loses
+money**, and if it lands exactly on $2.00 then **nothing at all reaches the Nepal relief effort**,
+which is the whole premise of the page.
+
+This is larger than the $15 gift letter, because the tiers are live on the site today. All three
+need recalculating the moment the IngramSpark figure arrives.
+
+### 0.4 The entity proposal of 23 October. SUPERSEDED by 0.5, kept for the reasoning
+
+**This route was dropped on 24 October.** Read 0.5 for what was actually done.
+
+Ray proposed making **Phyto Science USA** the parent of Puen Publishing by a county filing, and
+using its $300,000 loss carryover while the 501(c)(3) is pending.
+
+A county filing of that kind is a **fictitious business name, not a subsidiary**. The result is that
+PSUSA is the seller trading as Puen Publishing: PSUSA's EIN in Stripe, PSUSA's bank account, PSUSA
+on the IngramSpark agreement. He has been told this and asked to confirm with his accountant whether
+the carryover is usable at entity level at all.
+
+**Consequence for the book:** the Letter from the Author tells the reader their purchase joined the
+rescue team. Under a commercial parent that is a sale which then supports the mission, so the
+sentence needs a light edit to avoid reading as a charitable donation.
+
+---
+
+### 0.5 24 October: the entity is final, and two things are now open
+
+**The entity is settled.** The IRS has issued a **new EIN** to **New Life Mission Network, Inc.**
+State filing done, federal nearly done. Phyto Science USA is out, and so is the earlier idea of a
+subsidiary borrowing a parent's number: this is a separate entity with its own.
+
+**The name has to be corrected in three places before anything is submitted.**
+
+| Where | What it must say |
+|---|---|
+| Copyright page | `Copyright © 2026 New Life Mission Network, Inc.`, and the publisher line as an imprint of the same. The wording sent on 23 Oct said **Board**, which is now wrong |
+| Stripe | Legal name New Life Mission Network, Inc., the new EIN, and a payout bank account **in that same name**. Do not tick the 501(c)(3) option until the determination letter arrives |
+| IngramSpark | Same name, same EIN |
+
+**The Covenant panel is resolved.** Ray had begun doubting Pay-It-Forward himself, on the sound
+ground that he cannot measure it beyond the second generation, and prefers selling to schools at a
+discount so they keep the retail proceeds. That model is already built at `/institutions`.
+
+Agreed principle, worth keeping for every future printed surface: **the cover carries only what
+stays true, and points at a page we can edit.** He accepted the replacement paragraph and sent it
+to Sarah. The two paragraphs of reasoning beneath it were for him, not for the panel, and he read
+that correctly.
+
+**🔴 Open and genuinely risky: who owns the illustrations.**
+
+The copyright page claims the whole book for New Life Mission Network, Inc. Sarah drew it. Unless
+she has **assigned copyright in writing**, or drew under a written work for hire agreement, the
+artwork's copyright is still hers and that line is not true.
+
+This surfaced sideways. Ray said Sarah has always refused to give her surname and proposed
+**deleting her credit altogether**. He was advised not to, since a single name credit is normal and
+removing it would be the stranger choice, and asked instead whether he holds anything in writing
+from her. He has not yet answered.
+
+**It should be settled before the book is printed, not after.** A one page assignment is cheap now
+and impossible to insist on once an ISBN is registered and copies exist. Note that an illustrator
+who will not give a surname is unlikely to have signed anything.
+
+**Also open at the close of 24 October:**
+
+- The three IngramSpark quantity runs, 1, 2 and 25. Ray will telephone them.
+- Shipping costs, which he cannot get out of IngramSpark yet.
+- Whether he accepts the classroom clause in the copyright wording.
+- How Sarah wishes to be credited.
+
+Ray resumes **Sunday 26 October**.
+
+---
+
 ## 1. Stripe: taking real payments
 
 ### 1.1 The gate, before anything else
