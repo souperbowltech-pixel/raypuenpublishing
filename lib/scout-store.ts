@@ -425,8 +425,13 @@ async function updateScoutInSupabase(
       // succeeds it leaves a stale local copy that a later fallback read might serve.
       // On the error, never-landed, and dropped-columns paths, the local copy is the
       // only copy where unsaved state survives.
+      // Awaited, not fired and forgotten. A serverless function can be frozen the
+      // instant it returns its response, so an unawaited promise here is a reward
+      // that sometimes never lands and nobody finds out until a parent writes in.
+      // The cost is one extra round trip, and only on the single request where a
+      // child colours page 1 having arrived through a friend's link.
       if (partial.completedPages !== undefined && next.completedPages.includes(1) && next.referredBy) {
-        void recomputeReferrerProgress(next.referredBy);
+        await recomputeReferrerProgress(next.referredBy);
       }
       if (outcome.kind === 'written') {
         return { state: next, persisted: true };
