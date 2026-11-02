@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
                 sku: BOOK_1_SKU,
               },
             },
-            unit_amount: Math.round(RETAIL_PRICE * 100), // $6.99 -> 699 cents
+            unit_amount: Math.round(RETAIL_PRICE * 100), // dollars to whole cents
           },
           quantity,
         },

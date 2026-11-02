@@ -226,7 +226,7 @@ The same webhook misconfiguration would have applied to retail, wholesale and sp
 
 ### 1.5 Proving it, which is not optional
 
-9. Place one real `$6.99` retail order with a real card.
+9. Place one real `$14.99` retail order with a real card.
 10. Check all four, not just the first:
     - Stripe shows the payment succeeded.
     - Stripe shows the webhook returned **200**, not 400. A 400 means the signing secret is wrong.

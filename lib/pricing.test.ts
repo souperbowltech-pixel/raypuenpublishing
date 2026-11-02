@@ -64,12 +64,12 @@ describe("SPONSOR_TIERS — the amounts institutions are really charged", () => 
 });
 
 describe("retail pricing", () => {
-  it("sells Book 1 at $6.99", () => {
-    expect(RETAIL_PRICE).toBe(6.99);
+  it("sells Book 1 at $14.99, the price Ray set on 29 October", () => {
+    expect(RETAIL_PRICE).toBe(14.99);
   });
 
   it("converts to whole cents for Stripe", () => {
-    expect(Math.round(RETAIL_PRICE * 100)).toBe(699);
+    expect(Math.round(RETAIL_PRICE * 100)).toBe(1499);
   });
 });
 

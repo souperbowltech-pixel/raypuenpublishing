@@ -71,8 +71,8 @@ before. These are the ones that matter, with where to verify each.
 
 | What he may say | What is actually true | Where to check |
 |---|---|---|
-| The coloring book is $6.99 | Correct | `RETAIL_PRICE` in `lib/pricing.ts` |
-| The $6.99 includes the Parent's Guide | **Wrong.** The Guide is not part of it | `lib/pricing.ts` |
+| The coloring book is $14.99 (was $6.99 until 2 Nov 2026) | Correct | `RETAIL_PRICE` in `lib/pricing.ts` |
+| The book price includes the Parent's Guide | **Wrong.** The Guide is not part of it | `lib/pricing.ts` |
 | The digital Parent's Guide is $29.97 | Correct price, but **it cannot be sold** - the PDF does not exist and the checkout is deliberately closed | `PARENTS_GUIDE_DIGITAL_LIVE = false`, and the three reopening conditions in `lib/pricing.ts:13-28` |
 | The $10 offer is three books | **Wrong.** It is three *gift memberships* to share | `app/guide/page.tsx:135-146` |
 | Three friends registering earns the Guide free | Correct, and it is the **printed** Guide | `app/guide/page.tsx:146` |

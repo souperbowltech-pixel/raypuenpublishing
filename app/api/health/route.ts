@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 const HEALTH_TOKEN = "HEALTH-CHECK";
 
 type Check = { ok: boolean; error?: string };
+type Db = NonNullable<typeof supabase>;
 
 /**
  * Every table check reads one row rather than asking for a HEAD count.
@@ -21,6 +22,89 @@ type Check = { ok: boolean; error?: string };
 
 function fail(error: { code?: string; message?: string } | null): Check {
   return { ok: false, error: [error?.code, error?.message].filter(Boolean).join(": ") || "unknown error" };
+}
+
+/**
+ * The whole check answers within this, whatever the database does.
+ *
+ * Each query already aborts after 8 seconds (lib/supabase.ts), but there used to
+ * be thirteen of them in a row, so an unreachable database held this route open
+ * for well over a minute and the caller got no answer at all. That is exactly
+ * when a health check is needed, so it now reports the database as unreachable.
+ * The reads run together, so a healthy database answers in about three round
+ * trips and six seconds is generous.
+ */
+const HEALTH_DEADLINE_MS = 6_000;
+
+/** One-row reads, each proving a table or column exists: [check name, table, columns]. */
+const READ_CHECKS: [string, string, string][] = [
+  ["scoutRead", "scout_profiles", "token"],
+  ["scoutNewColumns", "scout_profiles", "friends_completed, book3_sponsored"],
+  ["ordersTable", "orders", "stripe_session_id"],
+  // Family accounts (registration, sessions and the public share code).
+  ["familiesTable", "families", "id"],
+  ["familySessionsTable", "family_sessions", "token_hash"],
+  ["scoutFamilyColumns", "scout_profiles", "family_id, share_code"],
+  // The video addresses printed inside the book read from this table. The pages
+  // fall back to a waiting screen if it is missing, so this check is the only
+  // thing that would tell us the migration never reached production.
+  ["videosTable", "videos", "slug"],
+  // The referral column decides whether a real friend referral is recorded at
+  // all. `getScout` reads the row with select('*'), so a missing column is
+  // invisible there: registration keeps working and the referral is silently
+  // dropped. This check is the only thing that would catch it.
+  ["scoutReferralColumn", "scout_profiles", "referred_by_scout_token"],
+  // The Parent's Guide / Chief Scout Patrol funnel. Without these tables a paid
+  // Patrol cannot issue its gift codes and the free printed guide cannot be
+  // claimed or approved. patrol_gifts is keyed by the gift code, not an id.
+  ["patrolLeadersTable", "patrol_leaders", "id"],
+  ["patrolGiftsTable", "patrol_gifts", "code"],
+  ["guideApprovalsTable", "guide_approvals", "id"],
+];
+
+/**
+ * Fills `checks` in place, so a deadline that fires mid-way keeps what finished.
+ * Every query carries `signal`: once the deadline fires, nothing still in flight
+ * keeps a recovering database busy, and the test write is never sent late.
+ */
+async function runChecks(db: Db, checks: Record<string, Check>, signal: AbortSignal) {
+  const reads = READ_CHECKS.map(async ([name, table, columns]) => {
+    const result = await db.from(table).select(columns).limit(1).abortSignal(signal);
+    if (!signal.aborted) checks[name] = result.error ? fail(result.error) : { ok: true };
+  });
+
+  // Writing the Book 2 status also proves the status CHECK migration is applied,
+  // and reading it back proves the write really landed and is not served from a
+  // cached snapshot (the stale-progress bug fixed on Sept 22).
+  const writeAndReadBack = async () => {
+    const stamp = new Date().toISOString();
+    const write = await db
+      .from("scout_profiles")
+      .upsert(
+        { token: HEALTH_TOKEN, scout_name: "Health Check", status: "Unlock_Volume_2", updated_at: stamp },
+        { onConflict: "token" }
+      )
+      .abortSignal(signal);
+    if (signal.aborted) return;
+    if (write.error) {
+      checks.scoutWrite = fail(write.error);
+      return;
+    }
+    const back = await db
+      .from("scout_profiles")
+      .select("updated_at")
+      .eq("token", HEALTH_TOKEN)
+      .abortSignal(signal)
+      .maybeSingle();
+    if (signal.aborted) return;
+    // Postgres returns "+00:00" where JavaScript writes "Z": compare instants.
+    const readBack = back.data?.updated_at ? Date.parse(back.data.updated_at) : NaN;
+    checks.scoutWrite = readBack === Date.parse(stamp)
+      ? { ok: true }
+      : { ok: false, error: `wrote ${stamp} but read back ${back.data?.updated_at ?? "nothing"}` };
+  };
+
+  await Promise.all([...reads, writeAndReadBack()]);
 }
 
 /**
@@ -38,72 +122,25 @@ export async function GET(req: NextRequest) {
   const checks: Record<string, Check> = {};
 
   if (supabase) {
-    const read = await supabase.from("scout_profiles").select("token").limit(1);
-    checks.scoutRead = read.error ? fail(read.error) : { ok: true };
-
-    const cols = await supabase.from("scout_profiles").select("friends_completed, book3_sponsored").limit(1);
-    checks.scoutNewColumns = cols.error ? fail(cols.error) : { ok: true };
-
-    // Writing the Book 2 status also proves the status CHECK migration is applied,
-    // and reading it back proves the write really landed and is not served from a
-    // cached snapshot (the stale-progress bug fixed on Sept 22).
-    const stamp = new Date().toISOString();
-    const write = await supabase.from("scout_profiles").upsert(
-      { token: HEALTH_TOKEN, scout_name: "Health Check", status: "Unlock_Volume_2", updated_at: stamp },
-      { onConflict: "token" }
-    );
-    if (write.error) {
-      checks.scoutWrite = fail(write.error);
-    } else {
-      const back = await supabase.from("scout_profiles").select("updated_at").eq("token", HEALTH_TOKEN).maybeSingle();
-      // Postgres returns "+00:00" where JavaScript writes "Z": compare instants.
-      const readBack = back.data?.updated_at ? Date.parse(back.data.updated_at) : NaN;
-      checks.scoutWrite = readBack === Date.parse(stamp)
-        ? { ok: true }
-        : { ok: false, error: `wrote ${stamp} but read back ${back.data?.updated_at ?? "nothing"}` };
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<"timeout">((resolve) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        resolve("timeout");
+      }, HEALTH_DEADLINE_MS);
+    });
+    try {
+      const result = await Promise.race([runChecks(supabase, checks, controller.signal), deadline]);
+      if (result === "timeout") {
+        checks.databaseReachable = { ok: false, error: `no answer within ${HEALTH_DEADLINE_MS}ms` };
+      }
+    } catch (err) {
+      controller.abort();
+      checks.databaseReachable = { ok: false, error: err instanceof Error ? err.message : String(err) };
+    } finally {
+      clearTimeout(timer);
     }
-
-    const orders = await supabase.from("orders").select("stripe_session_id").limit(1);
-    checks.ordersTable = orders.error ? fail(orders.error) : { ok: true };
-
-    // Family accounts (registration, sessions and the public share code).
-    const families = await supabase.from("families").select("id").limit(1);
-    checks.familiesTable = families.error ? fail(families.error) : { ok: true };
-
-    const sessions = await supabase.from("family_sessions").select("token_hash").limit(1);
-    checks.familySessionsTable = sessions.error ? fail(sessions.error) : { ok: true };
-
-    const shareCodes = await supabase.from("scout_profiles").select("family_id, share_code").limit(1);
-    checks.scoutFamilyColumns = shareCodes.error ? fail(shareCodes.error) : { ok: true };
-
-    // The five video addresses printed inside the book read from this table. The
-    // pages fall back to a waiting screen if it is missing, so this check is the
-    // only thing that would tell us the migration never reached production.
-    const videos = await supabase.from("videos").select("slug").limit(1);
-    checks.videosTable = videos.error ? fail(videos.error) : { ok: true };
-
-    // The referral column decides whether a real friend referral is recorded at
-    // all. `getScout` reads the row with select('*'), so a missing column is
-    // invisible there: registration keeps working and the referral is silently
-    // dropped. This check is the only thing that would catch it.
-    const referrals = await supabase.from("scout_profiles").select("referred_by_scout_token").limit(1);
-    checks.scoutReferralColumn = referrals.error ? fail(referrals.error) : { ok: true };
-
-    // The Parent's Guide / Chief Scout Patrol funnel. Without these tables a
-    // paid $10 Patrol cannot issue its gift codes and the free printed guide
-    // cannot be claimed or approved.
-    const leaders = await supabase.from("patrol_leaders").select("id").limit(1);
-    checks.patrolLeadersTable = leaders.error ? fail(leaders.error) : { ok: true };
-
-    // patrol_gifts is keyed by the gift code itself, not an id.
-    const gifts = await supabase.from("patrol_gifts").select("code").limit(1);
-    checks.patrolGiftsTable = gifts.error ? fail(gifts.error) : { ok: true };
-
-    const approvals = await supabase.from("guide_approvals").select("id").limit(1);
-    checks.guideApprovalsTable = approvals.error ? fail(approvals.error) : { ok: true };
-
-    // Re-save an existing row exactly as the app does, to surface write errors
-    // that the store would otherwise only log (uses the demo profile's own row).
   }
 
   const ok = config.configured && Object.values(checks).every((c) => c.ok);

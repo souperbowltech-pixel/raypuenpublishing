@@ -11,7 +11,7 @@ Live production site: **[https://puenpublishing.com](https://puenpublishing.com)
 - **Retail Storefront (`/`)**
   - Interactive book showcase for *The Geezy Goober's Guide to Icky Sfand: The Search for the Magic Pen (Volume 1)*.
   - Trim size: 8.5" × 11" US Letter format (32+ pages).
-  - Secure Stripe Checkout ($6.99) with real-time stock and shipping collection.
+  - Secure Stripe Checkout ($14.99) with real-time stock and shipping collection.
 
 - **Family Accounts & Chief Explorer Portal (`/start`, `/dashboard/book2`)**
   - Frictionless passwordless family account onboarding via SHA-256 hashed session cookies (`family_sessions`).

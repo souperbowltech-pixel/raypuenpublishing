@@ -7,7 +7,7 @@
  * math". It is in git history if that model is ever revived.
  */
 
-export const RETAIL_PRICE = 6.99;
+export const RETAIL_PRICE = 14.99;
 export const PARENTS_GUIDE_DIGITAL_PRICE = 29.97;
 
 /**

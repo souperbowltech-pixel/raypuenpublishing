@@ -113,6 +113,16 @@ unlisted video, which the printed link makes reversible later.
 
 ## Last session summary
 
+2026-11-02: Book 1 retail price raised from $6.99 to $14.99 (Ray's decision of 29 October;
+`RETAIL_PRICE`, with a test on the amount Stripe is actually asked to charge). The Patrol stays at
+$10 for now: Ray's $15 version is a different product (two printed books), and its checkout collects
+no shipping address yet, so changing the price alone would sell the old product at the new price.
+`/api/health` no longer hangs when the database is unreachable: the reads run together, the whole
+check answers within 6 seconds, and the deadline aborts every query still in flight, so a paused
+Supabase project now shows as `databaseReachable: false` instead of a request that never answers.
+Found while the live site's video pages were all showing the waiting screen because the database
+was not answering (being checked in the Supabase dashboard).
+
 2026-09-23: Read `NEXT_SESSION_HANDOFF.md`; installed the Claude Code quality kit (`CLAUDE.md`,
 `.claude/settings.json`, hooks, `/setup` `/audit` `/fix-audit` `/next` `/qa` commands,
 `code-auditor` and `qa-reviewer` subagent instructions) into this project per the user's request,

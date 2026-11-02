@@ -63,6 +63,8 @@ describe("POST /api/checkout/retail (SEC-04 quantity bounds)", () => {
     expect(createSessionMock).toHaveBeenCalledTimes(1);
     const args = createSessionMock.mock.calls[0][0];
     expect(args.line_items[0].quantity).toBe(1);
+    // What Stripe actually charges, not just the constant: $14.99 per book.
+    expect(args.line_items[0].price_data.unit_amount).toBe(1499);
   });
 
   it("accepts valid whole number quantities between 1 and 50", async () => {
