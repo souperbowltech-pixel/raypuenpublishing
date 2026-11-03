@@ -113,6 +113,15 @@ unlisted video, which the printed link makes reversible later.
 
 ## Last session summary
 
+2026-11-03: new static page `/certificate` (`components/certificate/CertificateDownload.tsx`,
+files in `public/certificate/`). The printed book now carries a black and white certificate (one ink
+type per book at IngramSpark), and a line under it sends parents to this page for the free color PDF:
+the 300 DPI artwork on one US Letter page, about 2 MB instead of the 19 MB original. No database, so
+it works while Supabase is paused. The address is printed, so it must never move. Also: the site
+header's Gallery, Details and Buy Now links were bare hashes and did nothing on any page except the
+home page (/certificate, /guide); they now point at `/#...`. The nonprofit's registered name is
+**New Life Mission Network, Inc.** (Ray, 3 Nov), replacing "Board" in the footer credit and the docs.
+
 2026-11-02: Book 1 retail price raised from $6.99 to $14.99 (Ray's decision of 29 October;
 `RETAIL_PRICE`, with a test on the amount Stripe is actually asked to charge). The Patrol stays at
 $10 for now: Ray's $15 version is a different product (two printed books), and its checkout collects
