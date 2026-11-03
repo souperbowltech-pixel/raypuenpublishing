@@ -1,7 +1,7 @@
 # PUEN PUBLISHING & REGENCY PRESS — PROJECT MASTER STATUS REPORT
 **Document Name:** `PROJECT_STATUS_AND_HANDOVER_REPORT.md`  
 **Date:** Monday, September 14, 2026  
-**Client:** Ray Puen (Regency Press / Puen Publishing / New Life Mission Board, Inc.)  
+**Client:** Ray Puen (Regency Press / Puen Publishing / New Life Mission Network, Inc.)  
 **Lead Engineer:** Huzaifah  
 **Live Production URL:** [https://puenpublishing.com](https://puenpublishing.com) — the
 `raypuenpublishing.vercel.app` deployment still answers, but it is the hosting platform's
@@ -40,7 +40,7 @@ The platform is purpose-built to support:
 
 ### A. Official Bowker Registry & Legal Imprint Architecture
 - **Footer & Metadata Synchronization:** Configured dual-entity legal credits across the entire application:
-  `"Published by Regency Press under the Puen Publishing Imprint (An Educational Imprint of New Life Mission Board, Inc.)"` (single source: `lib/book.ts`).
+  `"Published by Regency Press under the Puen Publishing Imprint (An Educational Imprint of New Life Mission Network, Inc.)"` (single source: `lib/book.ts`).
 - **Title Accuracy:** Bowker ISBN title constraints fully enforced:
   *Title:* **The Geezy Goober’s Guide to Icky Island**  
   *Subtitle:* **The Geezy Goober and the Magic Pen**

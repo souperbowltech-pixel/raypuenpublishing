@@ -71,7 +71,7 @@ Replacing the current page, which carries only the words "Copyright © 2026" and
                   By Ray Puen inspired by Grace and Joy.
 
    Published by Regency Press under the Puen Publishing Imprint
-   (An Educational Imprint of New Life Mission Board, Inc.)
+   (An Educational Imprint of New Life Mission Network, Inc.)
 
                     __________________________
                         (business address)
@@ -114,7 +114,7 @@ permitted. It must stay word for word.
 
 - **Ray Puen** personally. Simplest, and usual for an author who has not assigned rights to a company.
 - **Regency Press.** Correct if the rights sit with the publishing business.
-- **New Life Mission Board, Inc.** Correct if the ministry commissioned the work and owns it.
+- **New Life Mission Network, Inc.** Correct if the ministry commissioned the work and owns it.
 
 This decides who can license the book, who sues if it is copied, and what happens to the rights
 later. It is a question for your lawyer rather than for me, and it is worth asking him while he is

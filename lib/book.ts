@@ -80,7 +80,7 @@ export const book1: BookContent = {
 export const publisherBrand = {
   umbrellaName: "Regency Press",
   imprintName: "Puen Publishing",
-  fullCredit: "Published by Regency Press under the Puen Publishing Imprint (An Educational Imprint of New Life Mission Board, Inc.)",
+  fullCredit: "Published by Regency Press under the Puen Publishing Imprint (An Educational Imprint of New Life Mission Network, Inc.)",
   colophonLogo: "/brand/puen-colophon.png",
   mottoImage: "/brand/puen-motto.png",
   slogan: "Building character is our commitment; your child's destiny is our product.",

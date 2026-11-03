@@ -1,6 +1,6 @@
 # Puen Publishing — Children's Coloring Book Platform
 
-Production e-commerce and interactive gamification platform for **Puen Publishing**, an educational imprint of New Life Mission Board, Inc. co-created by Ray Puen.
+Production e-commerce and interactive gamification platform for **Puen Publishing**, an educational imprint of New Life Mission Network, Inc. co-created by Ray Puen.
 
 Live production site: **[https://puenpublishing.com](https://puenpublishing.com)**
 

@@ -2,7 +2,7 @@
 
 **Project:** Puen Publishing E-Commerce & Gamification Platform  
 **Live Production URL:** [https://puenpublishing.com](https://puenpublishing.com)  
-**Client:** Ray Puen (Regency Press / Puen Publishing / New Life Mission Board, Inc.)  
+**Client:** Ray Puen (Regency Press / Puen Publishing / New Life Mission Network, Inc.)  
 **Lead Engineer:** Huzaifah  
 **Version / Milestone:** Phase 1 Handover (October 2026)  
 

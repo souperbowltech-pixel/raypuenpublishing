@@ -68,3 +68,11 @@ describe("the granddaughters' credit", () => {
 
 
 
+describe("publisher credit", () => {
+  // Ray confirmed the legal name on 3 November 2026. It replaces "New Life
+  // Mission Board, Inc." and must match the nonprofit's registration.
+  it("names the nonprofit by its registered name", () => {
+    expect(publisherBrand.fullCredit).toContain("New Life Mission Network, Inc.");
+    expect(publisherBrand.fullCredit).not.toContain("Mission Board");
+  });
+});
