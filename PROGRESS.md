@@ -113,6 +113,10 @@ unlisted video, which the printed link makes reversible later.
 
 ## Last session summary
 
+2026-11-04: the seven Book 1 QR codes are served as one file at
+`/print/geezy-book1-qr-codes.zip`, so Ray can forward a link to Sarah instead of a chat attachment he
+could not find. Static file, test in `lib/print-files.test.ts`.
+
 2026-11-03: new static page `/certificate` (`components/certificate/CertificateDownload.tsx`,
 files in `public/certificate/`). The printed book now carries a black and white certificate (one ink
 type per book at IngramSpark), and a line under it sends parents to this page for the free color PDF:
