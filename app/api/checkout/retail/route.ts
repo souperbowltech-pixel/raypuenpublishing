@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe, isStripeConfigured, STRIPE_NOT_CONFIGURED_MESSAGE } from "@/lib/stripe";
 import { RETAIL_PRICE } from "@/lib/pricing";
 import { BOOK_1_SKU } from "@/lib/checkout";
-import { publisherBrand } from "@/lib/book";
+import { book1, publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { getSiteOrigin } from "@/lib/site";
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "The Geezy Goober's Guide to Icky Sfand: The Search for the Magic Pen (Volume 1)",
+              name: `${book1.title}, ${book1.tagline}`,
               description:
                 "An Interactive Rhythmic Rhyme & Tactile Coloring Quest for Early Learners.",
               metadata: {

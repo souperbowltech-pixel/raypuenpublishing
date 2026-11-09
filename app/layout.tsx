@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Nunito_Sans } from "next/font/google";
-import { siteMeta } from "@/lib/book";
+import { book1, shareImage, siteMeta } from "@/lib/book";
+import { getSiteOrigin } from "@/lib/site";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -18,8 +19,22 @@ const nunito = Nunito_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteOrigin()),
   title: `${siteMeta.name} — Children's Coloring Books`,
   description: siteMeta.description,
+  openGraph: {
+    type: "website",
+    siteName: siteMeta.name,
+    title: `${book1.title}, ${book1.tagline}`,
+    description: siteMeta.description,
+    images: [{ ...shareImage, alt: book1.coverImage.alt }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${book1.title}, ${book1.tagline}`,
+    description: siteMeta.description,
+    images: [shareImage.url],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },

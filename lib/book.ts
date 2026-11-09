@@ -38,8 +38,8 @@ export interface BookContent {
 
 export const book1: BookContent = {
   sku: "PUEN-CB-001",
-  title: "The Geezy Goober's Guide to Icky Sfand",
-  tagline: "The Search for the Magic Pen (Volume 1)",
+  title: "The Adventures of Geezy Goober",
+  tagline: "Volume 1: The Search for the Magic Pen",
   byline: "By Ray Puen inspired by Grace and Joy.",
   description:
     "Deep in the woods of Twist-and-Twirl, words are mysteriously vanishing! Co-created by Publisher Ray Puen and his young granddaughters, Grace and Joy, this interactive adventure features a precise, musical iambic rhythm that grips a child's focus. Designed as a deliberate two-part strategy, Volume 1 captures children's deep affection through high-appeal whimsical adventure coloring blocks, priming their hearts to follow our storybook heroes into future structural paths of honor, kindness, and respect.",
@@ -47,8 +47,8 @@ export const book1: BookContent = {
   pageCount: 32,
   dimensions: '8.5" × 11" (US Letter, softcover)',
   coverImage: {
-    src: "/book1-cover.jpg",
-    alt: "Front cover of The Geezy Goober's Guide to Icky Sfand",
+    src: "/book1-cover-v2.jpg",
+    alt: "Front cover of The Adventures of Geezy Goober, Volume 1: The Search for the Magic Pen",
   },
   activeEdition: {
     editionId: "nepalRecovery",
@@ -115,5 +115,8 @@ export const siteMeta = {
   name: "Regency Press • Puen Publishing",
   shortName: "Regency Press",
   description:
-    "The Geezy Goober's Guide to Icky Sfand: The Search for the Magic Pen (Volume 1) — Published by Regency Press under the Puen Publishing Imprint.",
+    "The Adventures of Geezy Goober, Volume 1: The Search for the Magic Pen. Published by Regency Press under the Puen Publishing Imprint.",
 };
+
+/** The preview Facebook, WhatsApp and X show under every shared link and ad (1200 x 630). */
+export const shareImage = { url: "/og-book1.jpg", width: 1200, height: 630 };

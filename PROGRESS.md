@@ -113,6 +113,8 @@ unlisted video, which the printed link makes reversible later.
 
 ## Last session summary
 
+**2026-11-09: storefront title, cover and link preview.** Book 1 is now called "The Adventures of Geezy Goober" with "Volume 1: The Search for the Magic Pen", matching the 30 Oct cover and the copyright page; the retired "Guide to Icky Sfand" title is gone from the storefront, the page description and the Stripe product name. New cover `public/book1-cover-v2.jpg` (900 x 1165, front panel of the 30 Oct wrap) and a 1200 x 630 link preview `public/og-book1.jpg` with Open Graph and Twitter tags. Open: the hero badge still says 32 pages while the latest interior is 35 printed pages.
+
 2026-11-04: the seven Book 1 QR codes are served as one file at
 `/print/geezy-book1-qr-codes.zip`, so Ray can forward a link to Sarah instead of a chat attachment he
 could not find. Static file, test in `lib/print-files.test.ts`.
