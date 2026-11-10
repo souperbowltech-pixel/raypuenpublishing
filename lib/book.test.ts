@@ -77,6 +77,11 @@ describe("Book 1 title matches the printed cover", () => {
     expect(book1.coverImage.alt).toContain("The Adventures of Geezy Goober");
   });
 
+  // Sarah's corrected interior of 10 Nov 2026 is 36 US Letter pages, cover included.
+  it("shows the page count of the final print file", () => {
+    expect(book1.pageCount).toBe(36);
+  });
+
   it("drops the retired working title everywhere it is shown", () => {
     expect(siteMeta.description).toContain("The Adventures of Geezy Goober");
     expect(`${book1.title} ${book1.tagline} ${siteMeta.description}`).not.toMatch(/Guide to Icky Sfand/);
