@@ -18,16 +18,24 @@ import { alertFailure } from "@/lib/alerts";
 export const VIDEO_SLUGS = ["v1", "v2", "v3", "v4", "v5", "v6"] as const;
 export type VideoSlug = (typeof VIDEO_SLUGS)[number];
 
+/**
+ * Every row the site reads: the printed addresses plus the Bonus Video, which has
+ * no address of its own. It plays on /start, the page behind the last code in the
+ * book, where families go to invite their two friends.
+ */
+export type VideoKey = VideoSlug | "bonus";
+
 export type VideoProvider = "none" | "youtube" | "cloudflare" | "bunny" | "vimeo";
 
 /** Heading used until the row carries a real title from Ray. */
-const DEFAULT_TITLE: Record<VideoSlug, string> = {
+const DEFAULT_TITLE: Record<VideoKey, string> = {
   v1: "Video 1",
   v2: "Video 2",
   v3: "Video 3",
   v4: "Video 4",
   v5: "Video 5",
   v6: "Welcome",
+  bonus: "Bonus Video",
 };
 
 /** Shape of a `public.videos` row as PostgREST returns it. */
@@ -51,8 +59,8 @@ export type PendingReason =
   | "database-error"; // timeout, network failure or permission problem
 
 export type VideoView =
-  | { state: "live"; slug: VideoSlug; title: string; provider: VideoProvider; embedUrl: string }
-  | { state: "pending"; slug: VideoSlug; title: string; reason: PendingReason };
+  | { state: "live"; slug: VideoKey; title: string; provider: VideoProvider; embedUrl: string }
+  | { state: "pending"; slug: VideoKey; title: string; reason: PendingReason };
 
 export function isVideoSlug(value: unknown): value is VideoSlug {
   return typeof value === "string" && (VIDEO_SLUGS as readonly string[]).includes(value);
@@ -104,7 +112,7 @@ export function buildEmbedUrl(
   return embed.url(id);
 }
 
-function pending(slug: VideoSlug, reason: PendingReason, title?: string | null): VideoView {
+function pending(slug: VideoKey, reason: PendingReason, title?: string | null): VideoView {
   return { state: "pending", slug, title: title?.trim() || DEFAULT_TITLE[slug], reason };
 }
 
@@ -112,7 +120,7 @@ function pending(slug: VideoSlug, reason: PendingReason, title?: string | null):
  * Decide what a page shows from the row it was given. Pure — all the branching
  * lives here so it can be tested without a database.
  */
-export function resolveVideo(slug: VideoSlug, row: VideoRow | null | undefined): VideoView {
+export function resolveVideo(slug: VideoKey, row: VideoRow | null | undefined): VideoView {
   if (!row) return pending(slug, "no-row");
 
   const title = row.title?.trim() || DEFAULT_TITLE[slug];
@@ -144,16 +152,23 @@ export function isMissingTableError(
  */
 const DB_TIMEOUT_MS = 4_000;
 
-/** One alert per reason per instance — a scanned QR must not become an alert storm. */
+/**
+ * One alert per reason and video per instance: a scanned QR must not become an
+ * alert storm, and a busy /start must not hide a failure on a /v page.
+ */
 const alerted = new Set<string>();
-function alertOnce(reason: PendingReason, detail: Record<string, unknown>): void {
-  if (alerted.has(reason)) return;
-  alerted.add(reason);
+function alertOnce(reason: PendingReason, detail: { slug: VideoKey } & Record<string, unknown>): void {
+  const key = `${reason}:${detail.slug}`;
+  if (alerted.has(key)) return;
+  alerted.add(key);
   void alertFailure(`Video page fell back to the waiting screen (${reason})`, detail);
 }
 
-/** Read one printed address's row and decide what the page shows. Never throws. */
-export async function getVideo(slug: VideoSlug): Promise<VideoView> {
+/**
+ * Read one video's row and decide what the page shows. Never throws.
+ * `timeoutMs` lets a page whose main job is something else give up sooner.
+ */
+export async function getVideo(slug: VideoKey, timeoutMs = DB_TIMEOUT_MS): Promise<VideoView> {
   if (!supabase) return pending(slug, "database-off");
 
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -165,12 +180,12 @@ export async function getVideo(slug: VideoSlug): Promise<VideoView> {
       .maybeSingle();
 
     const deadline = new Promise<"timeout">((resolve) => {
-      timer = setTimeout(() => resolve("timeout"), DB_TIMEOUT_MS);
+      timer = setTimeout(() => resolve("timeout"), timeoutMs);
     });
 
     const result = await Promise.race([query, deadline]);
     if (result === "timeout") {
-      alertOnce("database-error", { slug, error: `videos lookup exceeded ${DB_TIMEOUT_MS}ms` });
+      alertOnce("database-error", { slug, error: `videos lookup exceeded ${timeoutMs}ms` });
       return pending(slug, "database-error");
     }
 
