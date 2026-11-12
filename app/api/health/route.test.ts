@@ -211,7 +211,7 @@ describe("GET /api/health (infrastructure health check and SEC-07 privacy bounda
         [
           "familiesTable", "familySessionsTable", "guideApprovalsTable", "ordersTable",
           "patrolGiftsTable", "patrolLeadersTable", "scoutFamilyColumns", "scoutNewColumns",
-          "scoutRead", "scoutReferralColumn", "scoutWrite", "videosTable",
+          "schoolRequestsTable", "scoutRead", "scoutReferralColumn", "scoutWrite", "videosTable",
         ].sort()
       );
     });

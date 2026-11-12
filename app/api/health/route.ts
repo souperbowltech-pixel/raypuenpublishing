@@ -60,6 +60,8 @@ const READ_CHECKS: [string, string, string][] = [
   ["patrolLeadersTable", "patrol_leaders", "id"],
   ["patrolGiftsTable", "patrol_gifts", "code"],
   ["guideApprovalsTable", "guide_approvals", "id"],
+  // Requests from schools on /neighborhood. The form saves here and nowhere else.
+  ["schoolRequestsTable", "school_requests", "id"],
 ];
 
 /**
