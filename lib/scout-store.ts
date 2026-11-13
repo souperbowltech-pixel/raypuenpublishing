@@ -125,7 +125,9 @@ function errText(err: unknown): string {
   return String(err);
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+// LOCAL_DATA_DIR lets each test file keep its own copy; parallel files sharing one
+// scouts.json overwrite each other's writes.
+const DATA_DIR = process.env.LOCAL_DATA_DIR || path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'scouts.json');
 
 // --- Defense-in-depth sanitisers (never trust merged-in values) ---

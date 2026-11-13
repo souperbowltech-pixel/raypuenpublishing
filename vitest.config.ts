@@ -11,6 +11,8 @@ export default defineConfig({
   esbuild: { jsx: "automatic" },
   test: {
     environment: "node",
+    // Gives every test file its own local data folder (see vitest.setup.ts).
+    setupFiles: ["./vitest.setup.ts"],
     include: [
       "lib/**/*.test.ts",
       "lib/**/*.test.tsx",

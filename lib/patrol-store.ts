@@ -81,7 +81,7 @@ interface LocalPatrolStore {
   approvals: GuideApproval[];
 }
 
-const LOCAL_FILE = path.join(process.cwd(), 'data', 'patrols.json');
+const LOCAL_FILE = path.join(process.env.LOCAL_DATA_DIR || path.join(process.cwd(), 'data'), 'patrols.json');
 const memory: LocalPatrolStore = { leaders: [], gifts: [], approvals: [] };
 
 function readLocal(): LocalPatrolStore {

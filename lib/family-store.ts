@@ -40,7 +40,7 @@ interface LocalStore { families: LocalFamily[]; sessions: Record<string, string>
  * under traffic, they mutate disjoint copies, causing a child's progress or
  * session to appear to reset depending on which instance answers the next request.
  */
-const LOCAL_FILE = path.join(process.cwd(), 'data', 'families.json');
+const LOCAL_FILE = path.join(process.env.LOCAL_DATA_DIR || path.join(process.cwd(), 'data'), 'families.json');
 const memory: LocalStore = { families: [], sessions: {} };
 
 function readLocal(): LocalStore {
