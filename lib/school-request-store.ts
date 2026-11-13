@@ -142,6 +142,8 @@ export async function notifySchoolRequest(input: SchoolRequestInput): Promise<Em
     subject: `School request: ${input.school}`,
     text: schoolRequestEmailText(input),
     replyTo: input.email,
+    // EMAIL_FROM names the children's Chief Explorer; a principal's request is business mail.
+    fromName: "Puen Publishing",
   });
   if (!result.sent) {
     console.warn("[school-requests] notification not sent", result.reason, redactEmail(input.email));

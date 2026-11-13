@@ -68,6 +68,55 @@ describe("sendEmail", () => {
     expect(body).toMatchObject({ from: FROM, to: "parent@example.com", subject: "Your Patrol", text: "Hello" });
   });
 
+  it("can send under another name from the same configured address", async () => {
+    fetchMock.mockResolvedValue(ok());
+    await sendEmail({ ...message, fromName: "Ray's Office" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).from).toBe(`"Ray's Office" <hello@send.puenpublishing.com>`);
+  });
+
+  it("uses a bare configured address as it is when renaming the sender", async () => {
+    process.env.EMAIL_FROM = "hello@send.puenpublishing.com";
+    fetchMock.mockResolvedValue(ok());
+    await sendEmail({ ...message, fromName: "Puen Publishing" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).from).toBe(`"Puen Publishing" <hello@send.puenpublishing.com>`);
+  });
+
+  it("keeps a sender name from adding headers or a second address", async () => {
+    fetchMock.mockResolvedValue(ok());
+    await sendEmail({ ...message, fromName: 'Evil\r\nBcc: x@evil.example <"a@b.example">' });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).from).toBe(
+      `"Evil Bcc: x@evil.example a@b.example" <hello@send.puenpublishing.com>`
+    );
+  });
+
+  it("keeps commas, colons and brackets inside one quoted name", async () => {
+    fetchMock.mockResolvedValue(ok());
+    await sendEmail({ ...message, fromName: "Smith, Ray (Office); a@b" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).from).toBe(
+      `"Smith, Ray (Office); a@b" <hello@send.puenpublishing.com>`
+    );
+  });
+
+  it("renames a configured sender whose own name is quoted", async () => {
+    process.env.EMAIL_FROM = `"Quoted, Name" <hello@send.puenpublishing.com>`;
+    fetchMock.mockResolvedValue(ok());
+    await sendEmail({ ...message, fromName: "Puen Publishing" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).from).toBe(`"Puen Publishing" <hello@send.puenpublishing.com>`);
+  });
+
+  it("sends a configured sender it cannot read unchanged, rather than rebuilding it", async () => {
+    process.env.EMAIL_FROM = "Name hello@send.puenpublishing.com";
+    fetchMock.mockResolvedValue(ok());
+    await sendEmail({ ...message, fromName: "Puen Publishing" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).from).toBe("Name hello@send.puenpublishing.com");
+  });
+
+  it("falls back to the configured sender when the name is blank", async () => {
+    fetchMock.mockResolvedValue(ok());
+    await sendEmail({ ...message, fromName: "   " });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).from).toBe(FROM);
+  });
+
   it("does not send at all when it is not configured", async () => {
     delete process.env.RESEND_API_KEY;
     await expect(sendEmail(message)).resolves.toEqual({ sent: false, reason: "not-configured" });

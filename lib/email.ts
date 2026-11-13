@@ -38,6 +38,11 @@ export interface EmailMessage {
   text: string;
   html?: string;
   replyTo?: string;
+  /**
+   * Display name to send under instead of the one in EMAIL_FROM. The address
+   * stays the configured one, so it is always on the verified domain.
+   */
+  fromName?: string;
 }
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
@@ -58,6 +63,21 @@ export function emailConfigured(): boolean {
  */
 function scrubSecrets(text: string, apiKey: string): string {
   return text.split(apiKey).join("re_***").replace(/re_[A-Za-z0-9_-]{8,}/g, "re_***");
+}
+
+/**
+ * The configured sender with its display name swapped. The name is quoted, so a
+ * comma or colon in it stays part of the name; quotes, backslashes, angle
+ * brackets and line breaks are dropped first, so it can never close the quote,
+ * add a second address or start a Bcc line. If EMAIL_FROM holds no single clear
+ * address, it is sent unchanged rather than rebuilt into something broken.
+ */
+function senderWithName(configured: string, name: string | undefined): string {
+  const cleanName = (name ?? "").replace(/[\r\n"<>\\]/g, " ").replace(/\s+/g, " ").trim();
+  if (!cleanName) return configured;
+  const address = configured.match(/<([^<>]+)>\s*$/)?.[1] ?? configured.trim();
+  if (!/^[^\s@<>]+@[^\s@<>]+$/.test(address)) return configured;
+  return `"${cleanName}" <${address}>`;
 }
 
 export async function sendEmail(message: EmailMessage): Promise<EmailResult> {
@@ -85,7 +105,7 @@ export async function sendEmail(message: EmailMessage): Promise<EmailResult> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from,
+        from: senderWithName(from, message.fromName),
         to: recipient.value,
         subject: message.subject,
         text: message.text,

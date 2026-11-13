@@ -143,6 +143,7 @@ describe("notifySchoolRequest", () => {
       to: "ray@inbox.example",
       subject: "School request: Lincoln Elementary",
       replyTo: "ana@school.example",
+      fromName: "Puen Publishing",
     });
     expect(message.text).toContain("Copies: 40");
     expect(message.text).toContain("Phone: not given");
