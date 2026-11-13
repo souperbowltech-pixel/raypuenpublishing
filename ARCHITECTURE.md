@@ -64,3 +64,11 @@ Three identifiers per child, each with a different trust boundary:
 - **Print fulfilment gated behind `PRINT_FULFILLMENT_LIVE = false`** in
   `components/dashboard/BookUnlockCard.tsx` — flip on only once IngramSpark API access exists.
 - **Repo files are CRLF** — scripted/programmatic edits must normalise `\r\n` before matching.
+- **Private library codes are stored as an HMAC keyed with `LIBRARY_CODE_SECRET`** (`lib/library.ts`).
+  A copied table alone cannot test guesses. The cost: every environment that shares the Supabase
+  database must use the same secret (32+ characters), and changing it cancels every code already
+  issued. Never rotate it without re-issuing codes. Without it the library stays closed.
+- **Library copies go through storage, not through a function response** (`lib/library-store.ts`).
+  Vercel caps a response at about 4.5 MB; a stamped book is 10 to 15 MB. The copy is written to the
+  private `library` bucket and the browser gets a 5 minute signed link. Masters are reading editions
+  (`scripts/make-reading-edition.py`), because the free plan refuses files over 50 MB.
