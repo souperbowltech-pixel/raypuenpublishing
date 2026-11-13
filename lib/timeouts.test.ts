@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { noStoreFetch } from "@/lib/supabase";
+import { noStoreFetch, storageFetch } from "@/lib/supabase";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -66,6 +66,50 @@ describe("the database has a deadline", () => {
     const init = fetchMock.mock.calls[0][1];
     expect(init.signal).toBe(mine.signal);
     expect(init.cache).toBe("no-store");
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("storage has a deadline that covers the whole file", () => {
+  it("hands back the full body, status and headers", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("book bytes", { status: 200, headers: { "x-test": "1" } })));
+    const response = await storageFetch("https://example.test/storage/v1/object/library/masters/a.pdf");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-test")).toBe("1");
+    expect(await response.text()).toBe("book bytes");
+    vi.unstubAllGlobals();
+  });
+
+  it("passes on a reply that may not carry a body", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
+    expect((await storageFetch("https://example.test/storage/v1/x")).status).toBe(204);
+    vi.unstubAllGlobals();
+  });
+
+  it("aborts a download whose body stalls after the headers arrive", async () => {
+    vi.useFakeTimers();
+    let captured: AbortSignal | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_input: unknown, init: RequestInit) => {
+        captured = init.signal as AbortSignal;
+        // Headers arrive at once; the body never finishes until the request is aborted, as with real fetch.
+        const body = new Promise<ArrayBuffer>((_resolve, reject) =>
+          captured!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))
+        );
+        return Promise.resolve({ status: 200, statusText: "OK", headers: new Headers(), arrayBuffer: () => body });
+      })
+    );
+
+    const pending = storageFetch("https://example.test/storage/v1/object/library/masters/a.pdf");
+    const outcome = expect(pending).rejects.toThrow(/aborted/);
+    await vi.advanceTimersByTimeAsync(9_000);
+    expect(captured!.aborted).toBe(false); // longer than a database call: a book is big
+    await vi.advanceTimersByTimeAsync(22_000);
+    expect(captured!.aborted).toBe(true);
+    await outcome;
+
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 });

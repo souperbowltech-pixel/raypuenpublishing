@@ -41,6 +41,10 @@ describe("catalog", () => {
     expect(findBook("../secrets")).toBeNull();
     expect(findBook(undefined)).toBeNull();
   });
+
+  it("names every download with characters that survive storage's double encoding", () => {
+    for (const book of LIBRARY_BOOKS) expect(book.fileName).toMatch(/^[A-Za-z0-9 .-]+\.pdf$/);
+  });
 });
 
 describe("codes", () => {

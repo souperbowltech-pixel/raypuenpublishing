@@ -24,7 +24,7 @@ prioritized task list (P0-P3) and acceptance tests, see the live tracker linked 
 | Real friend tracking (2 of 3 -> 300 pts) | planned | Tracker t16 |
 | MailerLite lifecycle emails | planned | Tracker t17 |
 | Ray's admin view | planned | Tracker t18 |
-| Private library: review copies with one-time codes, paid digital Guide delivery | in progress (1 of 5 done) | Ray asked 13 Nov. 1: codes, name cleaning, stamping (done). 2: bucket, table, redeem page. 3: admin codes. 4: webhook delivery of the $29.97 Guide. 5: reading editions (script done; NC 10.7 MB, Geezy 14.3 MB). Needs `LIBRARY_CODE_SECRET` (32+ chars) in Vercel |
+| Private library: review copies with one-time codes, paid digital Guide delivery | in progress (2 of 5 done) | Ray asked 13 Nov. 1: codes, name cleaning, stamping (done). 2: bucket, table, /library page and /api/library/open (done; migration `20261114_create_library.sql` not yet run). 3: admin codes. 4: webhook delivery of the $29.97 Guide. 5: reading editions (script done; NC 10.7 MB, Geezy 14.3 MB). Needs `LIBRARY_CODE_SECRET` (32+ chars) in Vercel |
 | Rotate Stripe keys exposed in git history | planned | Tracker t09 |
 | Deliver $270 Fiverr order | planned | Tracker t26 — due Oct 4, 2026 |
 | CI pipeline (lint/typecheck/test on push) | planned | AUDIT.md OPS-01 (HIGH) — currently only a gitignored local hook enforces this |
@@ -113,6 +113,8 @@ links and one line on each video's subject. Video hosting is unbought — the fa
 unlisted video, which the printed link makes reversible later.
 
 ## Last session summary
+
+**2026-11-14: private library, part 2 of 5 (bucket, table, /library).** Migration `20261114_create_library.sql` makes the private `library` bucket (50 MB, PDF only, forced private on re-run) and `library_grants` (RLS on, no grants to the public keys). `openCode` checks the code, stamps the grant's one copy at `copies/<grantId>.pdf`, signs a 5 minute link, and only then records first use with a conditional update, so a failed stamp never spends a review code and two clicks cannot both start a window. Copies are reused for an hour and swept by their age in storage after two, before every fresh stamp, under a 5 second cap that never deletes late or the grant's own file; a cached copy that has gone is stamped again. Storage calls use their own 30 second deadline that covers the body. The library refuses to run without the service-role key. **Still to confirm once live:** that signing a missing object returns an error (the reuse fallback depends on it), and a real 15 MB upload time from the production region.
 
 **2026-11-14: private library, part 1 of 5 (codes and stamping).** `lib/library.ts` holds the rules: 12-character Crockford codes (60 bits) stored only as an HMAC with `LIBRARY_CODE_SECRET`, typing-tolerant normalising, recipient names cleaned to what the PDF font prints (capital form checked too), review codes 60 days with a 24 hour download window after first use, paid copies a year; unknown or unreadable rows count as closed. `lib/library-stamp.ts` prints the name at the foot of every inside page inside the crop box, cover untouched, and refuses rotated pages, oversize masters and stamps that do not fit. Measured on the real reading editions: under 100 ms and about 100 MB. `scripts/make-reading-edition.py` turns a print PDF into a reading edition (NC 101 MB to 10.7 MB, Geezy 62 MB to 14.3 MB).
 

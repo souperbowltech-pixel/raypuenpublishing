@@ -44,6 +44,42 @@ export const supabase = supabaseUrl && supabaseKey
     })
   : null;
 
+/**
+ * Moving a whole book (10 to 15 MB) to or from storage needs a longer deadline
+ * than a database call, and the deadline must cover reading the body too:
+ * storage-js reads it after `fetch` resolves, where the database timeout no
+ * longer applies, so a stalled download would hang until the platform killed
+ * the function. Here the body is read inside the deadline and handed on whole.
+ * storage-js never passes a signal of its own, so this one is always used.
+ */
+const STORAGE_TIMEOUT_MS = 30_000;
+
+export const storageFetch: typeof fetch = async (input, init) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), STORAGE_TIMEOUT_MS);
+  try {
+    const response = await fetch(input, { ...init, cache: 'no-store', signal: controller.signal });
+    const body = await response.arrayBuffer();
+    // A Response with these statuses may not carry a body at all, not even an empty one.
+    const bodyless = [101, 204, 205, 304].includes(response.status);
+    return new Response(bodyless ? null : body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+/** The same project, for storage only: book files with a deadline sized for them. */
+export const storageClient = supabaseUrl && supabaseKey
+  ? createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+      global: { fetch: storageFetch },
+    })
+  : null;
+
 /** True on the live Vercel deployment, where a missing database must never be silent. */
 export const isProduction =
   process.env.VERCEL_ENV === 'production' ||

@@ -19,7 +19,7 @@ export interface LibraryBook {
   title: string;
   /** Path inside the private `library` bucket. Uploaded by hand, never by the app. */
   masterPath: string;
-  /** What the downloaded file is called on the reader's computer. */
+  /** What the downloaded file is called on the reader's computer: letters, digits, spaces, dots and hyphens only. */
   fileName: string;
 }
 
@@ -40,7 +40,8 @@ export const LIBRARY_BOOKS: readonly LibraryBook[] = [
     slug: "parents-guide",
     title: "The Parent's Guide",
     masterPath: "masters/parents-guide.pdf",
-    fileName: "The Parent's Guide.pdf",
+    // No apostrophe: storage encodes the download name twice, and it would arrive as %27.
+    fileName: "The Parents Guide.pdf",
   },
 ];
 
@@ -54,8 +55,12 @@ export const REVIEW_CODE_DAYS = 60;
 export const PURCHASE_CODE_DAYS = 365;
 /** After a review code is first used, the download stays open this long, then the code is spent. */
 export const REVIEW_DOWNLOAD_HOURS = 24;
-/** A stamped copy is kept this long for repeat clicks, then deleted to save storage. */
-export const COPY_CACHE_HOURS = 24;
+/**
+ * A stamped copy is reused this long for repeat clicks, then deleted. A copy
+ * only has to outlive its 5-minute link and a retry or two; kept longer, about
+ * 60 copies would fill the free plan's 1 GB.
+ */
+export const COPY_CACHE_HOURS = 1;
 /** The storage link handed to the browser is short-lived: long enough to start a download. */
 export const SIGNED_URL_SECONDS = 300;
 

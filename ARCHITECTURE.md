@@ -72,3 +72,7 @@ Three identifiers per child, each with a different trust boundary:
   Vercel caps a response at about 4.5 MB; a stamped book is 10 to 15 MB. The copy is written to the
   private `library` bucket and the browser gets a 5 minute signed link. Masters are reading editions
   (`scripts/make-reading-edition.py`), because the free plan refuses files over 50 MB.
+- **One stamped copy per grant, at a fixed path, swept by age** (`copies/<grantId>.pdf`). Two clicks
+  at once overwrite one file instead of leaving a stray one, and the sweep judges each file by its own
+  age in storage (reuse 1 hour, delete after 2), so a copy whose request was cut short is still removed.
+  About 60 live copies would fill the free plan's 1 GB, which is why the reuse time is short.
