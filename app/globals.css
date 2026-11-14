@@ -33,14 +33,14 @@
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-full bg-clay
       px-7 py-3.5 text-base font-bold text-paper shadow-card transition
-      hover:bg-clay-dark focus-visible:outline-spruce
+      duration-120 ease-out-soft press hover:bg-clay-dark focus-visible:outline-spruce
       disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 rounded-full border-2
       border-ink/20 bg-transparent px-6 py-3 text-base font-semibold text-ink
-      transition hover:border-ink/40 hover:bg-ink/5;
+      transition duration-120 ease-out-soft press hover:border-ink/40 hover:bg-ink/5;
   }
 
   .eyebrow {
@@ -58,6 +58,52 @@
   }
 }
 
+@layer components {
+  /* Squash on press: the button gives a little under the finger and springs back. */
+  .press:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: translateY(1px) scale(0.96);
+  }
+
+  /* Depth on hover: a card rises toward the reader and its shadow deepens.
+     Only where a real pointer hovers, so a tap on a phone does not leave it raised. */
+  .lift {
+    @apply transition duration-200 ease-out-soft;
+  }
+
+  @media (hover: hover) {
+    .lift:hover {
+      @apply -translate-y-1 shadow-book;
+    }
+  }
+
+  /* Entrance for a <Reveal> group: the group moves together, each child a beat
+     after the last. Only a group that started below the fold is ever "pending",
+     so nothing on screen at load, or without JavaScript, is hidden. It uses the
+     separate translate property so a child's own Tailwind transform still works.
+     600ms and 70ms match REVEAL_DURATION_MS and REVEAL_STEP_MS in lib/motion.ts.
+     A Tailwind opacity or transition utility on a direct child outranks these
+     rules, so wrap such a child rather than putting it straight inside a Reveal. */
+  [data-reveal="pending"] > * {
+    opacity: 0;
+    translate: 0 16px;
+  }
+
+  [data-reveal="shown"] > * {
+    transition-property: opacity, translate;
+    transition-duration: 600ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: calc(var(--reveal-i, 0) * 70ms);
+  }
+}
+
+/* A page printed before it was scrolled must not print blank sections. */
+@media print {
+  [data-reveal] > * {
+    opacity: 1 !important;
+    translate: none !important;
+  }
+}
+
 /* Respect users who prefer reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -66,6 +112,8 @@
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }
