@@ -111,6 +111,12 @@ describe("globals.css, as Tailwind compiles it", async () => {
     expect(rule(".lift")).toContain("transition-duration: 200ms");
   });
 
+  it("puts the Reveal rules after .lift, so a lifting card inside a Reveal still enters", () => {
+    // Same specificity: whichever comes later wins. The wholesale tier cards rely on this.
+    expect(css.indexOf(".lift {")).toBeGreaterThan(-1);
+    expect(css.indexOf('[data-reveal="shown"] > *')).toBeGreaterThan(css.indexOf(".lift {"));
+  });
+
   it("emits the keyframe for an animation a page uses", () => {
     expect(css).toContain("@keyframes stamp");
   });

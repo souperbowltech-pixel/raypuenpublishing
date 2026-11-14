@@ -6,6 +6,8 @@ import { REVEAL_SETTLE_MS, revealIndex, shouldDeferReveal } from "@/lib/motion";
 interface RevealProps {
   children: ReactNode;
   className?: string;
+  /** The element the group renders as; a list stays a list. */
+  as?: "div" | "ul";
 }
 
 /**
@@ -22,8 +24,8 @@ interface RevealProps {
  * Children are numbered for the stagger when the group mounts; any added later
  * enter with the first beat.
  */
-export function Reveal({ children, className }: RevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
+export function Reveal({ children, className, as: Tag = "div" }: RevealProps) {
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const node = ref.current;
@@ -64,8 +66,9 @@ export function Reveal({ children, className }: RevealProps) {
   }, []);
 
   return (
-    <div ref={ref} className={className}>
+    // Either tag is a plain block element; the ref only reads its position and dataset.
+    <Tag ref={ref as React.RefObject<HTMLDivElement & HTMLUListElement>} className={className}>
       {children}
-    </div>
+    </Tag>
   );
 }

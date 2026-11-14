@@ -110,6 +110,24 @@ describe("a group below the fold", () => {
   });
 });
 
+describe("a list", () => {
+  it("stays a list and staggers its items", () => {
+    place({ top: 1200 });
+    act(() =>
+      root.render(
+        <Reveal as="ul" className="list">
+          <li>One</li>
+          <li>Two</li>
+        </Reveal>
+      )
+    );
+    const list = container.querySelector("ul.list") as HTMLUListElement;
+    expect(list).not.toBeNull();
+    expect(list.dataset.reveal).toBe("pending");
+    expect(steps(list)).toEqual(["0", "1"]);
+  });
+});
+
 describe("a group that is never hidden", () => {
   it("leaves a group already on screen alone", () => {
     place({ top: 100 });

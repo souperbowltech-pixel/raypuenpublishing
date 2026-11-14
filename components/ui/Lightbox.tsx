@@ -88,7 +88,7 @@ export function Lightbox({ images, index, onClose, onNavigate }: LightboxProps) 
       role="dialog"
       aria-modal="true"
       aria-label="Illustration preview"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/85 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/85 p-4 animate-fade-in"
       onClick={onClose}
     >
       <button
@@ -112,8 +112,11 @@ export function Lightbox({ images, index, onClose, onNavigate }: LightboxProps) 
         ‹
       </button>
 
+      {/* Grows in when the lightbox opens. Not re-keyed per page: keeping the
+          element lets the browser show the old picture until the next has loaded,
+          instead of an empty box on a slow connection. */}
       <figure
-        className="max-h-[85vh] max-w-3xl"
+        className="max-h-[85vh] max-w-3xl animate-fade-scale"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="overflow-hidden rounded-xl2 bg-paper shadow-book">

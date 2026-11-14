@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { SPONSOR_TIERS, SponsorTier, formatCurrency } from "@/lib/pricing";
 import { Spinner } from "@/components/ui/Spinner";
+import { Reveal } from "@/components/ui/Reveal";
 
 export default function WholesaleForm() {
   const [selectedTier, setSelectedTier] = useState<1 | 2 | 3>(2);
@@ -75,7 +76,7 @@ export default function WholesaleForm() {
       </div>
 
       {/* 3 Flat Tiers Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Reveal className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {([1, 2, 3] as const).map((tId) => {
           const t = SPONSOR_TIERS[tId];
           const isSelected = selectedTier === tId;
@@ -84,7 +85,7 @@ export default function WholesaleForm() {
             <div
               key={tId}
               onClick={() => setSelectedTier(tId)}
-              className={`cursor-pointer rounded-xl border-2 p-5 transition flex flex-col justify-between ${
+              className={`lift cursor-pointer rounded-xl border-2 p-5 flex flex-col justify-between ${
                 isSelected
                   ? "border-spruce bg-spruce/5 ring-2 ring-spruce/30 shadow-md"
                   : "border-ink/10 bg-paper-deep/40 hover:border-ink/20"
@@ -140,7 +141,7 @@ export default function WholesaleForm() {
             </div>
           );
         })}
-      </div>
+      </Reveal>
 
       {/* Contact Fields */}
       <div className="space-y-4 pt-4 border-t border-ink/10">

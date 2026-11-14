@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { book1 } from "@/lib/book";
 import { Lightbox } from "@/components/ui/Lightbox";
+import { Reveal } from "@/components/ui/Reveal";
 
 export function IllustrationGallery() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -22,13 +23,13 @@ export function IllustrationGallery() {
         </p>
       </div>
 
-      <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <Reveal as="ul" className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {images.map((img, i) => (
           <li key={img.src}>
             <button
               type="button"
               onClick={() => setActiveIndex(i)}
-              className="group block w-full overflow-hidden rounded-xl2 border border-ink/10 bg-paper shadow-card transition hover:-translate-y-1 hover:shadow-book focus-visible:-translate-y-1"
+              className="lift group block w-full overflow-hidden rounded-xl2 border border-ink/10 bg-paper shadow-card focus-visible:-translate-y-1 focus-visible:shadow-book"
               aria-label={`Open ${img.alt}`}
             >
               <Image
@@ -41,7 +42,7 @@ export function IllustrationGallery() {
             </button>
           </li>
         ))}
-      </ul>
+      </Reveal>
 
       <Lightbox
         images={images}

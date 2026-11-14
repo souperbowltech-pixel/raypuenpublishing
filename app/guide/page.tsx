@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/retail/SiteHeader";
 import { SiteFooter } from "@/components/retail/SiteFooter";
 import { PARENTS_GUIDE_DIGITAL_PRICE, PARENTS_GUIDE_DIGITAL_LIVE, PATROL_BUNDLE_PRICE, formatCurrency } from "@/lib/pricing";
 import { Spinner } from "@/components/ui/Spinner";
+import { Reveal } from "@/components/ui/Reveal";
 
 export default function ParentsGuidePage() {
   const [loadingType, setLoadingType] = useState<"digital" | "patrol" | null>(null);
@@ -56,7 +57,7 @@ export default function ParentsGuidePage() {
           )}
 
           {/* Pricing Options */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Reveal className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Option 1: Digital Edition ($29.97) */}
             <div className="rounded-3xl border-2 border-ink/10 bg-paper-deep p-6 sm:p-8 shadow-card flex flex-col justify-between">
               <div>
@@ -161,7 +162,7 @@ export default function ParentsGuidePage() {
                 {loadingType === "patrol" ? <><Spinner className="h-4 w-4" /> Connecting to Checkout…</> : "Join Chief Scout Patrol ($10.00)"}
               </button>
             </div>
-          </div>
+          </Reveal>
 
           <div className="mt-12 text-center text-xs text-ink-soft">
             <Link href="/" className="inline-flex min-h-11 items-center font-semibold text-spruce hover:underline">

@@ -109,6 +109,10 @@ const config: Config = {
           "0%": { opacity: "0", transform: "scale(0.96)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
       },
       animation: {
         "pop-in": `pop-in ${MOTION_MS.slow}ms ${EASE_OUT_SOFT} both`,
@@ -119,6 +123,7 @@ const config: Config = {
         stamp: `stamp ${MOTION_MS.slow}ms ${EASE_OUT_SOFT} backwards`,
         rise: `rise ${MOTION_MS.medium}ms ${EASE_OUT_SOFT} both`,
         "fade-scale": `fade-scale ${MOTION_MS.fast}ms ${EASE_OUT_SOFT} both`,
+        "fade-in": `fade-in ${MOTION_MS.fast}ms ${EASE_OUT_SOFT} both`,
       },
     },
   },

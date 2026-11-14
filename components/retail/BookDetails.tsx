@@ -1,4 +1,5 @@
 import { book1 } from "@/lib/book";
+import { Reveal } from "@/components/ui/Reveal";
 
 const specs = [
   { label: "Age range", value: book1.ageRange },
@@ -10,7 +11,7 @@ const specs = [
 export function BookDetails() {
   return (
     <section id="details" className="bg-paper-deep py-16">
-      <div className="container-page grid gap-10 lg:grid-cols-[1.2fr_1fr]">
+      <Reveal className="container-page grid gap-10 lg:grid-cols-[1.2fr_1fr]">
         <div>
           <p className="eyebrow">About the book</p>
           <h2 className="mt-2 font-display text-3xl font-bold text-ink sm:text-4xl">
@@ -33,7 +34,7 @@ export function BookDetails() {
             </div>
           ))}
         </dl>
-      </div>
+      </Reveal>
     </section>
   );
 }
