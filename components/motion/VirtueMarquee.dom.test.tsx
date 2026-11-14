@@ -113,7 +113,9 @@ describe("VirtueMarquee from the server", () => {
 
   it("sends one still list, with room already kept for the pause button", () => {
     expect(html.match(/<ul/g)).toHaveLength(1);
-    expect(html).toContain("3 virtues to color in Book 1");
+    // The real number, once, so the heading reads "3 virtues..." for copy, search and screen readers.
+    const heading = /<h2[^>]*>([\s\S]*?)<\/h2>/.exec(html)![1].replace(/<[^>]+>/g, "");
+    expect(heading).toBe("3 virtues to color in Book 1");
     expect(html).not.toContain("<button");
     expect(html).toMatch(/<div class="container-page flex min-h-11 /);
   });

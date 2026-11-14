@@ -1,9 +1,10 @@
 import { book1 } from "@/lib/book";
 import { Reveal } from "@/components/ui/Reveal";
+import { CountUp } from "@/components/motion/CountUp";
 
 const specs = [
   { label: "Age range", value: book1.ageRange },
-  { label: "Page count", value: `${book1.pageCount} pages` },
+  { label: "Page count", value: <><CountUp value={book1.pageCount} /> pages</> },
   { label: "Dimensions", value: book1.dimensions },
   { label: "Format", value: "Softcover · matte finish" },
 ];

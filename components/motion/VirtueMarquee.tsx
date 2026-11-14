@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import Image from "next/image";
 import { loadGsap } from "@/components/motion/load-gsap";
+import { CountUp } from "@/components/motion/CountUp";
 import { PAGE_STICKER_META } from "@/lib/stickers";
 import { stickerBadgePath } from "@/lib/gamification";
 
@@ -129,7 +130,7 @@ export function VirtueMarquee({ badges }: { badges: VirtueBadge[] }) {
       {/* Tall enough for the button from the start, so its arrival moves nothing. */}
       <div className="container-page flex min-h-11 items-center justify-between gap-4">
         <h2 id="virtues-heading" className="eyebrow">
-          {badges.length} virtues to color in Book 1
+          <CountUp value={badges.length} /> virtues to color in Book 1
         </h2>
         {moving && (
           <button
