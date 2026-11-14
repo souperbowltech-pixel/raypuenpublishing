@@ -50,7 +50,7 @@ function mount() {
     root.render(
       <section id="hero">
         <CoverParallax>
-          <img alt="cover" />
+          <span data-testid="cover">cover</span>
         </CoverParallax>
       </section>
     )
@@ -78,7 +78,7 @@ describe("CoverParallax", () => {
     await settle();
     expect(tweens).toHaveLength(1);
     const { target, vars } = tweens[0];
-    expect(target.querySelector("img")).not.toBeNull();
+    expect(target.querySelector('[data-testid="cover"]')).not.toBeNull();
     expect(vars).toMatchObject({ yPercent: -12, rotate: -4, ease: "none" });
     const trigger = vars.scrollTrigger as Record<string, unknown>;
     expect((trigger.trigger as Element).id).toBe("hero");

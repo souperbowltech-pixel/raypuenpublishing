@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { stickerBadgePath } from "@/lib/gamification";
 import { PAGE_STICKER_META } from "@/lib/stickers";
 
@@ -111,10 +112,13 @@ export default function PageStickersGrid({
                   }`}
                 >
                   {isAchieved && !missingBadges.has(page.pageNumber) ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    // Through Next's image optimiser: the source PNGs are about 1 MB each
+                    // (19 of them came to over 17 MB on one visit), this is a few kB.
+                    <Image
                       src={stickerBadgePath(page.pageNumber)}
                       alt={`${page.virtue} merit badge`}
+                      width={64}
+                      height={64}
                       className="h-16 w-16 object-contain drop-shadow-sm"
                       onError={() => markBadgeMissing(page.pageNumber)}
                     />

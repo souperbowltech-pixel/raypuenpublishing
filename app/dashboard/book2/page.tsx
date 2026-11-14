@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ScoreGate from "@/components/dashboard/ScoreGate";
@@ -14,6 +14,19 @@ import { BOOK2_GATE_CONFIG } from "@/lib/gamification";
 import { DEMO_SCOUT_TOKEN as DEMO_TOKEN } from "@/lib/family";
 import { Spinner } from "@/components/ui/Spinner";
 import { useJustBecameTrue } from "@/components/ui/useJustBecameTrue";
+
+/** A save that has not answered by now is treated as failed, so later saves are not held up. */
+const SAVE_TIMEOUT_MS = 10_000;
+/** How long typing must pause before the explorer name is saved. */
+const NAME_SAVE_DELAY_MS = 600;
+
+/** AbortSignal.timeout, with a fallback for browsers before it (iPads on iOS 15 and older). */
+function timeoutSignal(ms: number): AbortSignal {
+  if (typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
 
 export default function Book2DashboardPage() {
   const router = useRouter();
@@ -33,6 +46,11 @@ export default function Book2DashboardPage() {
   const [book3Unlocked, setBook3Unlocked] = useState(false);
   const [completedPages, setCompletedPages] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const saveSeq = useRef(0);
+  const pagesSaveSeq = useRef(0);
+  // The sticker list as the server last confirmed it: what a failed tick returns to.
+  const confirmedPages = useRef<number[]>([]);
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
 
   const applyScout = (scout: any) => {
     setScoutName(scout.scoutName || "");
@@ -41,6 +59,7 @@ export default function Book2DashboardPage() {
     setFriendsCompleted(scout.friendsCompleted ?? 0);
     setBook3Unlocked(Boolean(scout.book3Unlocked));
     setCompletedPages(scout.completedPages ?? []);
+    confirmedPages.current = scout.completedPages ?? [];
     if (scout.shareCode) setShareCode(scout.shareCode);
   };
 
@@ -76,26 +95,60 @@ export default function Book2DashboardPage() {
   // Sync state to persistent API. The server is authoritative: it returns the
   // canonical scout record, which we mirror back into local state. A family's
   // requests carry no token; the server uses this device's session.
+  //
+  // Saves go one at a time. Each sticker save carries the whole list, so sent
+  // together a slow early save could land last at the server, and its late
+  // answer used to wipe newer ticks off the screen (seen live on 15 Nov: quick
+  // ticks switching themselves off). So:
+  // - every save waits for the one before, and gives up after SAVE_TIMEOUT_MS,
+  //   so one stalled request cannot hold every later save;
+  // - scores and unlocks are taken from every confirmed answer (they now arrive
+  //   in order), but the sticker list only from the newest sticker save, and only
+  //   that save may undo a tick, since a newer one carries the same list again;
+  // - "Syncing" and the failure notice follow the newest save of any kind.
+  // A failed sticker save puts the list back to what the server last confirmed,
+  // not to the moment of the click: if several quick ticks all fail, none of
+  // them may stay lit. Only the newest sticker save does this, as a newer one
+  // carries the same list. Quiz and name saves undo themselves.
+  const undo = (rollback: (() => void) | undefined, pagesSeq: number, newestPagesSave: boolean) => {
+    if (pagesSeq === 0) rollback?.();
+    else if (newestPagesSave) setCompletedPages(confirmedPages.current);
+  };
+
   /** Returns whether the change was actually confirmed saved by the server. */
-  const persistUpdate = async (
+  const persistUpdate = (updates: Record<string, any>, rollback?: () => void): Promise<boolean> => {
+    const seq = ++saveSeq.current;
+    const pagesSeq = "completedPages" in updates ? ++pagesSaveSeq.current : 0;
+    const run = () => sendUpdate(updates, rollback, seq, pagesSeq);
+    const queued = saveQueue.current.then(run, run);
+    saveQueue.current = queued;
+    return queued;
+  };
+
+  const sendUpdate = async (
     updates: Record<string, any>,
-    rollback?: () => void
+    rollback: (() => void) | undefined,
+    seq: number,
+    pagesSeq: number
   ): Promise<boolean> => {
+    const newest = () => seq === saveSeq.current;
+    const newestPages = () => pagesSeq !== 0 && pagesSeq === pagesSaveSeq.current;
     setIsSaving(true);
-    setSaveFailed(false);
+    let ok = false;
     try {
       const res = await fetch("/api/scout/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(mode === "demo" ? { token: DEMO_TOKEN, ...updates } : updates),
+        signal: timeoutSignal(SAVE_TIMEOUT_MS),
       });
       const data = await res.json().catch(() => null);
 
-      // The server now tells us whether the write actually reached the database.
+      // The server tells us whether the write actually reached the database.
       // Anything short of a confirmed save has to undo the optimistic change,
       // otherwise a sticker stays lit that nobody ever recorded.
       if (!res.ok || data?.saved === false) {
-        rollback?.();
+        undo(rollback, pagesSeq, newestPages());
         setSaveFailed(true);
         return false;
       }
@@ -105,17 +158,41 @@ export default function Book2DashboardPage() {
         setReferralScore(data.scout.referralScore ?? 0);
         setFriendsCompleted(data.scout.friendsCompleted ?? 0);
         setBook3Unlocked(Boolean(data.scout.book3Unlocked));
-        setCompletedPages(data.scout.completedPages ?? []);
+        confirmedPages.current = data.scout.completedPages ?? [];
+        if (newestPages() || pagesSaveSeq.current === 0) setCompletedPages(confirmedPages.current);
       }
+      ok = true;
       return true;
     } catch {
-      rollback?.();
+      // Timed out, aborted or offline.
+      undo(rollback, pagesSeq, newestPages());
       setSaveFailed(true);
       return false;
     } finally {
-      setIsSaving(false);
+      if (newest()) {
+        setIsSaving(false);
+        if (ok) setSaveFailed(false);
+      }
     }
   };
+
+  // The name is saved once typing pauses, not on every key: one request per
+  // character filled the save queue and could hit the per-minute limit.
+  const nameTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const saveNameSoon = (name: string) => {
+    clearTimeout(nameTimer.current);
+    pendingName.current = name;
+    nameTimer.current = setTimeout(() => flushName.current(), NAME_SAVE_DELAY_MS);
+  };
+  const pendingName = useRef<string | null>(null);
+  const flushName = useRef(() => {});
+  flushName.current = () => {
+    clearTimeout(nameTimer.current);
+    if (pendingName.current !== null) persistUpdate({ scoutName: pendingName.current });
+    pendingName.current = null;
+  };
+  // Leaving the page within the pause still saves what was typed.
+  useEffect(() => () => flushName.current(), []);
 
   // Only leave once the server has cleared the session: leaving early would land
   // on /start still signed in, which reads as "sign out did nothing".
@@ -123,7 +200,7 @@ export default function Book2DashboardPage() {
     setSigningOut(true);
     setSignOutFailed(false);
     try {
-      const res = await fetch("/api/family/logout", { method: "POST", signal: AbortSignal.timeout(10_000) });
+      const res = await fetch("/api/family/logout", { method: "POST", signal: timeoutSignal(10_000) });
       if (!res.ok) throw new Error(`logout ${res.status}`);
       router.replace("/start");
     } catch {
@@ -133,13 +210,12 @@ export default function Book2DashboardPage() {
   };
 
   const handleTogglePage = (pageNumber: number) => {
-    const previous = completedPages;
     const updated = completedPages.includes(pageNumber)
       ? completedPages.filter((p) => p !== pageNumber)
       : [...completedPages, pageNumber].sort((a, b) => a - b);
 
     setCompletedPages(updated);
-    persistUpdate({ completedPages: updated }, () => setCompletedPages(previous));
+    persistUpdate({ completedPages: updated });
   };
 
   // Quiz answers are graded server-side; we never send a client-computed score.
@@ -228,7 +304,7 @@ export default function Book2DashboardPage() {
           >
             <span>
               <strong className="font-bold">That didn&apos;t save.</strong> Your last
-              change wasn&apos;t recorded, so we&apos;ve put it back. Please try again.
+              change wasn&apos;t recorded. Please try again.
             </span>
             <button type="button" onClick={() => setSaveFailed(false)} className="inline-flex min-h-11 items-center px-2 text-xs font-bold underline">
               Dismiss
@@ -250,7 +326,7 @@ export default function Book2DashboardPage() {
                 value={scoutName}
                 onChange={(e) => {
                   setScoutName(e.target.value);
-                  persistUpdate({ scoutName: e.target.value });
+                  saveNameSoon(e.target.value);
                 }}
                 className="font-display text-xl sm:text-2xl font-bold bg-transparent border-b border-dashed border-ink/30 focus:outline-none focus:border-spruce text-ink"
                 title="Click to customize Chief Explorer name"
