@@ -112,13 +112,13 @@ function Form({ bonus }: { bonus?: React.ReactNode }) {
 
           {giftCode && (
             <div className="mt-4 rounded-xl border border-crayon-gold/40 bg-crayon-goldsoft/30 p-3 text-center text-xs font-bold text-ink">
-              🎁 Redeeming your gifted Chief Scout Patrol membership!
+              Redeeming your gifted Chief Scout Patrol membership!
             </div>
           )}
 
           {!giftCode && refCode && (
             <div className="mt-4 rounded-xl border border-spruce/30 bg-spruce/10 p-3 text-center text-xs font-bold text-spruce-dark">
-              🧭 Joining via a friend&apos;s Quest Captain invitation!
+              Joining via a friend&apos;s Quest Captain invitation!
             </div>
           )}
 

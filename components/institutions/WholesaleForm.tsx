@@ -311,7 +311,7 @@ export default function WholesaleForm() {
         )}
 
         <div className="mt-3 rounded-lg border border-spruce/30 bg-spruce/10 px-3 py-2 text-center text-xs text-spruce-dark">
-          <span className="font-semibold">🧪 Sandbox Test Mode:</span> Use test card{" "}
+          <span className="font-semibold">Sandbox Test Mode:</span> Use test card{" "}
           <code className="rounded bg-paper px-1 font-mono font-bold text-ink">4242 4242 4242 4242</code>.
         </div>
       </div>

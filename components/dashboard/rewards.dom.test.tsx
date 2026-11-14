@@ -93,7 +93,6 @@ describe("the quiz", () => {
 
     const banner = Array.from(animated("pop-in")).find((el) => el.textContent?.includes("Fantastic job"));
     expect(banner).toBeDefined();
-    expect(banner!.querySelector('.animate-wiggle[aria-hidden="true"]')?.textContent).toBe("🎉");
     expect(animated("shake")).toHaveLength(0);
   });
 
@@ -167,7 +166,7 @@ describe("the score gate", () => {
     act(() => root.render(<Gate quizScore={0} />));
     act(() => root.render(<Gate quizScore={400} />));
     expect(animated("boing")).toHaveLength(1);
-    expect(animated("boing")[0].textContent).toContain("🎖️");
+    expect(animated("boing")[0].textContent).toContain("Academic Points Secured");
   });
 
   it("does not bounce a pass that was already there", () => {

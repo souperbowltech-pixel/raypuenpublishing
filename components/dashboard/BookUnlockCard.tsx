@@ -19,7 +19,7 @@ interface BookUnlockCardProps {
 
 const COPY = {
   2: {
-    badge: "🏆 Milestone Complete · 700 Points",
+    badge: "Milestone Complete · 700 Points",
     heading: "Book 2 Unlocked 100% Free!",
     blurb: (
       <>
@@ -33,11 +33,11 @@ const COPY = {
       </>
     ),
     fulfillmentNote: "Zero-Dollar Peer-Reward Fulfillment Trigger ($0.00 Cost to Explorer)",
-    cta: "🚀 Confirm Address & Trigger Free Book 2 Printing",
+    cta: "Confirm Address & Trigger Free Book 2 Printing",
     gifted: "$0.00 (Gifted via Biblical 700 Gate)",
   },
   3: {
-    badge: "💛 Grandpa Multiplier · $40 Sponsored",
+    badge: "Grandpa Multiplier · $40 Sponsored",
     heading: "Book 3 Unlocked!",
     blurb: (
       <>
@@ -51,7 +51,7 @@ const COPY = {
       </>
     ),
     fulfillmentNote: "Sponsored Fulfillment Trigger ($0.00 Cost to Explorer — covered by sponsor)",
-    cta: "🚀 Confirm Address & Trigger Sponsored Book 3 Printing",
+    cta: "Confirm Address & Trigger Sponsored Book 3 Printing",
     gifted: "$0.00 (Covered by the $40 Grandpa Sponsorship)",
   },
 } as const;
@@ -107,9 +107,6 @@ export default function BookUnlockCard({ scoutName, bookNumber, celebrate = fals
       <div className="mt-8 rounded-2xl border-2 border-spruce/30 bg-paper p-6 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-ink/10 pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-spruce text-paper font-bold text-xl">
-              📦
-            </span>
             <div>
               <h4 className="text-base font-bold text-ink">
                 IngramSpark Global Print &amp; Distribution
@@ -221,9 +218,6 @@ export default function BookUnlockCard({ scoutName, bookNumber, celebrate = fals
         ) : (
           <div className="mt-5 rounded-xl bg-spruce/10 border border-spruce/30 p-5 text-center sm:text-left animate-rise">
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="text-4xl animate-boing" aria-hidden="true">
-                <span className="inline-block animate-wiggle">🎉</span>
-              </div>
               <div>
                 <h5 className="text-lg font-bold text-spruce-dark font-display">
                   Order Successfully Dispatched to IngramSpark!

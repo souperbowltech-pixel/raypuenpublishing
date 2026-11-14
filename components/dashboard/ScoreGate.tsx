@@ -64,7 +64,7 @@ export default function ScoreGate({
                 color: "#FCF8F1",
               }}
             >
-              {isBook2Unlocked ? "🌟 Status: Unlock_Volume_2" : hasAcademicPass ? "📜 Status: Academic_Pass" : "🧭 Status: In_Progress"}
+              {isBook2Unlocked ? "Status: Unlock_Volume_2" : hasAcademicPass ? "Status: Academic_Pass" : "Status: In_Progress"}
             </span>
           </div>
         </div>
@@ -90,9 +90,8 @@ export default function ScoreGate({
       {hasAcademicPass && (
         <div className={`mt-6 rounded-xl border border-spruce/30 bg-spruce/10 p-5 ${passJustLanded ? "animate-rise" : ""}`}>
           <div className="flex items-start gap-3.5">
-            <div className={`text-2xl sm:text-3xl ${passJustLanded ? "animate-boing" : ""}`} aria-hidden="true">🎖️</div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base sm:text-lg font-bold text-spruce-dark font-display">
+              <h3 className={`text-base sm:text-lg font-bold text-spruce-dark font-display ${passJustLanded ? "animate-boing" : ""}`}>
                 {isBook2Unlocked ? BOOK2_GATE_CONFIG.unlockedPanelTitle : "Academic Points Secured!"}
               </h3>
               <p className="mt-1 text-sm sm:text-base leading-relaxed text-ink-soft">

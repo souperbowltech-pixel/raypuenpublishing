@@ -210,12 +210,11 @@ export default function ComprehensionQuiz({
                 </span>
               ) : isPerfect ? (
                 <span className={`text-spruce flex items-center gap-1.5 font-bold ${justSubmitted ? "animate-pop-in" : ""}`}>
-                  <span className={`inline-block ${justSubmitted ? "animate-wiggle" : ""}`} aria-hidden="true">🎉</span>
                   Fantastic job! All 4 answers correct — 400 Academic Points locked!
                 </span>
               ) : (
                 <span className={`text-clay flex items-center gap-1.5 font-bold ${justSubmitted ? "animate-rise" : ""}`}>
-                  ⚠️ You scored {currentQuizScore}/400 pts. Retake to secure full 400 points!
+                  You scored {currentQuizScore}/400 pts. Retake to secure full 400 points!
                 </span>
               )}
             </div>

@@ -82,7 +82,6 @@ export default function SponsorLandingPage() {
   return (
     <main className="min-h-[80vh] flex items-center justify-center px-4 py-16">
       <div className="max-w-lg w-full rounded-2xl border-2 border-crayon-gold bg-gradient-to-b from-crayon-goldsoft/40 to-paper p-8 text-center shadow-book">
-        <div className="text-5xl mb-3">💛</div>
         <p className="eyebrow mb-2">The Grandpa Multiplier</p>
 
         {stage === "form" && (
@@ -103,7 +102,7 @@ export default function SponsorLandingPage() {
                 disabled={loading}
                 className="btn-primary mt-6 w-full text-base disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? <><Spinner className="h-4 w-4" /> Redirecting to secure checkout…</> : `💳 Sponsor Book 3 (${price})`}
+                {loading ? <><Spinner className="h-4 w-4" /> Redirecting to secure checkout…</> : `Sponsor Book 3 (${price})`}
               </button>
             ) : (
               <p className="mt-6 rounded-lg bg-clay/10 border border-clay/30 p-4 text-sm font-semibold text-clay-dark">
@@ -112,7 +111,7 @@ export default function SponsorLandingPage() {
               </p>
             )}
 
-            {error && <p className="mt-3 text-sm font-semibold text-clay-dark">⚠️ {error}</p>}
+            {error && <p className="mt-3 text-sm font-semibold text-clay-dark">{error}</p>}
 
             <p className="mt-4 text-xs text-ink-soft">
               Secure payment via Stripe. Book 3 unlocks automatically once the sponsorship is confirmed.

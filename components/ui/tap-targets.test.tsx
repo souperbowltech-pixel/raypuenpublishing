@@ -124,7 +124,7 @@ describe("controls in page files are at least 44 px", () => {
     ["components/dashboard/ComprehensionQuiz.tsx", "Retake Quiz"],
     ["components/dashboard/ScoreGate.tsx", "onClick={handlePrintRibbon}"],
     ["components/dashboard/QuestCaptainBox.tsx", "onClick={handleCopy}"],
-    ["components/dashboard/QuestCaptainBox.tsx", "⚡ Simulate Friend Join"],
+    ["components/dashboard/QuestCaptainBox.tsx", "onClick={() => onSetFriends(Math.min("],
     ["components/dashboard/QuestCaptainBox.tsx", "Reset Referral Test"],
     ["app/dashboard/book2/page.tsx", "← Back to Storefront"],
     ["app/dashboard/book2/page.tsx", "font-display text-lg sm:text-xl"],

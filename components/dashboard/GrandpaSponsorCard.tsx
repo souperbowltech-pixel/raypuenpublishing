@@ -61,7 +61,6 @@ export default function GrandpaSponsorCard({ shareCode, scoutName, demoToken }: 
     <div className="rounded-2xl border-2 border-clay/30 bg-gradient-to-b from-clay/5 to-paper p-6 sm:p-8 shadow-card">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-ink/10 pb-5">
         <div className="flex items-start gap-3">
-          <span className="text-3xl">💛</span>
           <div>
             <span className="eyebrow">Advanced Relative Track</span>
             <h3 className="mt-1 text-2xl font-bold font-display text-ink">
@@ -89,7 +88,7 @@ export default function GrandpaSponsorCard({ shareCode, scoutName, demoToken }: 
             disabled={loading}
             className="btn-primary w-full sm:w-auto text-base disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? <><Spinner className="h-4 w-4" /> Redirecting to secure checkout…</> : `💳 Sponsor Book 3 (${price})`}
+            {loading ? <><Spinner className="h-4 w-4" /> Redirecting to secure checkout…</> : `Sponsor Book 3 (${price})`}
           </button>
           <p className="mt-2 text-xs text-ink-soft">
             Secure payment via Stripe. Book 3 unlocks automatically the moment the sponsorship is confirmed.
@@ -101,7 +100,7 @@ export default function GrandpaSponsorCard({ shareCode, scoutName, demoToken }: 
       </div>
 
       {error && (
-        <p className="mt-3 text-sm font-semibold text-clay-dark">⚠️ {error}</p>
+        <p className="mt-3 text-sm font-semibold text-clay-dark">{error}</p>
       )}
     </div>
   );

@@ -105,8 +105,8 @@ export default function QuestCaptainBox({
               </span>
               <span className={`text-sm font-bold ${gateMet ? "text-spruce" : "text-ink"}`}>
                 {gateMet
-                  ? `✅ ${friendsCompleted} Friends Verified! (2-of-3 gate met · 300 Points Awarded)`
-                  : `⏳ ${friendsCompleted} of ${required} required friends have coloured Page 1...`}
+                  ? `${friendsCompleted} Friends Verified! (2-of-3 gate met · 300 Points Awarded)`
+                  : `${friendsCompleted} of ${required} required friends have coloured Page 1...`}
               </span>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function QuestCaptainBox({
                   <div className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-lg ${
                     done ? "bg-spruce text-paper" : "bg-ink/10 text-ink-soft grayscale"
                   }`}>
-                    {done ? "🎨" : "👤"}
+                    {done ? "✓" : i + 1}
                   </div>
                   <p className="mt-1.5 text-[11px] font-bold text-ink">Friend {i + 1}</p>
                   <p className={`text-[10px] font-semibold ${done ? "text-spruce" : "text-ink-soft"}`}>
@@ -148,7 +148,7 @@ export default function QuestCaptainBox({
               className="min-h-11 rounded-lg bg-clay px-3.5 py-2 text-xs font-bold text-paper transition hover:bg-clay-dark shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
               title="Simulate one invited friend logging in and colouring their Page 1"
             >
-              ⚡ Simulate Friend Join (+1)
+              Simulate Friend Join (+1)
             </button>
             {friendsCompleted > 0 && (
               <button

@@ -245,7 +245,6 @@ export default function Book2DashboardPage() {
           <div>
             <span className="eyebrow">Chief Explorer Profile</span>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-2xl">🧭</span>
               <input
                 type="text"
                 value={scoutName}
@@ -261,7 +260,7 @@ export default function Book2DashboardPage() {
           <div className="text-xs text-ink-soft sm:text-right">
             <span>Verified Reader · Persistent Server State</span>
             <span className="block font-mono font-bold text-spruce">
-              {isSaving ? "💾 Syncing..." : mode === "demo" ? "Demo profile" : `Explorer code: ${shareCode}`}
+              {isSaving ? "Syncing..." : mode === "demo" ? "Demo profile" : `Explorer code: ${shareCode}`}
             </span>
             {mode === "family" && (
               <button

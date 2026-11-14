@@ -3,17 +3,14 @@ import { Reveal } from "@/components/ui/Reveal";
 
 const items = [
   {
-    icon: "📦",
     title: "Shipping",
     body: shippingReturns.shipping,
   },
   {
-    icon: "↩️",
     title: "Returns",
     body: shippingReturns.returns,
   },
   {
-    icon: "🔒",
     title: "Secure checkout",
     body: "256-bit encrypted checkout powered by Stripe. All major credit and debit cards accepted securely.",
   },
@@ -28,10 +25,7 @@ export function ShippingReturns() {
             key={item.title}
             className="rounded-xl2 border border-ink/10 bg-paper-deep p-6"
           >
-            <span className="text-2xl" aria-hidden>
-              {item.icon}
-            </span>
-            <h3 className="mt-2 font-display text-lg font-semibold text-ink">
+            <h3 className="font-display text-lg font-semibold text-ink">
               {item.title}
             </h3>
             <p className="mt-1 text-sm leading-relaxed text-ink-soft">

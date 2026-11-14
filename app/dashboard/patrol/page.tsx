@@ -227,7 +227,7 @@ function PatrolHubContent() {
             </div>
             <p className="mt-2 text-xs text-ink-soft">
               {isGoalReached
-                ? "🎉 Milestone Complete! All 3 families have registered their Chief Explorers."
+                ? "Milestone Complete! All 3 families have registered their Chief Explorers."
                 : `Gift your links below. ${3 - redeemedCount} more ${3 - redeemedCount === 1 ? "family" : "families"} needed to earn your Free Printed Parent's Guide!`}
             </p>
           </div>
@@ -291,7 +291,7 @@ function PatrolHubContent() {
           <div className="rounded-3xl border-2 border-spruce/40 bg-spruce/10 p-6 sm:p-10 shadow-book">
             <div className="text-center">
               <span className="inline-block rounded-full bg-spruce px-4 py-1 text-xs font-black uppercase tracking-wider text-paper mb-2">
-                🏆 Patrol Leader Reward Unlocked
+                Patrol Leader Reward Unlocked
               </span>
               <h2 className="text-2xl sm:text-3xl font-black font-display text-ink">
                 Claim Your Free Printed Parent&apos;s Guide
@@ -307,15 +307,12 @@ function PatrolHubContent() {
                   approvalJustArrived ? "animate-rise" : ""
                 }`}
               >
-                <span className={`inline-block text-3xl ${approvalJustArrived ? "animate-boing" : ""}`} aria-hidden="true">
-                  📦
-                </span>
-                <h4 className="mt-2 text-lg font-bold text-ink">
+                <h4 className={`text-lg font-bold text-ink ${approvalJustArrived ? "animate-boing" : ""}`}>
                   {approval.status === "approved"
-                    ? "✅ Reward Approved for Printing!"
+                    ? "Reward Approved for Printing!"
                     : approval.status === "rejected"
                     ? "Review Status: Declined"
-                    : "⏳ Submitted — Awaiting Ray's One-Click Approval"}
+                    : "Submitted — Awaiting Ray's One-Click Approval"}
                 </h4>
                 <p className="mt-2 text-xs text-ink-soft">
                   Recipient: <strong>{approval.recipientName}</strong>
