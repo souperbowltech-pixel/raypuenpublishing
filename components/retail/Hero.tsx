@@ -2,6 +2,7 @@ import Image from "next/image";
 import { book1 } from "@/lib/book";
 import { BuyBox } from "./BuyBox";
 import { HeroTitle } from "@/components/motion/HeroTitle";
+import { CoverParallax } from "@/components/motion/CoverParallax";
 
 export function Hero() {
   return (
@@ -40,20 +41,22 @@ export function Hero() {
         </div>
 
         <div className="order-1 flex justify-center lg:order-2">
-          <div className="relative">
-            <div
-              aria-hidden
-              className="absolute -inset-4 -rotate-3 rounded-xl2 bg-crayon-goldsoft"
-            />
-            <Image
-              src={book1.coverImage.src}
-              alt={book1.coverImage.alt}
-              width={480}
-              height={480}
-              priority
-              className="relative w-64 rotate-2 rounded-xl2 shadow-book sm:w-80"
-            />
-          </div>
+          <CoverParallax>
+            <div className="relative">
+              <div
+                aria-hidden
+                className="absolute -inset-4 -rotate-3 rounded-xl2 bg-crayon-goldsoft"
+              />
+              <Image
+                src={book1.coverImage.src}
+                alt={book1.coverImage.alt}
+                width={480}
+                height={480}
+                priority
+                className="relative w-64 rotate-2 rounded-xl2 shadow-book sm:w-80"
+              />
+            </div>
+          </CoverParallax>
         </div>
       </div>
     </section>
