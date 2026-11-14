@@ -3,6 +3,12 @@
  * they are tested on their own.
  */
 
+/**
+ * How long a GSAP entrance may hold its words unseen while the script loads.
+ * app/globals.css shows them after the same time; past it, the entrance is skipped.
+ */
+export const MOTION_FALLBACK_MS = 1500;
+
 /** How many children of one group get their own delay; later ones share the last. */
 export const REVEAL_STAGGER_CAP = 6;
 

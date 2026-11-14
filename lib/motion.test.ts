@@ -5,6 +5,7 @@ import postcss from "postcss";
 import tailwindcss from "tailwindcss";
 import config from "@/tailwind.config";
 import {
+  MOTION_FALLBACK_MS,
   REVEAL_DURATION_MS,
   REVEAL_SETTLE_MS,
   REVEAL_STAGGER_CAP,
@@ -115,6 +116,10 @@ describe("globals.css, as Tailwind compiles it", async () => {
     // Same specificity: whichever comes later wins. The wholesale tier cards rely on this.
     expect(css.indexOf(".lift {")).toBeGreaterThan(-1);
     expect(css.indexOf('[data-reveal="shown"] > *')).toBeGreaterThan(css.indexOf(".lift {"));
+  });
+
+  it("shows the GSAP hero words by CSS after the same time the script gives up waiting", () => {
+    expect(css).toContain(`animation: motion-fallback 0s linear ${MOTION_FALLBACK_MS / 1000}s forwards`);
   });
 
   it("emits the keyframe for an animation a page uses", () => {

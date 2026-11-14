@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { book1 } from "@/lib/book";
 import { BuyBox } from "./BuyBox";
+import { HeroTitle } from "@/components/motion/HeroTitle";
 
 export function Hero() {
   return (
@@ -13,9 +14,7 @@ export function Hero() {
       <div className="container-page relative grid items-center gap-10 py-14 sm:py-20 lg:grid-cols-2 lg:gap-14">
         <div className="order-2 lg:order-1">
           <p className="eyebrow">Independent children&apos;s imprint</p>
-          <h1 className="mt-3 font-display text-4xl font-bold leading-tight text-ink sm:text-5xl">
-            {book1.title}
-          </h1>
+          <HeroTitle text={book1.title} className="mt-3 font-display text-4xl font-bold leading-tight text-ink sm:text-5xl" />
           <p className="mt-4 max-w-md text-lg text-ink-soft">
             {book1.tagline}
           </p>

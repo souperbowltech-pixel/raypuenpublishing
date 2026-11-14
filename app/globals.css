@@ -96,6 +96,23 @@
   }
 }
 
+/* GSAP hero title (components/motion/HeroTitle.tsx): the words wait unseen
+   only while script is running and loading, so there is no flash before they
+   rise. If the script never arrives they appear anyway (MOTION_FALLBACK_MS in
+   lib/motion.ts; lib/motion.test.ts keeps the two equal). */
+@media (prefers-reduced-motion: no-preference) {
+  html.js [data-motion="waiting"] [data-word] > span {
+    visibility: hidden;
+    animation: motion-fallback 0s linear 1.5s forwards;
+  }
+}
+
+@keyframes motion-fallback {
+  to {
+    visibility: visible;
+  }
+}
+
 /* A page printed before it was scrolled must not print blank sections. */
 @media print {
   [data-reveal] > * {

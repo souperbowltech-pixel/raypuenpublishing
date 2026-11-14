@@ -52,7 +52,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${nunito.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Marks that script runs, before first paint, so motion can hold its
+            starting pose without hiding anything from a browser without it. */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+      </head>
       <body>{children}</body>
     </html>
   );
