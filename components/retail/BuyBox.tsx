@@ -50,7 +50,7 @@ export function BuyBox() {
             aria-label="Decrease quantity"
             disabled={loading}
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            className="h-10 w-10 rounded-l-full text-xl text-ink hover:bg-ink/5 disabled:opacity-50"
+            className="h-11 w-11 rounded-l-full text-xl text-ink hover:bg-ink/5 disabled:opacity-50"
           >
             −
           </button>
@@ -70,7 +70,7 @@ export function BuyBox() {
             aria-label="Increase quantity"
             disabled={loading}
             onClick={() => setQuantity((q) => q + 1)}
-            className="h-10 w-10 rounded-r-full text-xl text-ink hover:bg-ink/5 disabled:opacity-50"
+            className="h-11 w-11 rounded-r-full text-xl text-ink hover:bg-ink/5 disabled:opacity-50"
           >
             +
           </button>

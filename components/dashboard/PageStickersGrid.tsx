@@ -64,7 +64,7 @@ export default function PageStickersGrid({
           href="/api/stickers/sheet"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg bg-spruce px-4 py-2 text-sm font-bold text-paper transition hover:bg-spruce-dark shadow-sm"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-spruce px-4 py-2 text-sm font-bold text-paper transition hover:bg-spruce-dark shadow-sm"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -130,13 +130,16 @@ export default function PageStickersGrid({
               {/* Action Button */}
               <button
                 type="button"
-                className={`mt-3 w-full rounded-md py-1.5 text-[11px] font-bold transition ${
+                aria-pressed={isAchieved}
+                className={`mt-3 min-h-11 w-full rounded-md px-2 py-2 text-xs font-bold transition ${
                   isAchieved
                     ? "bg-spruce/15 text-spruce-dark hover:bg-spruce/25"
                     : "bg-clay text-paper hover:bg-clay-dark"
                 }`}
               >
                 {isAchieved ? "✓ Completed" : "I Completed This!"}
+                {/* The visible words start the name, so voice control still finds it; this tells the 19 apart. */}
+                <span className="sr-only">{`, page ${page.pageNumber}, ${page.virtue}`}</span>
               </button>
             </div>
           );

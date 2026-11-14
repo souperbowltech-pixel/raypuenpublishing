@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SiteHeader } from "@/components/retail/SiteHeader";
 import { SiteFooter } from "@/components/retail/SiteFooter";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface GiftSlot {
   code: string;
@@ -112,7 +113,9 @@ function PatrolHubContent() {
   if (loading) {
     return (
       <main className="min-h-screen bg-paper px-4 py-16 text-center text-ink">
-        <p className="text-lg font-bold">Loading Patrol Leader Hub…</p>
+        <p className="inline-flex items-center gap-2 text-lg font-bold" role="status">
+          <Spinner className="h-5 w-5 text-spruce" /> Loading Patrol Leader Hub…
+        </p>
       </main>
     );
   }
@@ -230,7 +233,7 @@ function PatrolHubContent() {
                   <button
                     type="button"
                     onClick={() => handleCopyLink(gift.code, gift.slotNumber)}
-                    className="btn-primary w-full mt-5 text-xs py-2"
+                    className="btn-primary w-full mt-5 min-h-11 text-xs py-2"
                   >
                     {copiedSlot === gift.slotNumber ? "✓ Copied Gift Link!" : "Copy Gift Link"}
                   </button>
@@ -352,7 +355,7 @@ function PatrolHubContent() {
                   disabled={submittingClaim}
                   className="btn-primary w-full mt-4 text-sm py-3 font-bold"
                 >
-                  {submittingClaim ? "Submitting Shipping Claim…" : "Submit Claim for Free Printed Guide"}
+                  {submittingClaim ? <><Spinner className="h-4 w-4" /> Submitting Shipping Claim…</> : "Submit Claim for Free Printed Guide"}
                 </button>
               </form>
             )}
@@ -360,7 +363,7 @@ function PatrolHubContent() {
         )}
 
         <div className="text-center">
-          <Link href="/guide" className="text-xs font-semibold text-spruce hover:underline">
+          <Link href="/guide" className="inline-flex min-h-11 items-center text-xs font-semibold text-spruce hover:underline">
             ← Back to Parent&apos;s Guide Info
           </Link>
         </div>

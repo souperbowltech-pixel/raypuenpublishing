@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { publisherBrand } from "@/lib/book";
+import { Spinner } from "@/components/ui/Spinner";
 
 type Field = "childFirstName" | "parentEmail" | "isParentOrGuardian";
 
@@ -85,7 +86,11 @@ function Form({ bonus }: { bonus?: React.ReactNode }) {
     <main className="min-h-screen bg-paper px-4 py-12 sm:py-16">
       <div className="mx-auto max-w-lg">
         {bonus}
-        {view === "checking" ? null : view === "welcome-back" ? (
+        {view === "checking" ? (
+          <p className="flex items-center justify-center gap-2 py-16 font-semibold text-ink-soft" role="status">
+            <Spinner className="h-5 w-5 text-spruce" /> Checking for your album…
+          </p>
+        ) : view === "welcome-back" ? (
           <div className="rounded-3xl border-2 border-crayon-gold bg-gradient-to-b from-crayon-goldsoft/40 to-paper p-6 text-center shadow-book sm:p-10">
             <h1 className="font-display text-3xl font-black text-ink">Welcome back, Explorer!</h1>
             <p className="mt-3 text-ink-soft">
@@ -162,7 +167,7 @@ function Form({ bonus }: { bonus?: React.ReactNode }) {
               </p>
             </div>
 
-            <label htmlFor="isParentOrGuardian" className="flex items-start gap-3 text-sm text-ink">
+            <label htmlFor="isParentOrGuardian" className="flex min-h-11 cursor-pointer items-start gap-3 py-1 text-sm text-ink">
               <input
                 id="isParentOrGuardian"
                 type="checkbox"
@@ -185,7 +190,7 @@ function Form({ bonus }: { bonus?: React.ReactNode }) {
               disabled={submitting}
               className="btn-primary w-full text-base disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {submitting ? "Setting up your album…" : "Start the adventure"}
+              {submitting ? <><Spinner className="h-4 w-4" /> Setting up your album…</> : "Start the adventure"}
             </button>
           </form>
 
@@ -197,7 +202,7 @@ function Form({ bonus }: { bonus?: React.ReactNode }) {
 
         <p className="mt-6 text-center text-xs text-ink-soft/80">{publisherBrand.fullCredit}</p>
         <p className="mt-2 text-center">
-          <Link href="/" className="text-xs font-semibold text-spruce hover:underline">
+          <Link href="/" className="inline-flex min-h-11 items-center text-xs font-semibold text-spruce hover:underline">
             ← Back to the store
           </Link>
         </p>

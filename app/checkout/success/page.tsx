@@ -93,7 +93,7 @@ export default async function CheckoutSuccessPage({
                 <p className="font-bold text-ink">Save this link — it is your Patrol.</p>
                 <Link
                   href={`/dashboard/patrol?token=${patrolToken}`}
-                  className="mt-2 block break-all font-mono text-sm font-semibold text-spruce-dark underline"
+                  className="mt-1 block min-h-11 break-all py-3 font-mono text-sm font-semibold text-spruce-dark underline"
                 >
                   puenpublishing.com/dashboard/patrol?token={patrolToken}
                 </Link>

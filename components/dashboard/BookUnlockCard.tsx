@@ -7,6 +7,7 @@ import {
   type ShippingAddress,
   type DispatchOutcome,
 } from "@/lib/fulfillment";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface BookUnlockCardProps {
   scoutName: string;
@@ -199,7 +200,7 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
                 disabled={sending}
                 className="btn-primary w-full sm:w-auto text-base"
               >
-                {sending ? "Sending..." : copy.cta}
+                {sending ? <><Spinner className="h-4 w-4" /> Sending...</> : copy.cta}
               </button>
             </div>
           </form>

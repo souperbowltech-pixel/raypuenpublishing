@@ -70,7 +70,7 @@ export default async function AdminPage({
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="font-display text-2xl font-bold text-ink">Guides waiting for approval</h1>
         <form method="POST" action="/api/admin/session?signout=1">
-          <button type="submit" className="text-sm font-semibold text-ink-soft underline">
+          <button type="submit" className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-soft underline">
             Sign out
           </button>
         </form>

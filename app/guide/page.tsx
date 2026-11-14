@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/retail/SiteHeader";
 import { SiteFooter } from "@/components/retail/SiteFooter";
 import { PARENTS_GUIDE_DIGITAL_PRICE, PARENTS_GUIDE_DIGITAL_LIVE, PATROL_BUNDLE_PRICE, formatCurrency } from "@/lib/pricing";
+import { Spinner } from "@/components/ui/Spinner";
 
 export default function ParentsGuidePage() {
   const [loadingType, setLoadingType] = useState<"digital" | "patrol" | null>(null);
@@ -105,7 +106,7 @@ export default function ParentsGuidePage() {
                 {!PARENTS_GUIDE_DIGITAL_LIVE
                   ? "Not on sale yet"
                   : loadingType === "digital"
-                    ? "Connecting to Checkout…"
+                    ? <><Spinner className="h-4 w-4" /> Connecting to Checkout…</>
                     : "Get Digital Guide ($29.97)"}
               </button>
             </div>
@@ -157,13 +158,13 @@ export default function ParentsGuidePage() {
                 disabled={loadingType !== null}
                 className="btn-primary w-full mt-8 py-3.5 text-base bg-spruce hover:bg-spruce-dark text-paper font-black"
               >
-                {loadingType === "patrol" ? "Connecting to Checkout…" : "Join Chief Scout Patrol ($10.00)"}
+                {loadingType === "patrol" ? <><Spinner className="h-4 w-4" /> Connecting to Checkout…</> : "Join Chief Scout Patrol ($10.00)"}
               </button>
             </div>
           </div>
 
           <div className="mt-12 text-center text-xs text-ink-soft">
-            <Link href="/" className="font-semibold text-spruce hover:underline">
+            <Link href="/" className="inline-flex min-h-11 items-center font-semibold text-spruce hover:underline">
               ← Return to Book 1 Storefront
             </Link>
           </div>

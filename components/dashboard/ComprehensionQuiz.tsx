@@ -74,7 +74,7 @@ export default function ComprehensionQuiz({
               key={b}
               type="button"
               onClick={() => handleSwitchBook(b)}
-              className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
+              className={`min-h-11 rounded-lg px-3.5 py-2 text-xs font-bold transition ${
                 activeBook === b
                   ? "bg-spruce text-paper shadow-sm"
                   : "bg-paper-deep text-ink-soft hover:bg-ink/10"
@@ -190,7 +190,7 @@ export default function ComprehensionQuiz({
               <button
                 type="button"
                 onClick={handleReset}
-                className="btn-secondary text-sm py-2 px-4"
+                className="btn-secondary min-h-11 text-sm py-2 px-4"
               >
                 Retake Quiz
               </button>

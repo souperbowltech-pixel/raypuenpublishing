@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { codeFromFragment, isSafeDownloadUrl } from "@/lib/library-link";
+import { Spinner } from "@/components/ui/Spinner";
 
 /**
  * The code field. A link like /library#code=ABCD-2345-WXYZ fills it in: the
@@ -70,7 +71,7 @@ export function LibraryForm() {
         onChange={(event) => setCode(event.target.value)}
       />
       <button type="submit" className="btn-primary w-full" disabled={state === "working" || !code.trim()}>
-        {state === "working" ? "Preparing your copy..." : "Download my copy"}
+        {state === "working" ? <><Spinner className="h-4 w-4" /> Preparing your copy...</> : "Download my copy"}
       </button>
       {state === "done" && (
         <p className="text-sm font-semibold text-spruce-dark" role="status">

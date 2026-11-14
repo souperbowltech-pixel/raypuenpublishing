@@ -23,7 +23,7 @@ export default function InstitutionsPage() {
     <div className="min-h-screen">
       <header className="border-b border-ink/10 bg-spruce-dark text-paper">
         <div className="container-page flex h-16 items-center justify-between">
-          <Link href="/" className="font-display text-2xl font-bold">
+          <Link href="/" className="inline-flex min-h-11 items-center font-display text-2xl font-bold">
             {siteMeta.name}
           </Link>
           <span className="rounded-full bg-paper/15 px-3 py-1 text-xs font-bold uppercase tracking-wider">

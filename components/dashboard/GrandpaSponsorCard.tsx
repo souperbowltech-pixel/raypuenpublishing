@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { GRANDPA_SPONSOR_PRICE } from "@/lib/gamification";
 import SponsorQRCode from "@/components/dashboard/SponsorQRCode";
 import { getSiteOrigin } from "@/lib/site";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface GrandpaSponsorCardProps {
   /** The child's public share code (GG-…); the private token never reaches the page. */
@@ -88,7 +89,7 @@ export default function GrandpaSponsorCard({ shareCode, scoutName, demoToken }: 
             disabled={loading}
             className="btn-primary w-full sm:w-auto text-base disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? "Redirecting to secure checkout…" : `💳 Sponsor Book 3 (${price})`}
+            {loading ? <><Spinner className="h-4 w-4" /> Redirecting to secure checkout…</> : `💳 Sponsor Book 3 (${price})`}
           </button>
           <p className="mt-2 text-xs text-ink-soft">
             Secure payment via Stripe. Book 3 unlocks automatically the moment the sponsorship is confirmed.

@@ -57,7 +57,7 @@ export function CertificateDownload() {
           </div>
 
           <div className="mt-12 text-xs text-ink-soft">
-            <Link href="/" className="font-semibold text-spruce hover:underline">
+            <Link href="/" className="inline-flex min-h-11 items-center font-semibold text-spruce hover:underline">
               ← Return to Book 1 Storefront
             </Link>
           </div>

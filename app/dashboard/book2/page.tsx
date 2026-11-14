@@ -12,6 +12,7 @@ import Book2ContinuationBanner from "@/components/dashboard/Book2ContinuationBan
 import PageStickersGrid from "@/components/dashboard/PageStickersGrid";
 import { BOOK2_GATE_CONFIG } from "@/lib/gamification";
 import { DEMO_SCOUT_TOKEN as DEMO_TOKEN } from "@/lib/family";
+import { Spinner } from "@/components/ui/Spinner";
 
 export default function Book2DashboardPage() {
   const router = useRouter();
@@ -21,6 +22,8 @@ export default function Book2DashboardPage() {
   // yet", so it may only ever be shown when the server actually said so.
   const [mode, setMode] = useState<"loading" | "family" | "demo" | "error">("loading");
   const [saveFailed, setSaveFailed] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutFailed, setSignOutFailed] = useState(false);
   const [shareCode, setShareCode] = useState("");
   const [scoutName, setScoutName] = useState("");
   const [quizScore, setQuizScore] = useState(0);
@@ -113,9 +116,19 @@ export default function Book2DashboardPage() {
     }
   };
 
+  // Only leave once the server has cleared the session: leaving early would land
+  // on /start still signed in, which reads as "sign out did nothing".
   const handleSignOut = async () => {
-    await fetch("/api/family/logout", { method: "POST" });
-    router.replace("/start");
+    setSigningOut(true);
+    setSignOutFailed(false);
+    try {
+      const res = await fetch("/api/family/logout", { method: "POST", signal: AbortSignal.timeout(10_000) });
+      if (!res.ok) throw new Error(`logout ${res.status}`);
+      router.replace("/start");
+    } catch {
+      setSignOutFailed(true);
+      setSigningOut(false);
+    }
   };
 
   const handleTogglePage = (pageNumber: number) => {
@@ -149,7 +162,9 @@ export default function Book2DashboardPage() {
   if (mode === "loading") {
     return (
       <div className="min-h-screen bg-paper text-ink flex items-center justify-center">
-        <p className="text-ink-soft font-semibold">Opening your Explorer dashboard…</p>
+        <p className="inline-flex items-center gap-2 text-ink-soft font-semibold" role="status">
+          <Spinner className="h-5 w-5 text-spruce" /> Opening your Explorer dashboard…
+        </p>
       </div>
     );
   }
@@ -178,7 +193,7 @@ export default function Book2DashboardPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="font-display text-lg sm:text-xl font-bold text-ink hover:text-clay transition"
+              className="inline-flex min-h-11 items-center font-display text-lg sm:text-xl font-bold text-ink hover:text-clay transition"
             >
               Puen Publishing
             </Link>
@@ -190,7 +205,7 @@ export default function Book2DashboardPage() {
           <div className="flex items-center gap-4">
             <Link
               href="/"
-              className="text-xs sm:text-sm font-semibold text-ink-soft hover:text-ink transition"
+              className="inline-flex min-h-11 items-center text-xs sm:text-sm font-semibold text-ink-soft hover:text-ink transition"
             >
               ← Back to Storefront
             </Link>
@@ -211,7 +226,7 @@ export default function Book2DashboardPage() {
               <strong className="font-bold">That didn&apos;t save.</strong> Your last
               change wasn&apos;t recorded, so we&apos;ve put it back. Please try again.
             </span>
-            <button onClick={() => setSaveFailed(false)} className="text-xs font-bold underline">
+            <button type="button" onClick={() => setSaveFailed(false)} className="inline-flex min-h-11 items-center px-2 text-xs font-bold underline">
               Dismiss
             </button>
           </div>
@@ -245,9 +260,19 @@ export default function Book2DashboardPage() {
               {isSaving ? "💾 Syncing..." : mode === "demo" ? "Demo profile" : `Explorer code: ${shareCode}`}
             </span>
             {mode === "family" && (
-              <button type="button" onClick={handleSignOut} className="mt-1 text-xs font-semibold text-ink-soft underline hover:text-ink">
-                Not your family? Sign out
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-ink-soft underline hover:text-ink disabled:cursor-wait"
+              >
+                {signingOut ? <><Spinner className="h-3.5 w-3.5" /> Signing out…</> : "Not your family? Sign out"}
               </button>
+            )}
+            {signOutFailed && (
+              <span className="block text-xs font-semibold text-clay" role="alert">
+                We could not sign you out. Please try again.
+              </span>
             )}
           </div>
         </div>

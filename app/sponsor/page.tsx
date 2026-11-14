@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GRANDPA_SPONSOR_PRICE } from "@/lib/gamification";
 import { publisherBrand } from "@/lib/book";
 import { DEMO_SCOUT_TOKEN, SHARE_CODE_REGEX } from "@/lib/family";
+import { Spinner } from "@/components/ui/Spinner";
 
 // "unlock-pending": the payment definitely succeeded, but writing the unlock did
 // not. Telling this sponsor Book 3 is unlocked would be exactly the kind of
@@ -102,7 +103,7 @@ export default function SponsorLandingPage() {
                 disabled={loading}
                 className="btn-primary mt-6 w-full text-base disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? "Redirecting to secure checkout…" : `💳 Sponsor Book 3 (${price})`}
+                {loading ? <><Spinner className="h-4 w-4" /> Redirecting to secure checkout…</> : `💳 Sponsor Book 3 (${price})`}
               </button>
             ) : (
               <p className="mt-6 rounded-lg bg-clay/10 border border-clay/30 p-4 text-sm font-semibold text-clay-dark">
@@ -120,7 +121,11 @@ export default function SponsorLandingPage() {
         )}
 
         {stage === "confirming" && (
-          <h1 className="font-display text-2xl font-black text-ink">Confirming your gift…</h1>
+          <div role="status">
+            <h1 className="flex items-center gap-3 font-display text-2xl font-black text-ink">
+              <Spinner className="h-6 w-6 text-spruce" /> Confirming your gift…
+            </h1>
+          </div>
         )}
 
         {stage === "thanks" && (
@@ -160,7 +165,7 @@ export default function SponsorLandingPage() {
           {publisherBrand.fullCredit}
         </p>
 
-        <Link href="/" className="mt-4 inline-block text-xs font-semibold text-spruce hover:underline">
+        <Link href="/" className="mt-2 inline-flex min-h-11 items-center text-xs font-semibold text-spruce hover:underline">
           ← Back to Storefront
         </Link>
       </div>

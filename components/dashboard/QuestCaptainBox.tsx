@@ -87,7 +87,7 @@ export default function QuestCaptainBox({
           <button
             type="button"
             onClick={handleCopy}
-            className="btn-primary sm:w-auto text-sm py-2.5 px-6 whitespace-nowrap"
+            className="btn-primary min-h-11 sm:w-auto text-sm py-2.5 px-6 whitespace-nowrap"
           >
             {copied ? "✓ Copied Link!" : "Copy Captain Link"}
           </button>
@@ -145,7 +145,7 @@ export default function QuestCaptainBox({
               type="button"
               onClick={() => onSetFriends(Math.min(capacity, friendsCompleted + 1))}
               disabled={friendsCompleted >= capacity}
-              className="rounded-lg bg-clay px-3.5 py-2 text-xs font-bold text-paper transition hover:bg-clay-dark shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              className="min-h-11 rounded-lg bg-clay px-3.5 py-2 text-xs font-bold text-paper transition hover:bg-clay-dark shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
               title="Simulate one invited friend logging in and colouring their Page 1"
             >
               ⚡ Simulate Friend Join (+1)
@@ -154,7 +154,7 @@ export default function QuestCaptainBox({
               <button
                 type="button"
                 onClick={() => onSetFriends(0)}
-                className="rounded-lg border border-ink/20 px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-paper"
+                className="min-h-11 rounded-lg border border-ink/20 px-3 py-2 text-xs font-semibold text-ink-soft hover:bg-paper"
               >
                 Reset Referral Test
               </button>

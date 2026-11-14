@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { SPONSOR_TIERS, SponsorTier, formatCurrency } from "@/lib/pricing";
+import { Spinner } from "@/components/ui/Spinner";
 
 export default function WholesaleForm() {
   const [selectedTier, setSelectedTier] = useState<1 | 2 | 3>(2);
@@ -128,11 +129,13 @@ export default function WholesaleForm() {
 
               <button
                 type="button"
-                className={`mt-4 w-full rounded-lg py-2 text-xs font-bold transition ${
+                className={`mt-4 min-h-11 w-full rounded-lg py-2.5 text-xs font-bold transition ${
                   isSelected ? "bg-spruce text-paper" : "bg-ink/10 text-ink"
                 }`}
               >
                 {isSelected ? "✓ Selected Tier" : "Choose Tier"}
+                {/* The visible words start the name; this says which tier. */}
+                <span className="sr-only">{` ${tId}, ${formatCurrency(t.flatPrice)}`}</span>
               </button>
             </div>
           );
@@ -274,7 +277,7 @@ export default function WholesaleForm() {
           disabled={loading}
           className="btn-primary w-full text-lg flex items-center justify-center gap-2"
         >
-          {loading ? "Preparing Secure Checkout..." : `Sponsor Tier ${selectedTier} · ${formatCurrency(tier.flatPrice)}`}
+          {loading ? <><Spinner className="h-4 w-4" /> Preparing Secure Checkout...</> : `Sponsor Tier ${selectedTier} · ${formatCurrency(tier.flatPrice)}`}
         </button>
 
         {serverError && (

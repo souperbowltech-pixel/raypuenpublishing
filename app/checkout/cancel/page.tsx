@@ -24,7 +24,7 @@ export default function CheckoutCancelPage() {
           </Link>
           <Link
             href="/"
-            className="text-sm font-semibold text-ink-soft hover:text-ink"
+            className="inline-flex min-h-11 items-center justify-center text-sm font-semibold text-ink-soft hover:text-ink"
           >
             Go to Homepage
           </Link>
