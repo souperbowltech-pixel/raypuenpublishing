@@ -45,7 +45,10 @@ export default function WholesaleForm() {
             email,
             phone,
           },
-          shippingAddress: tier.requiresShipping ? shippingAddress : undefined,
+          // Enter in the State box sends the form without leaving it, so capitalise here too.
+          shippingAddress: tier.requiresShipping
+            ? { ...shippingAddress, state: shippingAddress.state.trim().toUpperCase() }
+            : undefined,
         }),
       });
 
@@ -151,12 +154,14 @@ export default function WholesaleForm() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
+            <label htmlFor="ws-org" className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
               Organization / Church / Co-Op Name *
             </label>
             <input
               type="text"
               required
+              id="ws-org"
+              autoComplete="organization"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               className="input text-sm"
@@ -165,12 +170,14 @@ export default function WholesaleForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
+            <label htmlFor="ws-name" className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
               Contact Name *
             </label>
             <input
               type="text"
               required
+              id="ws-name"
+              autoComplete="name"
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
               className="input text-sm"
@@ -179,12 +186,14 @@ export default function WholesaleForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
+            <label htmlFor="ws-email" className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
               Email Address *
             </label>
             <input
               type="email"
               required
+              id="ws-email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input text-sm"
@@ -193,11 +202,13 @@ export default function WholesaleForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
+            <label htmlFor="ws-phone" className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
               Phone Number (Optional)
             </label>
             <input
               type="tel"
+              id="ws-phone"
+              autoComplete="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="input text-sm"
@@ -221,10 +232,12 @@ export default function WholesaleForm() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-3">
-              <label className="block text-xs font-bold text-ink-soft mb-1">Street Address *</label>
+              <label htmlFor="ws-street" className="block text-xs font-bold text-ink-soft mb-1">Street Address *</label>
               <input
                 type="text"
                 required
+                id="ws-street"
+                autoComplete="shipping address-line1"
                 value={shippingAddress.line1}
                 onChange={(e) => setShippingAddress({ ...shippingAddress, line1: e.target.value })}
                 className="input text-sm bg-paper"
@@ -233,10 +246,12 @@ export default function WholesaleForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-ink-soft mb-1">City *</label>
+              <label htmlFor="ws-city" className="block text-xs font-bold text-ink-soft mb-1">City *</label>
               <input
                 type="text"
                 required
+                id="ws-city"
+                autoComplete="shipping address-level2"
                 value={shippingAddress.city}
                 onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
                 className="input text-sm bg-paper"
@@ -245,22 +260,30 @@ export default function WholesaleForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-ink-soft mb-1">State *</label>
+              <label htmlFor="ws-state" className="block text-xs font-bold text-ink-soft mb-1">State *</label>
               <input
                 type="text"
                 required
+                id="ws-state"
+                autoComplete="shipping address-level1"
+                autoCapitalize="characters"
                 value={shippingAddress.state}
                 onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
+                // Capitalised when the box is left, not while typing, so the caret never jumps.
+                onBlur={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value.trim().toUpperCase() })}
                 className="input text-sm bg-paper"
                 placeholder="State"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-ink-soft mb-1">Zip Code *</label>
+              <label htmlFor="ws-zip" className="block text-xs font-bold text-ink-soft mb-1">Zip Code *</label>
               <input
                 type="text"
                 required
+                id="ws-zip"
+                autoComplete="shipping postal-code"
+                inputMode="numeric"
                 value={shippingAddress.zip}
                 onChange={(e) => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
                 className="input text-sm bg-paper"

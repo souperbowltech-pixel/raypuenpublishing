@@ -197,6 +197,7 @@ export default function BookUnlockCard({ scoutName, bookNumber, celebrate = fals
                   value={shippingAddress.zip}
                   onChange={(e) => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
                   autoComplete="postal-code"
+                  inputMode="numeric"
                   className="input text-sm py-2"
                   required
                 />

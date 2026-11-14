@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/retail/SiteHeader";
 import { SiteFooter } from "@/components/retail/SiteFooter";
 import { Spinner } from "@/components/ui/Spinner";
 import { useJustBecameTrue } from "@/components/ui/useJustBecameTrue";
+import { patrolTokenFrom } from "@/lib/patrol-link";
 
 interface GiftSlot {
   code: string;
@@ -33,6 +34,10 @@ function PatrolHubContent() {
   const tokenFromUrl = searchParams.get("token") || "";
 
   const [token, setToken] = useState(tokenFromUrl);
+  // What is in the access box; it becomes `token` only when the form is sent.
+  const [tokenInput, setTokenInput] = useState(tokenFromUrl);
+  const [lookupAttempt, setLookupAttempt] = useState(0);
+  const [lookupError, setLookupError] = useState<string | null>(null);
   const [data, setData] = useState<PatrolState | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiedSlot, setCopiedSlot] = useState<number | null>(null);
@@ -49,23 +54,38 @@ function PatrolHubContent() {
 
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://puenpublishing.com";
 
+  // Looks the Patrol up once per open or per press of the button, never per
+  // keystroke: typing a token by hand used to spend the per-minute lookup limit.
   useEffect(() => {
-    const activeToken = token || localStorage.getItem("gg_patrol_token") || "";
+    // A token saved on this device becomes the token first; the effect then runs again and looks it up once.
+    const stored = token ? "" : localStorage.getItem("gg_patrol_token") || "";
+    if (stored) {
+      setToken(stored);
+      return;
+    }
+    const activeToken = token;
     if (activeToken) {
-      setToken(activeToken);
       fetch(`/api/patrol/state?token=${encodeURIComponent(activeToken)}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((res) => {
+        .then(async (r) => {
+          if (r.status === 404) {
+            // A saved token that no longer opens anything must not greet the leader with an error on every visit.
+            if (localStorage.getItem("gg_patrol_token") === activeToken) localStorage.removeItem("gg_patrol_token");
+            setLookupError("We could not find a Patrol with that token. Please check the link in your receipt email.");
+          }
+          else if (r.status === 429) setLookupError("Too many tries just now. Please wait a minute and try again.");
+          else if (!r.ok) setLookupError("We could not open your Patrol right now. Please try again.");
+          const res = r.ok ? await r.json() : null;
           if (res?.success) {
             setData(res);
             localStorage.setItem("gg_patrol_token", activeToken);
           }
         })
+        .catch(() => setLookupError("We could not reach the site. Please check your connection and try again."))
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, lookupAttempt]);
 
   const handleCopyLink = (code: string, slot: number) => {
     const link = `${siteUrl}/start?gift=${encodeURIComponent(code)}`;
@@ -137,18 +157,35 @@ function PatrolHubContent() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              // The box keeps whatever was typed or pasted; the token is taken out only now.
+              const next = patrolTokenFrom(tokenInput);
+              if (!next) {
+                setLookupError("Please paste your Patrol link or token.");
+                return;
+              }
+              setLookupError(null);
               setLoading(true);
+              setToken(next);
+              setLookupAttempt((n) => n + 1);
             }}
             className="mt-6 space-y-4"
           >
             <input
               type="text"
-              placeholder="e.g. PT-..."
-              value={token}
-              onChange={(e) => setToken(e.target.value.trim())}
+              placeholder="Paste your Patrol link or token"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              aria-label="Patrol Leader token or link"
+              autoComplete="off"
+              spellCheck={false}
               className="input text-center font-mono text-sm"
               required
             />
+            {lookupError && (
+              <p role="alert" className="text-sm font-semibold text-clay-dark">
+                {lookupError}
+              </p>
+            )}
             <button type="submit" className="btn-primary w-full text-sm">
               Open My Patrol Hub
             </button>
@@ -298,11 +335,13 @@ function PatrolHubContent() {
                 )}
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">
+                  <label htmlFor="claim-name" className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">
                     Recipient Full Name *
                   </label>
                   <input
                     type="text"
+                    id="claim-name"
+                    autoComplete="shipping name"
                     value={recipientName}
                     onChange={(e) => setRecipientName(e.target.value)}
                     required
@@ -311,12 +350,16 @@ function PatrolHubContent() {
                   />
                 </div>
 
+                <fieldset className="space-y-4">
+                  <legend className="mb-2 text-sm font-bold text-ink">Where should we ship it?</legend>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">
+                  <label htmlFor="claim-street" className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">
                     Street Address *
                   </label>
                   <input
                     type="text"
+                    id="claim-street"
+                    autoComplete="shipping address-line1"
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
                     required
@@ -327,9 +370,11 @@ function PatrolHubContent() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-1">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">City *</label>
+                    <label htmlFor="claim-city" className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">City *</label>
                     <input
                       type="text"
+                      id="claim-city"
+                      autoComplete="shipping address-level2"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       required
@@ -338,11 +383,14 @@ function PatrolHubContent() {
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">State *</label>
+                    <label htmlFor="claim-state" className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">State *</label>
                     <input
                       type="text"
+                      id="claim-state"
+                      autoComplete="shipping address-level1"
+                      autoCapitalize="characters"
                       value={stateVal}
-                      onChange={(e) => setStateVal(e.target.value)}
+                      onChange={(e) => setStateVal(e.target.value.toUpperCase())}
                       required
                       className="input text-sm"
                       placeholder="CA"
@@ -350,9 +398,12 @@ function PatrolHubContent() {
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">ZIP *</label>
+                    <label htmlFor="claim-zip" className="block text-xs font-bold uppercase tracking-wider text-ink mb-1">ZIP *</label>
                     <input
                       type="text"
+                      id="claim-zip"
+                      autoComplete="shipping postal-code"
+                      inputMode="numeric"
                       value={zip}
                       onChange={(e) => setZip(e.target.value)}
                       required
@@ -361,6 +412,7 @@ function PatrolHubContent() {
                     />
                   </div>
                 </div>
+                </fieldset>
 
                 <button
                   type="submit"
