@@ -20,7 +20,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Ten tries a minute makes guessing pointless without locking Ray out.
-  const limit = rateLimit(`admin-session:${clientIp(req)}`, 10, 60_000);
+  // Signing in needs no database, so a slow Supabase must not lock Ray out: if the
+  // shared count cannot be checked, this instance holds sign-in to 3 tries a minute.
+  const limit = await rateLimit(`admin-session:${clientIp(req)}`, 10, 60_000, { whenUnavailable: 3 });
   if (!limit.ok) {
     return NextResponse.redirect(new URL("/admin?error=rate", req.url), { status: 303 });
   }

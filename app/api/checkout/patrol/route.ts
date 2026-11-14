@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const limit = rateLimit(`checkout-patrol:${clientIp(request)}`, 10, 60_000);
+  const limit = await rateLimit(`checkout-patrol:${clientIp(request)}`, 10, 60_000);
   if (!limit.ok) {
     return NextResponse.json(
       { error: "Too many requests" },

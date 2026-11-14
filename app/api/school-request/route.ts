@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error, field: parsed.field }, { status: 400 });
   }
 
-  const limit = rateLimit(`school-request:${clientIp(req)}`, REQUESTS_PER_HOUR, 60 * 60_000);
+  const limit = await rateLimit(`school-request:${clientIp(req)}`, REQUESTS_PER_HOUR, 60 * 60_000);
   if (!limit.ok) {
     return NextResponse.json(
       { error: "Too many requests from this connection. Please try again later." },

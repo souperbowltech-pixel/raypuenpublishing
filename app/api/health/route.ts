@@ -62,6 +62,11 @@ const READ_CHECKS: [string, string, string][] = [
   ["guideApprovalsTable", "guide_approvals", "id"],
   // Requests from schools on /neighborhood. The form saves here and nowhere else.
   ["schoolRequestsTable", "school_requests", "id"],
+  // Private review copies and paid Guide codes (migration 20261114).
+  ["libraryGrantsTable", "library_grants", "id"],
+  // The shared rate limit (migration 20261115). Without it limits quietly fall
+  // back to one count per server instance, which only this check would show.
+  ["rateLimitsTable", "rate_limits", "key"],
 ];
 
 /**
@@ -115,7 +120,7 @@ async function runChecks(db: Db, checks: Record<string, Check>, signal: AbortSig
  * never any key material.
  */
 export async function GET(req: NextRequest) {
-  const limit = rateLimit(`health:${clientIp(req)}`, 10, 60_000);
+  const limit = await rateLimit(`health:${clientIp(req)}`, 10, 60_000);
   if (!limit.ok) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

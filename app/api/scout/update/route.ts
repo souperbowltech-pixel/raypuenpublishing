@@ -23,7 +23,7 @@ function sanitizeName(raw: unknown): string {
 
 export async function POST(req: NextRequest) {
   // Rate limit: 30 requests / minute / IP
-  const limit = rateLimit(`scout-update:${clientIp(req)}`, 30, 60_000);
+  const limit = await rateLimit(`scout-update:${clientIp(req)}`, 30, 60_000);
   if (!limit.ok) {
     return NextResponse.json(
       { error: 'Too many requests' },

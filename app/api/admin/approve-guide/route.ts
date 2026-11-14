@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
 
 /** Decide. */
 export async function POST(req: NextRequest) {
-  const limit = rateLimit(`admin-approve:${clientIp(req)}`, 20, 60_000);
+  const limit = await rateLimit(`admin-approve:${clientIp(req)}`, 20, 60_000, { whenUnavailable: "refuse" });
   if (!limit.ok) {
     return html(page("Too many attempts", `<h1>Too many attempts</h1><p>Please wait a minute and try again.</p>`, "#B34738"), 429);
   }

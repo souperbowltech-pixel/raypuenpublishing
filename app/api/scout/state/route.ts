@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   // Rate limit: 60 requests / minute / IP
-  const limit = rateLimit(`scout-state:${clientIp(req)}`, 60, 60_000);
+  const limit = await rateLimit(`scout-state:${clientIp(req)}`, 60, 60_000);
   if (!limit.ok) {
     return NextResponse.json(
       { error: 'Too many requests' },

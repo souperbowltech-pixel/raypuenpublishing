@@ -5,7 +5,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const limit = rateLimit(`patrol-claim:${clientIp(req)}`, 5, 60_000);
+  const limit = await rateLimit(`patrol-claim:${clientIp(req)}`, 5, 60_000);
   if (!limit.ok) {
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },

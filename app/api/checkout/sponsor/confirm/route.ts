@@ -20,7 +20,7 @@ const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
  * from the client.
  */
 export async function POST(req: NextRequest) {
-  const limit = rateLimit(`sponsor-confirm:${clientIp(req)}`, 20, 60_000);
+  const limit = await rateLimit(`sponsor-confirm:${clientIp(req)}`, 20, 60_000);
   if (!limit.ok) {
     return NextResponse.json(
       { error: "Too many requests" },

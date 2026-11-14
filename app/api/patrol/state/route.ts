@@ -5,7 +5,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const limit = rateLimit(`patrol-state:${clientIp(req)}`, 30, 60_000);
+  const limit = await rateLimit(`patrol-state:${clientIp(req)}`, 30, 60_000);
   if (!limit.ok) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

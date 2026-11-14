@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 /** QR-code registration: parent email + the child's first name → own dashboard. */
 export async function POST(req: NextRequest) {
-  const limit = rateLimit(`family-register:${clientIp(req)}`, 5, 60 * 60_000);
+  const limit = await rateLimit(`family-register:${clientIp(req)}`, 5, 60 * 60_000);
   if (!limit.ok) {
     return NextResponse.json(
       { error: 'Too many sign-ups from this connection. Please try again later.' },

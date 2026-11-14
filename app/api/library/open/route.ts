@@ -29,7 +29,7 @@ const REFUSALS: Record<Refusal, { status: number; error: string }> = {
 
 /** The form on /library: a code in, a short-lived link to the reader's own copy out. */
 export async function POST(req: NextRequest) {
-  const limit = rateLimit(`library-open:${clientIp(req)}`, TRIES_PER_MINUTE, 60_000);
+  const limit = await rateLimit(`library-open:${clientIp(req)}`, TRIES_PER_MINUTE, 60_000, { whenUnavailable: "refuse" });
   if (!limit.ok) {
     return NextResponse.json(
       { error: "Too many tries from this connection. Please wait a minute." },

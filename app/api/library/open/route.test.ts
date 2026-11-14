@@ -51,7 +51,8 @@ describe("POST /api/library/open", () => {
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBe("42");
     expect(openMock).not.toHaveBeenCalled();
-    expect(rateLimitMock).toHaveBeenCalledWith("library-open:127.0.0.1", 10, 60_000);
+    // Fails closed: a code is never tried without the shared count behind it.
+    expect(rateLimitMock).toHaveBeenCalledWith("library-open:127.0.0.1", 10, 60_000, { whenUnavailable: "refuse" });
   });
 
   it("refuses a body that is not a code", async () => {

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /** The family signed in on this device (never the private scout token). */
 export async function GET(req: NextRequest) {
-  const limit = rateLimit(`family-me:${clientIp(req)}`, 60, 60_000);
+  const limit = await rateLimit(`family-me:${clientIp(req)}`, 60, 60_000);
   if (!limit.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   const family = await getFamilySession(req.cookies.get(SESSION_COOKIE)?.value);
