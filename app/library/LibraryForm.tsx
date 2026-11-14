@@ -73,8 +73,12 @@ export function LibraryForm() {
       <button type="submit" className="btn-primary w-full" disabled={state === "working" || !code.trim()}>
         {state === "working" ? <><Spinner className="h-4 w-4" /> Preparing your copy...</> : "Download my copy"}
       </button>
+      {/* Mounted from the start so screen readers announce the message when it appears. */}
+      <p className="sr-only" role="status">
+        {state === "done" ? "Your download is starting." : ""}
+      </p>
       {state === "done" && (
-        <p className="text-sm font-semibold text-spruce-dark" role="status">
+        <p className="text-sm font-semibold text-spruce-dark animate-rise">
           Your download is starting. If nothing happens, press the button again.
         </p>
       )}

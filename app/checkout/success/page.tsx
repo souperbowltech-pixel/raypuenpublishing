@@ -57,7 +57,7 @@ export default async function CheckoutSuccessPage({
             isPaid ? "bg-spruce-light text-spruce-dark" : "bg-ink/5 text-ink-soft"
           }`}
         >
-          {isPaid ? "✓" : "?"}
+          {isPaid ? <span className="inline-block animate-pop-in">✓</span> : "?"}
         </div>
 
         <p className="eyebrow mb-2">

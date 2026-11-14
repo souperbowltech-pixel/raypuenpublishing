@@ -89,7 +89,7 @@ export default function QuestCaptainBox({
             onClick={handleCopy}
             className="btn-primary min-h-11 sm:w-auto text-sm py-2.5 px-6 whitespace-nowrap"
           >
-            {copied ? "✓ Copied Link!" : "Copy Captain Link"}
+            {copied ? <span className="inline-block animate-pop-in">✓ Copied Link!</span> : "Copy Captain Link"}
           </button>
         </div>
         <p className="mt-2 text-xs text-ink-soft">

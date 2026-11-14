@@ -7,6 +7,7 @@ import {
   getMainPanelCopy,
   getUnlockedPanelCopy,
 } from "@/lib/gamification";
+import { useJustBecameTrue } from "@/components/ui/useJustBecameTrue";
 
 interface ScoreGateProps {
   totalScore: number;
@@ -24,6 +25,10 @@ export default function ScoreGate({
   const percentage = Math.min(100, Math.round((totalScore / 700) * 100));
   const hasAcademicPass = quizScore >= BOOK2_GATE_CONFIG.academicPassThreshold;
   const isBook2Unlocked = totalScore >= BOOK2_GATE_CONFIG.unlockThreshold;
+  // When the same answer also unlocks Book 2, the unlock card below carries the
+  // fanfare; the medal stays still so two things do not shout at once.
+  const unlockJustLanded = useJustBecameTrue(isBook2Unlocked);
+  const passJustLanded = useJustBecameTrue(hasAcademicPass) && !unlockJustLanded;
 
   const handlePrintRibbon = () => {
     window.print();
@@ -83,9 +88,9 @@ export default function ScoreGate({
       </div>
 
       {hasAcademicPass && (
-        <div className="mt-6 rounded-xl border border-spruce/30 bg-spruce/10 p-5">
+        <div className={`mt-6 rounded-xl border border-spruce/30 bg-spruce/10 p-5 ${passJustLanded ? "animate-rise" : ""}`}>
           <div className="flex items-start gap-3.5">
-            <div className="text-2xl sm:text-3xl">🎖️</div>
+            <div className={`text-2xl sm:text-3xl ${passJustLanded ? "animate-boing" : ""}`} aria-hidden="true">🎖️</div>
             <div className="min-w-0 flex-1">
               <h3 className="text-base sm:text-lg font-bold text-spruce-dark font-display">
                 {isBook2Unlocked ? BOOK2_GATE_CONFIG.unlockedPanelTitle : "Academic Points Secured!"}

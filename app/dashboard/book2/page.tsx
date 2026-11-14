@@ -13,6 +13,7 @@ import PageStickersGrid from "@/components/dashboard/PageStickersGrid";
 import { BOOK2_GATE_CONFIG } from "@/lib/gamification";
 import { DEMO_SCOUT_TOKEN as DEMO_TOKEN } from "@/lib/family";
 import { Spinner } from "@/components/ui/Spinner";
+import { useJustBecameTrue } from "@/components/ui/useJustBecameTrue";
 
 export default function Book2DashboardPage() {
   const router = useRouter();
@@ -158,6 +159,9 @@ export default function Book2DashboardPage() {
   const totalScore = quizScore + referralScore;
   const hasPassedQuiz = quizScore >= BOOK2_GATE_CONFIG.academicPassThreshold;
   const isBook2Unlocked = totalScore >= BOOK2_GATE_CONFIG.unlockThreshold;
+  const loaded = mode === "family" || mode === "demo";
+  const book2JustUnlocked = useJustBecameTrue(isBook2Unlocked, loaded);
+  const book3JustUnlocked = useJustBecameTrue(book3Unlocked, loaded);
 
   if (mode === "loading") {
     return (
@@ -309,11 +313,11 @@ export default function Book2DashboardPage() {
         />
 
         {/* 5. Peer track: reaching 700 pts unlocks Book 2 free (IngramSpark dispatch) */}
-        {isBook2Unlocked && <BookUnlockCard scoutName={scoutName} bookNumber={2} />}
+        {isBook2Unlocked && <BookUnlockCard scoutName={scoutName} bookNumber={2} celebrate={book2JustUnlocked} />}
 
         {/* 6. Grandpa track: a relative's $40 sponsorship unlocks Book 3 in parallel */}
         {book3Unlocked ? (
-          <BookUnlockCard scoutName={scoutName} bookNumber={3} />
+          <BookUnlockCard scoutName={scoutName} bookNumber={3} celebrate={book3JustUnlocked} />
         ) : (
           <GrandpaSponsorCard
             shareCode={shareCode}

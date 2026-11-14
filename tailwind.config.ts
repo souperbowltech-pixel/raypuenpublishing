@@ -115,7 +115,8 @@ const config: Config = {
         boing: `boing ${MOTION_MS.slow}ms ${EASE_OUT_SOFT} both`,
         wiggle: "wiggle 700ms ease-in-out 150ms both",
         shake: `shake ${MOTION_MS.medium}ms ease-in-out both`,
-        stamp: `stamp ${MOTION_MS.slow}ms ${EASE_OUT_SOFT} both`,
+        // backwards, not both: it ends at rest, so a hover transform keeps working afterwards.
+        stamp: `stamp ${MOTION_MS.slow}ms ${EASE_OUT_SOFT} backwards`,
         rise: `rise ${MOTION_MS.medium}ms ${EASE_OUT_SOFT} both`,
         "fade-scale": `fade-scale ${MOTION_MS.fast}ms ${EASE_OUT_SOFT} both`,
       },

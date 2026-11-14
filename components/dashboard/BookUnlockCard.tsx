@@ -13,6 +13,8 @@ interface BookUnlockCardProps {
   scoutName: string;
   /** 2 = peer/700-point track, 3 = $40 Grandpa sponsorship track. */
   bookNumber: 2 | 3;
+  /** The unlock happened while the child was on the page: play the fanfare. */
+  celebrate?: boolean;
 }
 
 const COPY = {
@@ -54,7 +56,7 @@ const COPY = {
   },
 } as const;
 
-export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCardProps) {
+export default function BookUnlockCard({ scoutName, bookNumber, celebrate = false }: BookUnlockCardProps) {
   const copy = COPY[bookNumber];
   const [dispatch, setDispatch] = useState<DispatchOutcome | null>(null);
   const [sending, setSending] = useState(false);
@@ -79,11 +81,22 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
 
   return (
     <div className="rounded-3xl border-3 border-crayon-gold bg-gradient-to-b from-crayon-goldsoft/40 via-paper to-spruce/10 p-6 sm:p-10 shadow-book text-ink">
+      {/* Always present, so a screen reader hears the short news when it fills in. */}
+      <p className="sr-only" role="status">
+        {dispatch?.dispatched ? `Book ${bookNumber} has been sent to the printer.` : ""}
+      </p>
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 rounded-full bg-crayon-gold px-4 py-1.5 text-xs font-black uppercase tracking-widest text-ink shadow-sm">
+        <div
+          className={`inline-flex items-center gap-2 rounded-full bg-crayon-gold px-4 py-1.5 text-xs font-black uppercase tracking-widest text-ink shadow-sm ${
+            celebrate ? "animate-stamp" : ""
+          }`}
+        >
           {copy.badge}
         </div>
-        <h2 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black font-display text-ink">
+        <h2
+          className={`mt-3 text-3xl sm:text-4xl md:text-5xl font-black font-display text-ink ${celebrate ? "animate-pop-in" : ""}`}
+          style={celebrate ? { animationDelay: "250ms" } : undefined}
+        >
           {copy.heading}
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-base sm:text-lg text-ink-soft leading-relaxed">
@@ -205,9 +218,11 @@ export default function BookUnlockCard({ scoutName, bookNumber }: BookUnlockCard
             </div>
           </form>
         ) : (
-          <div className="mt-5 rounded-xl bg-spruce/10 border border-spruce/30 p-5 text-center sm:text-left">
+          <div className="mt-5 rounded-xl bg-spruce/10 border border-spruce/30 p-5 text-center sm:text-left animate-rise">
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="text-4xl">🎉</div>
+              <div className="text-4xl animate-boing" aria-hidden="true">
+                <span className="inline-block animate-wiggle">🎉</span>
+              </div>
               <div>
                 <h5 className="text-lg font-bold text-spruce-dark font-display">
                   Order Successfully Dispatched to IngramSpark!

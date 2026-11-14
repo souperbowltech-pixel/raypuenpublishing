@@ -19,6 +19,8 @@ export default function PageStickersGrid({
   // Track slots whose real merit-badge PNG hasn't been delivered yet, so we can
   // fall back to a coloured numbered placeholder instead of a broken image.
   const [missingBadges, setMissingBadges] = useState<Set<number>>(new Set());
+  // The page the child just tapped, so only its badge stamps in.
+  const [lastToggled, setLastToggled] = useState<number | null>(null);
   const markBadgeMissing = (n: number) =>
     setMissingBadges((prev) => (prev.has(n) ? prev : new Set(prev).add(n)));
 
@@ -81,7 +83,10 @@ export default function PageStickersGrid({
           return (
             <div
               key={page.pageNumber}
-              onClick={() => onTogglePage(page.pageNumber)}
+              onClick={() => {
+                setLastToggled(page.pageNumber);
+                onTogglePage(page.pageNumber);
+              }}
               className={`group relative cursor-pointer rounded-xl border p-3.5 text-center transition-all duration-300 select-none flex flex-col justify-between ${
                 isAchieved
                   ? "border-spruce/50 bg-paper shadow-md ring-2 ring-spruce/30 scale-[1.02]"
@@ -100,7 +105,11 @@ export default function PageStickersGrid({
                 </div>
 
                 {/* Merit Badge — full-colour PNG when achieved; gray numbered silhouette when locked */}
-                <div className="mx-auto h-16 w-16 transition-transform duration-300 group-hover:scale-110">
+                <div
+                  className={`mx-auto h-16 w-16 transition-transform duration-300 group-hover:scale-110 ${
+                    isAchieved && lastToggled === page.pageNumber ? "animate-stamp" : ""
+                  }`}
+                >
                   {isAchieved && !missingBadges.has(page.pageNumber) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img

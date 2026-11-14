@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { getQuizQuestionsForBook, QuizQuestion } from "@/lib/gamification";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface ComprehensionQuizProps {
   /** Resolves to false when the score was not actually saved. */
@@ -24,6 +25,10 @@ export default function ComprehensionQuiz({
   const questions = getQuizQuestionsForBook(activeBook);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState<boolean>(currentQuizScore === 400);
+  // Set only by a submit made here, so a quiz finished on an earlier visit opens quietly.
+  const [justSubmitted, setJustSubmitted] = useState(false);
+  // The score shown comes back from the server; until it does, there is nothing to celebrate or retake.
+  const [saving, setSaving] = useState(false);
 
   const handleSelectOption = (questionId: string, optionIndex: number) => {
     if (submitted) return;
@@ -36,16 +41,29 @@ export default function ComprehensionQuiz({
   // Grading is done server-side; the client only submits the raw answers.
   const handleSubmit = async () => {
     setSubmitted(true);
-    const saved = await onSubmitAnswers(answers, activeBook);
+    setSaving(true);
+    let saved: boolean | void;
+    try {
+      saved = await onSubmitAnswers(answers, activeBook);
+    } catch {
+      saved = false;
+    } finally {
+      setSaving(false);
+    }
     // A score that never reached the database must not leave the quiz locked
     // with the answers revealed — the child would be stuck on 0 points with no
     // way to try again.
-    if (saved === false) setSubmitted(false);
+    if (saved === false) {
+      setSubmitted(false);
+      return;
+    }
+    setJustSubmitted(true);
   };
 
   const handleReset = () => {
     setAnswers({});
     setSubmitted(false);
+    setJustSubmitted(false);
     onReset(activeBook);
   };
 
@@ -53,6 +71,7 @@ export default function ComprehensionQuiz({
     setActiveBook(b);
     setAnswers({});
     setSubmitted(false);
+    setJustSubmitted(false);
     onReset(b);
   };
 
@@ -74,6 +93,7 @@ export default function ComprehensionQuiz({
               key={b}
               type="button"
               onClick={() => handleSwitchBook(b)}
+              disabled={saving}
               className={`min-h-11 rounded-lg px-3.5 py-2 text-xs font-bold transition ${
                 activeBook === b
                   ? "bg-spruce text-paper shadow-sm"
@@ -127,6 +147,7 @@ export default function ComprehensionQuiz({
                     {q.options.map((opt, optIdx) => {
                       const isOptionSelected = selected === optIdx;
                       let optionStyles = "border-ink/20 bg-paper text-ink hover:bg-paper-deep";
+                      const isWrongPick = submitted && isOptionSelected && optIdx !== q.correctIndex;
 
                       if (submitted) {
                         if (optIdx === q.correctIndex) {
@@ -146,11 +167,18 @@ export default function ComprehensionQuiz({
                           type="button"
                           disabled={submitted}
                           onClick={() => handleSelectOption(q.id, optIdx)}
-                          className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition flex items-center justify-between ${optionStyles}`}
+                          className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition flex items-center justify-between ${optionStyles} ${
+                            justSubmitted && isWrongPick ? "animate-shake" : ""
+                          }`}
                         >
                           <span>{opt}</span>
                           {submitted && optIdx === q.correctIndex && (
-                            <span className="text-spruce font-bold text-sm">✓ 100 Pts</span>
+                            <span
+                              className={`inline-block text-spruce font-bold text-sm ${justSubmitted ? "animate-pop-in" : ""}`}
+                              style={justSubmitted ? { animationDelay: `${qIdx * 120}ms` } : undefined}
+                            >
+                              ✓ 100 Pts
+                            </span>
                           )}
                         </button>
                       );
@@ -176,17 +204,22 @@ export default function ComprehensionQuiz({
         ) : (
           <div className="flex flex-wrap items-center justify-between w-full gap-3">
             <div className="text-sm font-semibold">
-              {isPerfect ? (
-                <span className="text-spruce flex items-center gap-1.5 font-bold">
-                  🎉 Fantastic job! All 4 answers correct — 400 Academic Points locked!
+              {saving ? (
+                <span className="flex items-center gap-2 text-ink-soft">
+                  <Spinner className="h-4 w-4 text-spruce" /> Checking your answers…
+                </span>
+              ) : isPerfect ? (
+                <span className={`text-spruce flex items-center gap-1.5 font-bold ${justSubmitted ? "animate-pop-in" : ""}`}>
+                  <span className={`inline-block ${justSubmitted ? "animate-wiggle" : ""}`} aria-hidden="true">🎉</span>
+                  Fantastic job! All 4 answers correct — 400 Academic Points locked!
                 </span>
               ) : (
-                <span className="text-clay flex items-center gap-1.5 font-bold">
+                <span className={`text-clay flex items-center gap-1.5 font-bold ${justSubmitted ? "animate-rise" : ""}`}>
                   ⚠️ You scored {currentQuizScore}/400 pts. Retake to secure full 400 points!
                 </span>
               )}
             </div>
-            {!isPerfect && (
+            {!saving && !isPerfect && (
               <button
                 type="button"
                 onClick={handleReset}

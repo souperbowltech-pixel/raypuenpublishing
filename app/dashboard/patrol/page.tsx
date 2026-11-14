@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { SiteHeader } from "@/components/retail/SiteHeader";
 import { SiteFooter } from "@/components/retail/SiteFooter";
 import { Spinner } from "@/components/ui/Spinner";
+import { useJustBecameTrue } from "@/components/ui/useJustBecameTrue";
 
 interface GiftSlot {
   code: string;
@@ -109,6 +110,11 @@ function PatrolHubContent() {
     }
     setSubmittingClaim(false);
   };
+
+  // The claim panel appearing because the leader just submitted is celebrated;
+  // one already there when the page opened is not. The page does not poll, so a
+  // later approval is seen on the next visit, quietly.
+  const approvalJustArrived = useJustBecameTrue(Boolean(data?.approval), !loading);
 
   if (loading) {
     return (
@@ -235,7 +241,7 @@ function PatrolHubContent() {
                     onClick={() => handleCopyLink(gift.code, gift.slotNumber)}
                     className="btn-primary w-full mt-5 min-h-11 text-xs py-2"
                   >
-                    {copiedSlot === gift.slotNumber ? "✓ Copied Gift Link!" : "Copy Gift Link"}
+                    {copiedSlot === gift.slotNumber ? <span className="inline-block animate-pop-in">✓ Copied Gift Link!</span> : "Copy Gift Link"}
                   </button>
                 )}
               </div>
@@ -259,8 +265,14 @@ function PatrolHubContent() {
             </div>
 
             {approval ? (
-              <div className="mt-8 rounded-2xl border-2 border-spruce/30 bg-paper p-6 text-center max-w-lg mx-auto shadow-card">
-                <span className="text-3xl">📦</span>
+              <div
+                className={`mt-8 rounded-2xl border-2 border-spruce/30 bg-paper p-6 text-center max-w-lg mx-auto shadow-card ${
+                  approvalJustArrived ? "animate-rise" : ""
+                }`}
+              >
+                <span className={`inline-block text-3xl ${approvalJustArrived ? "animate-boing" : ""}`} aria-hidden="true">
+                  📦
+                </span>
                 <h4 className="mt-2 text-lg font-bold text-ink">
                   {approval.status === "approved"
                     ? "✅ Reward Approved for Printing!"

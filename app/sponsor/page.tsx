@@ -130,7 +130,7 @@ export default function SponsorLandingPage() {
 
         {stage === "thanks" && (
           <>
-            <h1 className="font-display text-3xl font-black text-ink sm:text-4xl">Thank you!</h1>
+            <h1 className="font-display text-3xl font-black text-ink sm:text-4xl animate-pop-in">Thank you!</h1>
             <p className="mt-4 text-base text-ink-soft leading-relaxed">
               Your {price} gift is confirmed and Book 3 is now unlocked
               {scoutName ? ` for ${scoutName}` : ""}. They&apos;ll see it on their dashboard
