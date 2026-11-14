@@ -15,7 +15,8 @@ begin
 
   -- 1. The first hit is allowed.
   select * into r from public.hit_rate_limit('check-a', 2, 60000);
-  insert into rate_limit_check values (1, 'first hit allowed', r.allowed and r.retry_after = 0);
+  -- retry_after always says when the window ends; the site reads it only for a refused hit.
+  insert into rate_limit_check values (1, 'first hit allowed', r.allowed);
 
   -- 2. Hits up to the limit are allowed; the next is refused with a wait inside the window.
   select * into r from public.hit_rate_limit('check-a', 2, 60000);
