@@ -17,10 +17,20 @@ vi.mock("@/lib/scout-store", () => ({
 }));
 
 let rateLimitOk = true;
-vi.mock("@/lib/rate-limit", () => ({
-  rateLimit: () => ({ ok: rateLimitOk, retryAfter: 60 }),
-  clientIp: () => "127.0.0.1",
-}));
+// Set to count for real with the in-memory limiter; otherwise rateLimitOk decides.
+let realLimiter = false;
+let ip = "127.0.0.1";
+const rateLimitCalls: [string, number, number][] = [];
+vi.mock("@/lib/rate-limit", async (importActual) => {
+  const { memoryLimit } = await importActual<typeof import("@/lib/rate-limit")>();
+  return {
+    rateLimit: (key: string, limit: number, windowMs: number) => {
+      rateLimitCalls.push([key, limit, windowMs]);
+      return realLimiter ? memoryLimit(key, limit, windowMs) : { ok: rateLimitOk, retryAfter: 60 };
+    },
+    clientIp: () => ip,
+  };
+});
 
 const { GET: handleGetState } = await import("./state/route");
 const { POST: handleUpdateScout } = await import("./update/route");
@@ -76,6 +86,9 @@ describe("Scout Progress API Routes (GET /api/scout/state, POST /api/scout/updat
     getOrCreateScoutAsyncMock.mockReset();
     updateScoutAsyncMock.mockReset();
     rateLimitOk = true;
+    realLimiter = false;
+    ip = "127.0.0.1";
+    rateLimitCalls.length = 0;
   });
 
   describe("GET /api/scout/state", () => {
@@ -148,6 +161,67 @@ describe("Scout Progress API Routes (GET /api/scout/state, POST /api/scout/updat
       expect(res.status).toBe(429);
       const data = await res.json();
       expect(data.error).toBe("Too many requests");
+    });
+
+    describe("a table of families on one Wi-Fi", () => {
+      const familyAccess = (n: number): ScoutAccess => ({
+        ...mockFamilyAccess,
+        scoutToken: `scout_token_${n}`,
+        family: { ...mockFamilyAccess.family, familyId: `fam_${n}`, scoutToken: `scout_token_${n}` },
+      });
+      const tick = () => handleUpdateScout(buildPostRequest({ completedPages: [1] }));
+
+      beforeEach(() => {
+        realLimiter = true;
+        updateScoutAsyncMock.mockResolvedValue({ state: mockScoutState, persisted: true });
+      });
+
+      it("counts each child on their own, so ten children can tick 19 stickers each in one minute", async () => {
+        ip = "203.0.113.10";
+        for (let child = 1; child <= 10; child++) {
+          resolveScoutAccessMock.mockResolvedValue(familyAccess(child));
+          for (let sticker = 1; sticker <= 19; sticker++) expect((await tick()).status).toBe(200);
+        }
+      });
+
+      it("still stops one child past 30 saves a minute, without stopping the next child", async () => {
+        ip = "203.0.113.11";
+        resolveScoutAccessMock.mockResolvedValue(familyAccess(101));
+        for (let i = 1; i <= 30; i++) expect((await tick()).status).toBe(200);
+        const blocked = await tick();
+        expect(blocked.status).toBe(429);
+        expect(Number(blocked.headers.get("Retry-After"))).toBeGreaterThan(0);
+
+        resolveScoutAccessMock.mockResolvedValue(familyAccess(102));
+        expect((await tick()).status).toBe(200);
+      });
+
+      it("counts a family's saves on that child and on the connection", async () => {
+        ip = "203.0.113.13";
+        resolveScoutAccessMock.mockResolvedValue(familyAccess(201));
+        await tick();
+        expect(rateLimitCalls).toEqual([
+          ["scout-update:203.0.113.13", 300, 60_000],
+          ["scout-update:child:scout_token_201", 30, 60_000],
+        ]);
+      });
+
+      it("counts a request that is not signed in only on the connection", async () => {
+        ip = "203.0.113.14";
+        resolveScoutAccessMock.mockResolvedValue(null);
+        expect((await tick()).status).toBe(401);
+        expect(rateLimitCalls).toEqual([["scout-update:203.0.113.14", 300, 60_000]]);
+      });
+
+      it("counts the shared demo per connection, never as one bucket for every visitor", async () => {
+        ip = "203.0.113.12";
+        resolveScoutAccessMock.mockResolvedValue({ kind: "demo", scoutToken: DEMO_SCOUT_TOKEN });
+        await tick();
+        expect(rateLimitCalls).toEqual([
+          ["scout-update:203.0.113.12", 300, 60_000],
+          ["scout-update:demo:203.0.113.12", 30, 60_000],
+        ]);
+      });
     });
 
     it("returns 401 when access cannot be resolved", async () => {

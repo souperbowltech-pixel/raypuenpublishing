@@ -21,15 +21,27 @@ function sanitizeName(raw: unknown): string {
     .slice(0, 60);
 }
 
+/**
+ * Saves are limited twice. Every sticker tick, quiz answer and name change is
+ * one save, and at a church or co-op table every phone on the venue Wi-Fi
+ * shares one IP, so the per-connection count is set for a room of families
+ * and only stops a flood. The per-child count is the real one: 30 a minute
+ * covers a child ticking all 19 stickers quickly.
+ */
+const SAVES_PER_MINUTE_PER_CONNECTION = 300;
+const SAVES_PER_MINUTE_PER_CHILD = 30;
+
+function tooMany(retryAfter: number) {
+  return NextResponse.json(
+    { error: 'Too many requests' },
+    { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+  );
+}
+
 export async function POST(req: NextRequest) {
-  // Rate limit: 30 requests / minute / IP
-  const limit = await rateLimit(`scout-update:${clientIp(req)}`, 30, 60_000);
-  if (!limit.ok) {
-    return NextResponse.json(
-      { error: 'Too many requests' },
-      { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
-    );
-  }
+  const ip = clientIp(req);
+  const limit = await rateLimit(`scout-update:${ip}`, SAVES_PER_MINUTE_PER_CONNECTION, 60_000);
+  if (!limit.ok) return tooMany(limit.retryAfter);
 
   try {
     const body = await req.json();
@@ -37,6 +49,12 @@ export async function POST(req: NextRequest) {
     if (!access) {
       return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
     }
+
+    // Every demo visitor shares one scout token, so the demo is counted per connection.
+    const childKey =
+      access.kind === 'family' ? `scout-update:child:${access.scoutToken}` : `scout-update:demo:${ip}`;
+    const childLimit = await rateLimit(childKey, SAVES_PER_MINUTE_PER_CHILD, 60_000);
+    if (!childLimit.ok) return tooMany(childLimit.retryAfter);
 
     // STRICT whitelist — never accept quizScore/referralScore/totalScore/status
     // from the client. Everything is derived server-side.
