@@ -14,19 +14,12 @@ import { BOOK2_GATE_CONFIG } from "@/lib/gamification";
 import { DEMO_SCOUT_TOKEN as DEMO_TOKEN } from "@/lib/family";
 import { Spinner } from "@/components/ui/Spinner";
 import { useJustBecameTrue } from "@/components/ui/useJustBecameTrue";
+import { timeoutSignal } from "@/lib/timeout-signal";
 
 /** A save that has not answered by now is treated as failed, so later saves are not held up. */
 const SAVE_TIMEOUT_MS = 10_000;
 /** How long typing must pause before the explorer name is saved. */
 const NAME_SAVE_DELAY_MS = 600;
-
-/** AbortSignal.timeout, with a fallback for browsers before it (iPads on iOS 15 and older). */
-function timeoutSignal(ms: number): AbortSignal {
-  if (typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
-  const controller = new AbortController();
-  setTimeout(() => controller.abort(), ms);
-  return controller.signal;
-}
 
 export default function Book2DashboardPage() {
   const router = useRouter();

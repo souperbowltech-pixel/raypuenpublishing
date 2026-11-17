@@ -135,7 +135,7 @@ export function validateSchoolRequest(body: Record<string, unknown>): SchoolRequ
   if (!name.ok) return name;
   const role = requiredText(body.role, "role", "your role");
   if (!role.ok) return role;
-  const school = requiredText(body.school, "school", "the school's name");
+  const school = requiredText(body.school, "school", "the name of your school or group");
   if (!school.ok) return school;
   const location = requiredText(body.location, "location", "the city and state");
   if (!location.ok) return location;
