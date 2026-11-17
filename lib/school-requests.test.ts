@@ -56,6 +56,12 @@ describe("validateSchoolRequest", () => {
     }
   );
 
+  it("refuses an address that would turn Ray's reply link into something else", () => {
+    for (const bad of ["a?cc=evil@x.com", "a@b.co?cc=evil%40x.com", "a@b.co#x", "a&b@x.com", "mailto:a@b.co", "a/b@x.com"]) {
+      expect(validateSchoolRequest(valid({ email: bad }))).toMatchObject({ ok: false, field: "email" });
+    }
+  });
+
   it("normalises the email and rejects a bad one", () => {
     const ok = validateSchoolRequest(valid({ email: "  Ana@School.Example " }));
     expect(ok.ok && ok.value.email).toBe("ana@school.example");

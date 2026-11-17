@@ -41,6 +41,12 @@ export const SCHOOL_REQUEST_LIMITS = {
 /** More copies than any one school could ask for is a typo, not an order. */
 export const MAX_COPIES = 100_000;
 
+/**
+ * Characters a real school address never needs that would turn a mailto link
+ * or a Reply-To into something else ("a?cc=x@y.com").
+ */
+const EMAIL_URL_CHARS = /[?&#%/:]/;
+
 const PHONE_PATTERN = /^[0-9+().\-\s]{7,30}$/;
 const MIN_PHONE_DIGITS = 7;
 
@@ -92,6 +98,7 @@ function validateEmail(raw: unknown): FieldResult<string> {
   const invalid = { ok: false as const, field: "email" as const, error: "Please enter a valid email address." };
   // normalizeEmail would stringify an array and let a NUL through to a column that refuses it.
   if (typeof raw !== "string" || LONE_SURROGATE.test(raw) || HAS_INVISIBLE.test(raw)) return invalid;
+  if (EMAIL_URL_CHARS.test(raw)) return invalid;
   const email = normalizeEmail(raw);
   return email.ok ? { ok: true, value: email.value } : invalid;
 }

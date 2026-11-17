@@ -4,11 +4,13 @@ import { ADMIN_COOKIE, adminConfigured, isAdminCookie } from "@/lib/admin-auth";
 import { listPendingGuideClaims } from "@/lib/patrol-store";
 import { formatAddress } from "@/lib/notifications";
 import { publisherBrand } from "@/lib/book";
+import { listSchoolRequests, parsePageCursor } from "@/lib/school-request-store";
+import { SchoolRequestsList } from "@/components/admin/SchoolRequestsList";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Approvals — Puen Publishing",
+  title: "Admin | Puen Publishing",
   robots: { index: false, follow: false },
 };
 
@@ -19,11 +21,15 @@ export const metadata: Metadata = {
  * only way to reach a claim was the one-click link in an email. An email that
  * never arrives made a claim invisible. This page does not depend on a message
  * getting through.
+ *
+ * Below the approvals, the requests leaders send from /neighborhood, newest
+ * first, for the same reason: the email to Ray is a courtesy, this list is the
+ * record.
  */
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; before?: string };
 }) {
   if (!adminConfigured()) {
     return (
@@ -63,7 +69,8 @@ export default async function AdminPage({
     );
   }
 
-  const claims = await listPendingGuideClaims();
+  const before = typeof searchParams.before === "string" ? searchParams.before : undefined;
+  const [claims, requests] = await Promise.all([listPendingGuideClaims(), listSchoolRequests(before)]);
 
   return (
     <Shell wide>
@@ -115,6 +122,8 @@ export default async function AdminPage({
           ))}
         </ul>
       )}
+
+      <SchoolRequestsList rows={requests} paged={parsePageCursor(before) !== null} />
     </Shell>
   );
 }
