@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { addSubscriberToMailerLite } from "@/lib/mailerlite";
 import { updateScoutAsync } from "@/lib/scout-store";
-import { recordOrder, markOrder } from "@/lib/orders";
+import { recordOrder, markOrder, claimOrderNotice, markOrderNoticeSent, releaseOrderNotice } from "@/lib/orders";
+import { BOOK_1_SKU } from "@/lib/checkout";
+import { RETAIL_PRICE } from "@/lib/pricing";
 import { alertFailure } from "@/lib/alerts";
 import { isProduction } from "@/lib/supabase";
 import { createPatrolLeader } from "@/lib/patrol-store";
-import { sendPatrolReceipt } from "@/lib/notifications";
+import { sendBookOrderNotice, sendPatrolReceipt, shippingFromSession } from "@/lib/notifications";
 import { redactEmail, redactToken } from "@/lib/redact";
 
 const TOKEN_REGEX = /^[A-Za-z0-9_-]{3,64}$/;
@@ -79,6 +81,18 @@ export async function POST(req: NextRequest) {
         email: redactEmail(customerEmail),
         error: recorded.error,
       });
+    }
+
+    // 1b. A printed book: nothing goes to the printer by itself yet, so Ray
+    // gets the order by email and places it at IngramSpark. Only the retail
+    // checkout's own session counts: any other paid session without an
+    // order_type (a payment link, say) would otherwise read as a print order.
+    if (orderType === "retail" && (recorded.ok || recorded.skipped)) {
+      if (session.metadata?.channel !== "retail" || session.metadata?.sku !== BOOK_1_SKU) {
+        await alertFailure("Paid session not recognised: no order email was sent", { session: session.id });
+      } else if (!(await sendBookNoticeOnce(session, customerName, customerEmail, recorded.ok))) {
+        retryNeeded = true;
+      }
     }
 
     // 2. Grandpa multiplier: a confirmed $40 sponsorship unlocks Book 3 for the
@@ -199,4 +213,81 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+/**
+ * Whether a retry could fix a failed send. Missing settings, a bad recipient
+ * and a 4xx from Resend (unverified domain, revoked key, bad sender) fail the
+ * same way every time, and retrying them would fail the whole webhook for
+ * Stripe's three-day retry window, which can get the endpoint disabled.
+ */
+function emailFailureIsTransient(reason: string, error?: string): boolean {
+  if (reason === "timeout" || reason === "error") return true;
+  if (reason !== "rejected") return false;
+  const status = Number(/^HTTP (\d{3})/.exec(error ?? "")?.[1]);
+  return status === 408 || status === 409 || status === 429 || status >= 500;
+}
+
+/**
+ * Email Ray one paid book order, once. A redelivered event upserts the same
+ * order row, so the order's notice columns decide who sends: a delivery takes
+ * a short claim first, and the sent time is written only after Resend
+ * accepted the email, so a duplicate email can never become a duplicate print
+ * run. A claim from a delivery that died lapses by itself (NOTICE_LEASE_MS),
+ * so the email is delayed, never lost. Returns false when Stripe should retry.
+ * If the claim cannot be checked (migration not run, database down), the
+ * email goes anyway: a possible duplicate is better than an order nobody hears
+ * about.
+ */
+async function sendBookNoticeOnce(
+  session: any,
+  customerName: string | undefined,
+  customerEmail: string | null | undefined,
+  saved: boolean
+): Promise<boolean> {
+  const claim = saved ? await claimOrderNotice(session.id) : "unavailable";
+  if (claim === "already-sent") return true;
+  // Another delivery is sending right now; if it fails, this retry finds the claim lapsed.
+  if (claim === "in-progress") return false;
+
+  const rawQuantity = String(session.metadata?.quantity ?? "");
+  let sent = false;
+  let reason = "error";
+  let detail: string | undefined;
+  try {
+    const notice = await sendBookOrderNotice({
+      sessionId: session.id,
+      sku: BOOK_1_SKU,
+      quantity: /^\d+$/.test(rawQuantity) ? Number(rawQuantity) : null,
+      unitAmount: Math.round(RETAIL_PRICE * 100),
+      amountTotal: session.amount_total ?? null,
+      currency: session.currency ?? null,
+      buyerName: customerName,
+      buyerEmail: customerEmail,
+      shipTo: shippingFromSession(session),
+    });
+    sent = notice.sent;
+    if (!notice.sent) {
+      reason = notice.reason;
+      detail = notice.error;
+    }
+  } catch (err) {
+    console.error("[Stripe Webhook] Order email threw:", err);
+  }
+
+  if (sent) {
+    if (claim === "claimed" && !(await markOrderNoticeSent(session.id))) {
+      await alertFailure("Book order emailed to Ray, but not marked as sent: a redelivery could email it again", {
+        session: session.id,
+      });
+    }
+    return true;
+  }
+
+  if (claim === "claimed") await releaseOrderNotice(session.id);
+  if (saved) await markOrder(session.id, { lastError: `Order email to Ray not sent: ${reason}` });
+  await alertFailure("Book order paid but the order email to Ray did not go out", { session: session.id, reason });
+  // Retry only what a retry can fix, and only when this delivery held the
+  // claim: without one, a retry could send twice.
+  return claim !== "claimed" || !emailFailureIsTransient(reason, detail);
 }

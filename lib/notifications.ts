@@ -1,6 +1,7 @@
 import { sendEmail, type EmailResult } from "@/lib/email";
 import { getSiteOrigin } from "@/lib/site";
-import { publisherBrand } from "@/lib/book";
+import { book1, publisherBrand } from "@/lib/book";
+import { normalizeEmail } from "@/lib/family";
 import type { ShippingAddress } from "@/lib/patrol-store";
 
 /**
@@ -119,5 +120,121 @@ export async function sendGuideApprovalRequest({
     subject: `Free Parent's Guide claim to approve — ${recipientName}`,
     text,
     replyTo: patrolLeaderEmail,
+  });
+}
+
+/**
+ * The address block of a Checkout Session. Newer Stripe API versions put it
+ * under collected_information, older ones on the session itself.
+ */
+interface StripeShipping {
+  name?: string | null;
+  address?: {
+    line1?: string | null;
+    line2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postal_code?: string | null;
+    country?: string | null;
+  } | null;
+}
+
+/** Where the buyer asked for the book to go, or null when Checkout collected none. */
+export function shippingFromSession(session: {
+  collected_information?: { shipping_details?: StripeShipping | null } | null;
+  shipping_details?: StripeShipping | null;
+}): ShippingAddress | null {
+  const details = session.collected_information?.shipping_details ?? session.shipping_details;
+  const address = details?.address;
+  if (!details || !address) return null;
+  return {
+    recipient: details.name ?? "",
+    street: [address.line1, address.line2].filter(Boolean).join(", "),
+    city: address.city ?? "",
+    state: address.state ?? "",
+    zip: address.postal_code ?? "",
+    country: address.country ?? undefined,
+  };
+}
+
+export interface BookOrderNotice {
+  sessionId: string;
+  sku: string;
+  quantity: number | null;
+  /** What one copy cost at checkout, in cents, to check the amount against. */
+  unitAmount: number;
+  amountTotal: number | null;
+  currency: string | null;
+  buyerName?: string | null;
+  buyerEmail?: string | null;
+  shipTo: ShippingAddress | null;
+}
+
+/** Money as the buyer saw it: 2998 usd becomes "$29.98 USD". The shop sells in dollars only. */
+function formatPaid(amountTotal: number | null, currency: string | null): string {
+  if (amountTotal === null || !Number.isFinite(amountTotal)) return "not given by Stripe";
+  const code = (currency || "usd").toUpperCase();
+  return code === "USD" ? `$${(amountTotal / 100).toFixed(2)} USD` : `${amountTotal} ${code} (Stripe's smallest unit)`;
+}
+
+/**
+ * One line of text. Ray acts on this email, so a line break typed into a name
+ * or an address must not start a line of its own, such as a second "Copies:".
+ */
+function oneLine(text: string | null | undefined): string {
+  return (text ?? "").replace(/[\r\n\t\u000B\u000C\u0085\u2028\u2029]+/g, " ").trim();
+}
+
+/**
+ * Ray's copy of a paid book order. Nothing is printed by itself yet
+ * (PRINT_FULFILLMENT_LIVE is off), so this email is how an order reaches the
+ * printer: Ray places it at IngramSpark and ships it to the address here.
+ */
+export async function sendBookOrderNotice(order: BookOrderNotice): Promise<EmailResult> {
+  const copies = order.quantity && order.quantity > 0 ? order.quantity : null;
+  const buyerEmail = normalizeEmail(order.buyerEmail);
+  const buyer = [oneLine(order.buyerName), buyerEmail.ok ? buyerEmail.value : ""].filter(Boolean).join(", ");
+  const shipTo = order.shipTo && {
+    recipient: oneLine(order.shipTo.recipient),
+    street: oneLine(order.shipTo.street),
+    city: oneLine(order.shipTo.city),
+    state: oneLine(order.shipTo.state),
+    zip: oneLine(order.shipTo.zip),
+    country: oneLine(order.shipTo.country) || undefined,
+  };
+  const amountMatches =
+    copies !== null && order.amountTotal !== null && order.amountTotal === copies * order.unitAmount;
+
+  const text = [
+    `A paid order for ${book1.title} (${oneLine(order.sku)}) has come in.`,
+    "",
+    "Books are not sent to the printer automatically yet. Please place this order",
+    "at IngramSpark and have it shipped to the address below.",
+    "",
+    `Copies: ${copies ?? "not given, please check the order in Stripe"}`,
+    `Paid: ${formatPaid(order.amountTotal, order.currency)}`,
+    ...(amountMatches
+      ? []
+      : ["Please check this order in Stripe before printing: the amount paid does not match the copies at the book's price."]),
+    `Buyer: ${buyer || "not given by Stripe"}`,
+    "",
+    "Ship to:",
+    shipTo ? formatAddress(shipTo) : "No address was collected. Please check the order in Stripe.",
+    "",
+    `Order reference: ${oneLine(order.sessionId)}`,
+    "",
+    publisherBrand.fullCredit,
+  ].join("\n");
+
+  const recipient = shipTo?.recipient ?? "";
+  const subject = `New book order: ${copies ?? "?"} ${copies === 1 ? "copy" : "copies"}${recipient ? ` for ${recipient}` : ""}`;
+
+  return sendEmail({
+    to: approvalRecipient(),
+    subject: subject.slice(0, 150),
+    text,
+    fromName: "Puen Publishing",
+    idempotencyKey: `book-order/${order.sessionId}`,
+    ...(buyerEmail.ok ? { replyTo: buyerEmail.value } : {}),
   });
 }

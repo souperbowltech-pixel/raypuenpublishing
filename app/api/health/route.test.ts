@@ -214,7 +214,7 @@ describe("GET /api/health (infrastructure health check and SEC-07 privacy bounda
           "schoolRequestsTable", "scoutRead", "scoutReferralColumn", "scoutWrite", "videosTable",
           // The library and the shared rate limit: without these checks a migration
           // that never ran would leave health green.
-          "libraryGrantsTable", "rateLimitsTable",
+          "libraryGrantsTable", "rateLimitsTable", "orderNoticeColumn",
         ].sort()
       );
     });

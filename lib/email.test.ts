@@ -68,6 +68,15 @@ describe("sendEmail", () => {
     expect(body).toMatchObject({ from: FROM, to: "parent@example.com", subject: "Your Patrol", text: "Hello" });
   });
 
+  it("passes an idempotency key to Resend only when one is given", async () => {
+    fetchMock.mockResolvedValue(ok());
+    await sendEmail({ ...message, idempotencyKey: "book-order/cs_live_1" });
+    expect(fetchMock.mock.calls[0][1].headers["Idempotency-Key"]).toBe("book-order/cs_live_1");
+
+    await sendEmail(message);
+    expect(fetchMock.mock.calls[1][1].headers).not.toHaveProperty("Idempotency-Key");
+  });
+
   it("can send under another name from the same configured address", async () => {
     fetchMock.mockResolvedValue(ok());
     await sendEmail({ ...message, fromName: "Ray's Office" });

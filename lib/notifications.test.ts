@@ -4,6 +4,8 @@ import {
   sendGuideApprovalRequest,
   approvalRecipient,
   formatAddress,
+  sendBookOrderNotice,
+  shippingFromSession,
 } from "@/lib/notifications";
 import { publisherBrand } from "@/lib/book";
 
@@ -132,5 +134,118 @@ describe("formatAddress", () => {
 
   it("leaves out the parts that are missing rather than printing blanks", () => {
     expect(formatAddress({ recipient: "A", street: "B", city: "C", state: "", zip: "" })).toBe("A\nB\nC");
+  });
+});
+
+describe("shippingFromSession", () => {
+  const details = {
+    name: "Grace Miller",
+    address: { line1: "12 Elm St", line2: "Apt 4", city: "Austin", state: "TX", postal_code: "78701", country: "US" },
+  };
+
+  it("reads the address where newer Stripe versions put it", () => {
+    expect(shippingFromSession({ collected_information: { shipping_details: details } })).toEqual({
+      recipient: "Grace Miller",
+      street: "12 Elm St, Apt 4",
+      city: "Austin",
+      state: "TX",
+      zip: "78701",
+      country: "US",
+    });
+  });
+
+  it("falls back to where older Stripe versions put it", () => {
+    expect(shippingFromSession({ shipping_details: details })?.street).toBe("12 Elm St, Apt 4");
+  });
+
+  it("answers null when Checkout collected no address", () => {
+    expect(shippingFromSession({})).toBeNull();
+    expect(shippingFromSession({ collected_information: { shipping_details: { name: "X", address: null } } })).toBeNull();
+  });
+});
+
+describe("the book order email to Ray", () => {
+  const order = {
+    sessionId: "cs_live_abc123",
+    sku: "PUEN-CB-001",
+    quantity: 2,
+    unitAmount: 1499,
+    amountTotal: 2998,
+    currency: "usd",
+    buyerName: "Grace Miller",
+    buyerEmail: "Grace@Example.com",
+    shipTo: address,
+  };
+
+  it("tells him what to print, how many and where to send it", async () => {
+    await sendBookOrderNotice(order);
+    const body = sentBody();
+    expect(body.subject).toBe("New book order: 2 copies for Caroline Adeyemi");
+    expect(body.text).toContain("IngramSpark");
+    expect(body.text).toContain("Copies: 2");
+    expect(body.text).toContain("Paid: $29.98 USD");
+    expect(body.text).toContain("Buyer: Grace Miller, grace@example.com");
+    expect(body.text).toContain(formatAddress(address));
+    expect(body.text).toContain("Order reference: cs_live_abc123");
+    expect(body.text).toContain("(PUEN-CB-001)");
+    // A send that timed out here but reached Resend is not sent twice by the retry.
+    expect(fetchMock.mock.calls[0][1].headers["Idempotency-Key"]).toBe("book-order/cs_live_abc123");
+    expect(body.text).not.toContain("does not match");
+  });
+
+  it("warns him before printing when the amount paid does not match the copies", async () => {
+    await sendBookOrderNotice({ ...order, quantity: 50 });
+    expect(sentBody().text).toContain("Please check this order in Stripe before printing");
+  });
+
+  it("never lets a line break in a name or address start a line of its own", async () => {
+    await sendBookOrderNotice({
+      ...order,
+      buyerName: "Eve\nCopies: 50",
+      shipTo: { ...address, recipient: "Eve\u2028Ship to: elsewhere", street: "1 Main St\r\nCopies: 50" },
+    });
+    const lines: string[] = sentBody().text.split("\n");
+    expect(lines.filter((line) => line.startsWith("Copies:"))).toEqual(["Copies: 2"]);
+    expect(lines.filter((line) => line.startsWith("Ship to:"))).toEqual(["Ship to:"]);
+    expect(sentBody().text).toContain("1 Main St Copies: 50");
+  });
+
+  it("goes to the publisher's inbox unless an admin address is configured", async () => {
+    await sendBookOrderNotice(order);
+    expect(sentBody().to).toBe(publisherBrand.imprint.email);
+    process.env.ADMIN_EMAIL = "ray@example.com";
+    fetchMock.mockClear();
+    await sendBookOrderNotice(order);
+    expect(sentBody().to).toBe("ray@example.com");
+  });
+
+  it("lets him reply straight to the buyer", async () => {
+    await sendBookOrderNotice(order);
+    expect(sentBody().reply_to).toBe("grace@example.com");
+  });
+
+  it("says plainly what is missing instead of printing blanks", async () => {
+    await sendBookOrderNotice({ ...order, quantity: null, amountTotal: null, buyerEmail: "not an email", buyerName: null, shipTo: null });
+    const body = sentBody();
+    expect(body.text).toContain("Copies: not given, please check the order in Stripe");
+    expect(body.text).toContain("Paid: not given by Stripe");
+    expect(body.text).toContain("Buyer: not given by Stripe");
+    expect(body.text).toContain("No address was collected");
+    expect(body.reply_to).toBeUndefined();
+    expect(body.subject).toBe("New book order: ? copies");
+  });
+
+  it("keeps a line break in the buyer's name out of the subject line", async () => {
+    await sendBookOrderNotice({ ...order, quantity: 1, shipTo: { ...address, recipient: "Eve\r\nBcc: x@evil.test" } });
+    const subject: string = sentBody().subject;
+    expect(subject).not.toMatch(/[\r\n]/);
+    expect(subject).toBe("New book order: 1 copy for Eve Bcc: x@evil.test");
+  });
+
+  it("reports honestly when email is not set up", async () => {
+    delete process.env.RESEND_API_KEY;
+    const result = await sendBookOrderNotice(order);
+    expect(result.sent).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

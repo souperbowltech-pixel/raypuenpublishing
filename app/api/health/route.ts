@@ -41,6 +41,9 @@ const READ_CHECKS: [string, string, string][] = [
   ["scoutRead", "scout_profiles", "token"],
   ["scoutNewColumns", "scout_profiles", "friends_completed, book3_sponsored"],
   ["ordersTable", "orders", "stripe_session_id"],
+  // Keeps a paid book order to one print email (migration 20261118). Without it
+  // the email still goes, but a redelivered event could send it twice.
+  ["orderNoticeColumn", "orders", "notice_claimed_at, notice_sent_at"],
   // Family accounts (registration, sessions and the public share code).
   ["familiesTable", "families", "id"],
   ["familySessionsTable", "family_sessions", "token_hash"],

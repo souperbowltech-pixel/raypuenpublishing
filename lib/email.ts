@@ -43,6 +43,11 @@ export interface EmailMessage {
    * stays the configured one, so it is always on the verified domain.
    */
   fromName?: string;
+  /**
+   * Resend sends a message once per key for 24 hours, so a send that timed out
+   * here but reached Resend is not sent again by the retry.
+   */
+  idempotencyKey?: string;
 }
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
@@ -103,6 +108,7 @@ export async function sendEmail(message: EmailMessage): Promise<EmailResult> {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        ...(message.idempotencyKey ? { "Idempotency-Key": message.idempotencyKey } : {}),
       },
       body: JSON.stringify({
         from: senderWithName(from, message.fromName),
