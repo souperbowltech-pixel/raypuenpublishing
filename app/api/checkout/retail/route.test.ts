@@ -110,3 +110,66 @@ describe("POST /api/checkout/retail (SEC-04 quantity bounds)", () => {
     }
   });
 });
+
+describe("POST /api/checkout/retail, which book", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createSessionMock.mockResolvedValue({ url: "https://checkout.stripe.com/test-retail-session" });
+  });
+
+  const sessionArgs = () => createSessionMock.mock.calls[0][0];
+
+  it("sells Geezy Goober when no book is named, as before", async () => {
+    expect((await POST(buildRequest({}))).status).toBe(200);
+    const args = sessionArgs();
+    expect(args.line_items[0].price_data.product_data.name).toBe(
+      "The Adventures of Geezy Goober, Volume 1: The Search for the Magic Pen"
+    );
+    expect(args.line_items[0].price_data.product_data.metadata.sku).toBe("PUEN-CB-001");
+    expect(args.metadata).toMatchObject({ channel: "retail", sku: "PUEN-CB-001", quantity: "1" });
+  });
+
+  it("sells The Neighborhood Chronicles under its own name and SKU, at the same price, with shipping collected", async () => {
+    expect((await POST(buildRequest({ book: "neighborhood-book-1", quantity: 3 }))).status).toBe(200);
+    const args = sessionArgs();
+    expect(args.line_items[0].price_data.product_data.name).toBe("The Neighborhood Chronicles, Book 1: David and Goliath");
+    expect(args.line_items[0].price_data.unit_amount).toBe(1499);
+    expect(args.line_items[0].quantity).toBe(3);
+    expect(args.metadata).toMatchObject({ channel: "retail", sku: "PUEN-NC-001", quantity: "3" });
+    expect(args.shipping_address_collection.allowed_countries).toContain("US");
+  });
+
+  it("sends a buyer who backs out to the box of the book they were buying", async () => {
+    await POST(buildRequest({ book: "neighborhood-book-1" }));
+    expect(sessionArgs().cancel_url).toMatch(/\/checkout\/cancel\?book=neighborhood-book-1$/);
+  });
+
+  it("names the NC book on the line item itself, which is what Stripe shows the buyer", async () => {
+    await POST(buildRequest({ book: "neighborhood-book-1" }));
+    const product = sessionArgs().line_items[0].price_data.product_data;
+    expect(product.metadata.sku).toBe("PUEN-NC-001");
+    expect(product.description).toBe("A Bible-based character curriculum for children ages 3 to 7.");
+  });
+
+  it("accepts Geezy named outright, and still checks the quantity for NC", async () => {
+    expect((await POST(buildRequest({ book: "geezy-book-1" }))).status).toBe(200);
+    expect((await POST(buildRequest({ book: "neighborhood-book-1", quantity: 51 }))).status).toBe(400);
+  });
+
+  it("treats a JSON null, string or array body as an empty order, never a crash", async () => {
+    for (const body of [null, "hello", [1, 2]]) {
+      createSessionMock.mockClear();
+      const req = { headers: { get: () => "application/json" }, json: async () => body } as unknown as NextRequest;
+      expect((await POST(req)).status).toBe(200);
+      expect(sessionArgs().metadata).toMatchObject({ sku: "PUEN-CB-001", quantity: "1" });
+    }
+  });
+
+  it("refuses a book that is not on sale, without asking Stripe", async () => {
+    for (const book of ["parents-guide", "toString", "__proto__", 7, null, ""]) {
+      const res = await POST(buildRequest({ book }));
+      expect(res.status).toBe(400);
+    }
+    expect(createSessionMock).not.toHaveBeenCalled();
+  });
+});

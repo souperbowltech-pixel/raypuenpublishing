@@ -296,6 +296,7 @@ describe("a paid book order reaches Ray, since nothing prints by itself yet", ()
     expect(sendBookOrderNotice).toHaveBeenCalledWith({
       sessionId: "cs_test_webhook_1",
       sku: "PUEN-CB-001",
+      title: "The Adventures of Geezy Goober, Volume 1: The Search for the Magic Pen",
       quantity: 2,
       unitAmount: 1499,
       amountTotal: 2998,
@@ -304,6 +305,45 @@ describe("a paid book order reaches Ray, since nothing prints by itself yet", ()
       buyerEmail: "buyer@example.com",
       shipTo: { recipient: "Grace Miller", street: "12 Elm St", city: "Austin", state: "TX", zip: "78701", country: "US" },
     });
+  });
+
+  it("emails a Neighborhood Chronicles order under its own name and SKU", async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue(
+      bookOrder({ metadata: { channel: "retail", sku: "PUEN-NC-001", quantity: "1" }, amount_total: 1499 })
+    );
+    expect((await post()).status).toBe(200);
+    expect(sendBookOrderNotice).toHaveBeenCalledWith(
+      expect.objectContaining({ sku: "PUEN-NC-001", title: "The Neighborhood Chronicles, Book 1: David and Goliath", quantity: 1 })
+    );
+  });
+
+  it("sends one email when Stripe delivers the same NC order twice", async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue(
+      bookOrder({ metadata: { channel: "retail", sku: "PUEN-NC-001", quantity: "1" }, amount_total: 1499 })
+    );
+    await post();
+    await post();
+    expect(sendBookOrderNotice).toHaveBeenCalledTimes(1);
+    expect(sendBookOrderNotice).toHaveBeenCalledWith(expect.objectContaining({ unitAmount: 1499 }));
+  });
+
+  it("sends no print email for the NC SKU outside the retail checkout", async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue(bookOrder({ metadata: { sku: "PUEN-NC-001", quantity: "1" } }));
+    await post();
+    expect(sendBookOrderNotice).not.toHaveBeenCalled();
+  });
+
+  it("still emails a Geezy order made before quantities were recorded, with the copies unknown", async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue(bookOrder({ metadata: { channel: "retail", sku: "PUEN-CB-001" } }));
+    await post();
+    expect(sendBookOrderNotice).toHaveBeenCalledWith(expect.objectContaining({ sku: "PUEN-CB-001", quantity: null }));
+  });
+
+  it("sends no print email for a retail session with a SKU that is not on sale", async () => {
+    stripeMock.webhooks.constructEvent.mockReturnValue(bookOrder({ metadata: { channel: "retail", sku: "PUEN-XX-999", quantity: "1" } }));
+    expect((await post()).status).toBe(200);
+    expect(sendBookOrderNotice).not.toHaveBeenCalled();
+    expect(alertFailure).toHaveBeenCalledWith("Paid session not recognised: no order email was sent", { session: "cs_test_webhook_1" });
   });
 
   it("sends one email when Stripe delivers the same order twice, so nothing is printed twice", async () => {

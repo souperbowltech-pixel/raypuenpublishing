@@ -47,6 +47,16 @@ export function isStripeConfigured(
   return trimmed.startsWith("sk_");
 }
 
+/**
+ * True unless a live key is in use. The storefront and /neighborhood show the
+ * "test mode, use card 4242" note only while this holds. Both pages are built
+ * statically, so this is read at build time: after the live key goes into
+ * Vercel, redeploy, then check both pages no longer show the note.
+ */
+export function isStripeTestMode(key: string | undefined = process.env.STRIPE_SECRET_KEY): boolean {
+  return !(key ?? "").trim().startsWith("sk_live_");
+}
+
 /** The single response every checkout route gives when payments are not wired up. */
 export const STRIPE_NOT_CONFIGURED_MESSAGE =
   "Payments are not configured. Please try again shortly.";

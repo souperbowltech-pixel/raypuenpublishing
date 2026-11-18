@@ -23,9 +23,10 @@ describe("the checkout success page treats a Patrol as digital", () => {
   );
 
   it("never shows the printing and dispatch promises for a Patrol", () => {
-    // The fulfilment block is what claims "dispatched within 2-3 business days".
-    expect(page).toContain("{isPaid && !isPatrol && !isGuide && (");
-    expect(page).toContain("Dispatched directly to your address within 2–3 business days");
+    // Printing is promised only for a named printed book or a sponsorship; a
+    // Patrol is neither. components/retail/CheckoutPages.test.tsx renders it.
+    expect(page).toContain("{isPaid && isWholesale && (");
+    expect(page).toContain("{isPaid && book && (");
   });
 
   it("hands the buyer their Patrol link when the token is known", () => {
@@ -52,7 +53,8 @@ describe("the checkout success page treats the digital Guide as digital too", ()
   );
 
   it("never shows printing and dispatch for a Guide order", () => {
-    expect(page).toContain("{isPaid && !isPatrol && !isGuide && (");
+    expect(page).toContain("{isPaid && isWholesale && (");
+    expect(page).toContain("{isPaid && book && (");
   });
 
   it("promises the email only while the Guide is actually being issued", () => {

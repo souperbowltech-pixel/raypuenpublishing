@@ -1,6 +1,6 @@
 import { sendEmail, type EmailResult } from "@/lib/email";
 import { getSiteOrigin } from "@/lib/site";
-import { book1, publisherBrand } from "@/lib/book";
+import { publisherBrand } from "@/lib/book";
 import { normalizeEmail } from "@/lib/family";
 import type { ShippingAddress } from "@/lib/patrol-store";
 
@@ -160,6 +160,8 @@ export function shippingFromSession(session: {
 export interface BookOrderNotice {
   sessionId: string;
   sku: string;
+  /** The book's name, as on Checkout. */
+  title: string;
   quantity: number | null;
   /** What one copy cost at checkout, in cents, to check the amount against. */
   unitAmount: number;
@@ -206,7 +208,7 @@ export async function sendBookOrderNotice(order: BookOrderNotice): Promise<Email
     copies !== null && order.amountTotal !== null && order.amountTotal === copies * order.unitAmount;
 
   const text = [
-    `A paid order for ${book1.title} (${oneLine(order.sku)}) has come in.`,
+    `A paid order for ${oneLine(order.title)} (${oneLine(order.sku)}) has come in.`,
     "",
     "Books are not sent to the printer automatically yet. Please place this order",
     "at IngramSpark and have it shipped to the address below.",

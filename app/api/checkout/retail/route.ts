@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, isStripeConfigured, STRIPE_NOT_CONFIGURED_MESSAGE } from "@/lib/stripe";
-import { RETAIL_PRICE } from "@/lib/pricing";
-import { BOOK_1_SKU } from "@/lib/checkout";
-import { book1, publisherBrand } from "@/lib/book";
+import { PRINTED_BOOKS, findPrintedBook } from "@/lib/checkout";
+import { publisherBrand } from "@/lib/book";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { getSiteOrigin } from "@/lib/site";
 
@@ -29,7 +28,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json().catch(() => ({}));
+    const raw = await request.json().catch(() => ({}));
+    // A JSON null, string or array is treated as an empty order, never a crash.
+    const body: Record<string, unknown> = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+    // Geezy when no book is named, so older pages and links keep working.
+    const book = body.book === undefined ? PRINTED_BOOKS["geezy-book-1"] : findPrintedBook(body.book);
+    if (!book) {
+      return NextResponse.json({ error: "Please choose a book." }, { status: 400 });
+    }
     let quantity = 1;
     if (body.quantity !== undefined) {
       if (
@@ -55,14 +61,13 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `${book1.title}, ${book1.tagline}`,
-              description:
-                "An Interactive Rhythmic Rhyme & Tactile Coloring Quest for Early Learners.",
+              name: book.title,
+              description: book.description,
               metadata: {
-                sku: BOOK_1_SKU,
+                sku: book.sku,
               },
             },
-            unit_amount: Math.round(RETAIL_PRICE * 100), // dollars to whole cents
+            unit_amount: book.unitAmountCents,
           },
           quantity,
         },
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
       },
       metadata: {
         channel: "retail",
-        sku: BOOK_1_SKU,
+        sku: book.sku,
         quantity: quantity.toString(),
       },
       // Legal credit line, shown to the customer on the Stripe Checkout page.
@@ -81,7 +86,7 @@ export async function POST(request: NextRequest) {
         submit: { message: publisherBrand.fullCredit },
       },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/checkout/cancel`,
+      cancel_url: `${origin}/checkout/cancel?book=${book.key}`,
     });
 
     return NextResponse.json({ url: session.url });

@@ -66,7 +66,7 @@ function expectTappable(classes: string[]) {
 
 describe("rendered controls are at least 44 px", () => {
   it("gives the quantity steppers a full 44 px", () => {
-    const html = renderToStaticMarkup(<BuyBox />);
+    const html = renderToStaticMarkup(<BuyBox testMode />);
     expectTappable(classesOf(html, 'aria-label="Decrease quantity"'));
     expectTappable(classesOf(html, 'aria-label="Increase quantity"'));
   });
@@ -114,7 +114,7 @@ describe("rendered controls are at least 44 px", () => {
   });
 
   it("gives the cancelled checkout's way home a 44 px hit area", () => {
-    expectTappable(classesOf(renderToStaticMarkup(<CheckoutCancelPage />), "Go to Homepage"));
+    expectTappable(classesOf(renderToStaticMarkup(<CheckoutCancelPage searchParams={{}} />), "Go to Homepage"));
   });
 });
 

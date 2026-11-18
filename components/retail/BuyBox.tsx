@@ -1,14 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { RETAIL_PRICE, formatCurrency } from "@/lib/pricing";
-import { initiateRetailCheckout } from "@/lib/checkout";
+import { formatCurrency } from "@/lib/pricing";
+import { PRINTED_BOOKS, initiateRetailCheckout, type PrintedBookKey } from "@/lib/checkout";
 import { Spinner } from "@/components/ui/Spinner";
 
 /**
- * The retail purchase control. "Buy Now" triggers real Stripe Checkout.
+ * The retail purchase control. "Buy Now" triggers real Stripe Checkout for the
+ * book named (Geezy Goober unless told otherwise).
  */
-export function BuyBox() {
+export function BuyBox({
+  book = "geezy-book-1",
+  id = "buy",
+  testMode,
+}: {
+  book?: PrintedBookKey;
+  /** The anchor and the field ids; must be unique on the page. */
+  id?: string;
+  /** From the server (isStripeTestMode): shows the test card note while payments are in test mode. */
+  testMode: boolean;
+}) {
+  const { badge, unitAmountCents } = PRINTED_BOOKS[book];
+  // The same figure Checkout charges, so the box can never show another price.
+  const price = unitAmountCents / 100;
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +30,7 @@ export function BuyBox() {
   async function handleBuy() {
     setLoading(true);
     setError(null);
-    const res = await initiateRetailCheckout(quantity);
+    const res = await initiateRetailCheckout(quantity, book);
     if (res.error) {
       setError(res.error);
       setLoading(false);
@@ -25,23 +39,25 @@ export function BuyBox() {
 
   return (
     <div
-      id="buy"
+      id={id}
       className="rounded-xl2 border border-ink/10 bg-paper p-6 shadow-card"
     >
       <div className="flex items-end justify-between">
         <div>
           <p className="eyebrow">Retail price</p>
           <p className="font-display text-4xl font-bold text-ink">
-            {formatCurrency(RETAIL_PRICE)}
+            {formatCurrency(price)}
           </p>
         </div>
-        <span className="rounded-full bg-spruce-light px-3 py-1 text-xs font-bold text-spruce-dark">
-          Free coloring fun
-        </span>
+        {badge && (
+          <span className="rounded-full bg-spruce-light px-3 py-1 text-xs font-bold text-spruce-dark">
+            {badge}
+          </span>
+        )}
       </div>
 
       <div className="mt-5 flex items-center gap-3">
-        <label htmlFor="retail-qty" className="text-sm font-semibold text-ink">
+        <label htmlFor={`${id}-qty`} className="text-sm font-semibold text-ink">
           Quantity
         </label>
         <div className="flex items-center rounded-full border border-ink/20">
@@ -55,7 +71,7 @@ export function BuyBox() {
             −
           </button>
           <input
-            id="retail-qty"
+            id={`${id}-qty`}
             type="number"
             min={1}
             disabled={loading}
@@ -89,7 +105,7 @@ export function BuyBox() {
             Redirecting to Checkout...
           </>
         ) : (
-          `Buy Now · ${formatCurrency(RETAIL_PRICE * quantity)}`
+          `Buy Now · ${formatCurrency(price * quantity)}`
         )}
       </button>
 
@@ -103,13 +119,15 @@ export function BuyBox() {
       )}
 
       <p className="mt-2 text-center text-xs text-ink-soft">
-        Secure Stripe checkout · Ships in 2–3 business days
+        Secure Stripe checkout. Printed for you and sent to your address.
       </p>
 
-      <div className="mt-3 rounded-lg border border-spruce/30 bg-spruce/10 px-3 py-2 text-center text-xs text-spruce-dark">
-        <span className="font-semibold">Sandbox Test Mode:</span> Use card{" "}
-        <code className="rounded bg-paper px-1 font-mono font-bold text-ink">4242 4242 4242 4242</code> (Do not enter real cards).
-      </div>
+      {testMode && (
+        <div className="mt-3 rounded-lg border border-spruce/30 bg-spruce/10 px-3 py-2 text-center text-xs text-spruce-dark">
+          <span className="font-semibold">Sandbox Test Mode:</span> Use card{" "}
+          <code className="rounded bg-paper px-1 font-mono font-bold text-ink">4242 4242 4242 4242</code> (Do not enter real cards).
+        </div>
+      )}
     </div>
   );
 }
