@@ -111,7 +111,7 @@ describe("listSchoolRequests", () => {
     const at = "2026-11-12T10:00:00.123456+00:00";
     await store.listSchoolRequests(store.pageCursor({ createdAt: at, id }));
     expect(calls.find((c) => c.method === "or")?.args).toEqual([
-      `created_at.lt.${at},and(created_at.eq.${at},id.lt.${id})`,
+      `created_at.lt."${at}",and(created_at.eq."${at}",id.lt.${id})`,
     ]);
   });
 

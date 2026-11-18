@@ -2,6 +2,9 @@ import { supabase } from "@/lib/supabase";
 import { sendEmail, emailConfigured, redactEmail, type EmailResult } from "@/lib/email";
 import { approvalRecipient } from "@/lib/notifications";
 import type { SchoolRequestInput } from "@/lib/school-requests";
+import { parsePageCursor } from "@/lib/page-cursor";
+
+export { pageCursor, parsePageCursor } from "@/lib/page-cursor";
 
 /**
  * Where a school's request is kept, and how Ray hears about it.
@@ -49,26 +52,6 @@ export async function saveSchoolRequest(input: SchoolRequestInput): Promise<Save
 /** One admin page of requests. Ray reads these by eye, so 50 is plenty. */
 export const SCHOOL_REQUESTS_PAGE_SIZE = 50;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/** Postgres timestamptz as PostgREST returns it, kept as text so no microsecond is lost. */
-const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/;
-
-/**
- * Where the next page starts: the last row's time and id. Two requests can share
- * a time, so the id breaks the tie and none is skipped or shown twice.
- */
-export function pageCursor(row: Pick<SchoolRequestRow, "createdAt" | "id">): string {
-  return `${row.createdAt}|${row.id}`;
-}
-
-/** A cursor that came back through a URL. Anything malformed means "first page". */
-export function parsePageCursor(raw: unknown): { createdAt: string; id: string } | null {
-  if (typeof raw !== "string") return null;
-  const [createdAt, id, extra] = raw.split("|");
-  if (extra !== undefined || !TIMESTAMP.test(createdAt ?? "") || !UUID.test(id ?? "")) return null;
-  return { createdAt, id };
-}
-
 /**
  * Newest first, one page at a time. Returns null when the list cannot be read,
  * so the page can say so instead of showing an empty list.
@@ -86,8 +69,9 @@ export async function listSchoolRequests(cursor?: string): Promise<SchoolRequest
   const after = parsePageCursor(cursor);
   if (after) {
     // Both values passed the strict patterns above, so they cannot break out of the filter.
+    // The time is quoted: PostgREST reads "." and ":" in an unquoted value as syntax.
     query = query.or(
-      `created_at.lt.${after.createdAt},and(created_at.eq.${after.createdAt},id.lt.${after.id})`
+      `created_at.lt."${after.createdAt}",and(created_at.eq."${after.createdAt}",id.lt.${after.id})`
     );
   }
 

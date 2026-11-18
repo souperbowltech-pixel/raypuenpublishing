@@ -4,8 +4,12 @@ import { ADMIN_COOKIE, adminConfigured, isAdminCookie } from "@/lib/admin-auth";
 import { listPendingGuideClaims } from "@/lib/patrol-store";
 import { formatAddress } from "@/lib/notifications";
 import { publisherBrand } from "@/lib/book";
-import { listSchoolRequests, parsePageCursor } from "@/lib/school-request-store";
+import { listSchoolRequests } from "@/lib/school-request-store";
+import { parsePageCursor } from "@/lib/page-cursor";
 import { SchoolRequestsList } from "@/components/admin/SchoolRequestsList";
+import { listGrants } from "@/lib/library-store";
+import { LibraryCodes } from "@/components/admin/LibraryCodes";
+import { libraryBookOptions, libraryCodeRows, olderCodesCursor } from "@/lib/admin-library-rows";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +28,12 @@ export const metadata: Metadata = {
  *
  * Below the approvals, the requests leaders send from /neighborhood, newest
  * first, for the same reason: the email to Ray is a courtesy, this list is the
- * record.
+ * record. Then the review codes Ray hands to reviewers (the private library).
  */
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: { error?: string; before?: string };
+  searchParams: { error?: string; before?: string; lbefore?: string };
 }) {
   if (!adminConfigured()) {
     return (
@@ -70,7 +74,12 @@ export default async function AdminPage({
   }
 
   const before = typeof searchParams.before === "string" ? searchParams.before : undefined;
-  const [claims, requests] = await Promise.all([listPendingGuideClaims(), listSchoolRequests(before)]);
+  const codesBefore = typeof searchParams.lbefore === "string" ? searchParams.lbefore : undefined;
+  const [claims, requests, grants] = await Promise.all([
+    listPendingGuideClaims(),
+    listSchoolRequests(before),
+    listGrants(codesBefore),
+  ]);
 
   return (
     <Shell wide>
@@ -124,6 +133,13 @@ export default async function AdminPage({
       )}
 
       <SchoolRequestsList rows={requests} paged={parsePageCursor(before) !== null} />
+
+      <LibraryCodes
+        books={libraryBookOptions()}
+        rows={libraryCodeRows(grants, new Date())}
+        olderCursor={olderCodesCursor(grants)}
+        paged={parsePageCursor(codesBefore) !== null}
+      />
     </Shell>
   );
 }

@@ -18,7 +18,7 @@ let answers: Answer[] = [];
 function builder() {
   const query: Query = { calls: [] };
   const chain: Record<string, unknown> = {};
-  for (const method of ["from", "insert", "update", "select", "eq", "is", "not", "lt", "in", "limit", "order", "single", "maybeSingle"]) {
+  for (const method of ["from", "insert", "update", "select", "eq", "is", "not", "lt", "in", "limit", "order", "or", "single", "maybeSingle"]) {
     chain[method] = (...args: unknown[]) => {
       if (method === "from") queries.push(query);
       query.calls.push([method, args]);
@@ -467,5 +467,105 @@ describe("sweepOldCopies", () => {
     await vi.advanceTimersByTimeAsync(5_000);
     expect(await result).toBe(0);
     vi.useRealTimers();
+  });
+});
+
+describe("listGrants", () => {
+  it("reads the newest grants first, one page at a time", async () => {
+    answers = [ok([row()])];
+    const grants = await store.listGrants();
+    expect(grants).toHaveLength(1);
+    expect(grants![0]).toMatchObject({ id: GRANT_ID, recipientName: "Jane Smith", bookSlug: "neighborhood-book-1" });
+    expect(argsOf(queries[0], "order")).toEqual([["created_at", { ascending: false }], ["id", { ascending: false }]]);
+    expect(argsOf(queries[0], "limit")).toEqual([[store.GRANTS_PAGE_SIZE]]);
+    expect(argsOf(queries[0], "or")).toEqual([]);
+  });
+
+  it("starts after the last row shown, with the time quoted for PostgREST", async () => {
+    answers = [ok([])];
+    const at = "2026-11-14T11:00:00.123456+00:00";
+    await store.listGrants(`${at}|${GRANT_ID}`);
+    expect(argsOf(queries[0], "or")).toEqual([[`created_at.lt."${at}",and(created_at.eq."${at}",id.lt.${GRANT_ID})`]]);
+  });
+
+  it("treats a malformed cursor as the first page", async () => {
+    answers = [ok([])];
+    await store.listGrants("garbage),id.gt.0");
+    expect(argsOf(queries[0], "or")).toEqual([]);
+  });
+
+  it("answers null, not an empty list, when the list cannot be read", async () => {
+    answers = [failed()];
+    expect(await store.listGrants()).toBeNull();
+    serviceRole = false;
+    expect(await store.listGrants()).toBeNull();
+  });
+});
+
+describe("revokeGrant", () => {
+  it("cancels a live grant in one conditional update", async () => {
+    answers = [ok([{ id: GRANT_ID }])];
+    expect(await store.revokeGrant(GRANT_ID, NOW)).toBe("revoked");
+    const [update] = updates();
+    expect(argsOf(update, "update")).toEqual([[{ revoked_at: NOW.toISOString() }]]);
+    // Review codes only: a paid buyer's code is never cancelled from /admin.
+    expect(argsOf(update, "eq")).toEqual([["id", GRANT_ID], ["kind", "review"]]);
+    expect(argsOf(update, "is")).toEqual([["revoked_at", null]]);
+  });
+
+  it("reports not-found for a grant already cancelled or never there", async () => {
+    answers = [ok([])];
+    expect(await store.revokeGrant(GRANT_ID, NOW)).toBe("not-found");
+  });
+
+  it("refuses something that is not a grant id without asking the database", async () => {
+    for (const id of ["", "1 or 1=1", 42, null, `${GRANT_ID},id.neq.x`]) {
+      expect(await store.revokeGrant(id, NOW)).toBe("not-found");
+    }
+    expect(queries).toHaveLength(0);
+  });
+
+  it("says unavailable when the database fails or is not fully set up", async () => {
+    answers = [failed()];
+    expect(await store.revokeGrant(GRANT_ID, NOW)).toBe("unavailable");
+    serviceRole = false;
+    expect(await store.revokeGrant(GRANT_ID, NOW)).toBe("unavailable");
+  });
+});
+
+describe("masterUploaded", () => {
+  const book = findBook("geezy-book-1")!;
+
+  it("finds the master by its exact name in its folder", async () => {
+    bucket.list.mockResolvedValue({ data: [{ name: "geezy-book-1.pdf" }], error: null });
+    expect(await store.masterUploaded(book)).toBe(true);
+    expect(buckets).toEqual(["library"]);
+    expect(bucket.list).toHaveBeenCalledWith("masters", { search: "geezy-book-1.pdf", limit: 10 });
+  });
+
+  it("says no when only a similar name is there", async () => {
+    bucket.list.mockResolvedValue({ data: [{ name: "geezy-book-1.pdf.bak" }], error: null });
+    expect(await store.masterUploaded(book)).toBe(false);
+  });
+
+  it("answers null, rather than waiting, when storage does not reply in time", async () => {
+    vi.useFakeTimers();
+    try {
+      bucket.list.mockReturnValue(new Promise(() => {}));
+      const answer = store.masterUploaded(book);
+      await vi.advanceTimersByTimeAsync(3_000);
+      expect(await answer).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("answers null when storage cannot be asked", async () => {
+    bucket.list.mockResolvedValue({ data: null, error: { message: "down" } });
+    expect(await store.masterUploaded(book)).toBeNull();
+    bucket.list.mockRejectedValue(new Error("network"));
+    expect(await store.masterUploaded(book)).toBeNull();
+    dbConfigured = false;
+    expect(await store.masterUploaded(book)).toBeNull();
   });
 });

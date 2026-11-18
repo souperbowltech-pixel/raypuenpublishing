@@ -17,6 +17,7 @@ import {
   type LibraryBook,
   type RefusalReason,
 } from "@/lib/library";
+import { parsePageCursor } from "@/lib/page-cursor";
 
 /**
  * Where the library's codes are kept and its books handed over.
@@ -146,6 +147,107 @@ export async function createGrant(input: CreateInput): Promise<CreateResult> {
   return { ok: true, grant: toGrant(data as Row), code };
 }
 
+
+/** One page of Ray's list of codes. */
+export const GRANTS_PAGE_SIZE = 50;
+
+/**
+ * Every grant, newest first, a page at a time (cursor: the last row's
+ * created_at|id, as on the school requests list). Null when the list cannot
+ * be read, so /admin says so instead of showing an empty list.
+ */
+export async function listGrants(cursor?: string): Promise<Grant[] | null> {
+  if (!supabase || !libraryReady()) return null;
+  let query = supabase
+    .from("library_grants")
+    .select(COLUMNS)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(GRANTS_PAGE_SIZE);
+  const after = parsePageCursor(cursor);
+  if (after) {
+    // Both values passed strict patterns; the time is quoted because PostgREST reads "." and ":" as syntax.
+    query = query.or(
+      `created_at.lt."${after.createdAt}",and(created_at.eq."${after.createdAt}",id.lt.${after.id})`
+    );
+  }
+  const { data, error } = await query;
+  if (error) {
+    console.error("[library] grant list failed", error.code, error.message);
+    return null;
+  }
+  return ((data as Row[] | null) ?? []).map(toGrant);
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export type RevokeResult = "revoked" | "not-found" | "unavailable";
+
+/**
+ * Ray cancels a review code. One conditional update, so cancelling twice is
+ * harmless and a code already cancelled reports not-found. Only review codes:
+ * a paid buyer's code cannot be cancelled here, since nothing on /admin could
+ * give it back. A copy already downloaded cannot be taken back; the code
+ * simply opens nothing from now on.
+ */
+export async function revokeGrant(id: unknown, now: Date = new Date()): Promise<RevokeResult> {
+  if (!supabase || !libraryReady()) return "unavailable";
+  if (typeof id !== "string" || !UUID.test(id)) return "not-found";
+  const { data, error } = await supabase
+    .from("library_grants")
+    .update({ revoked_at: now.toISOString() })
+    .eq("id", id)
+    .eq("kind", "review")
+    .is("revoked_at", null)
+    .select("id");
+  if (error) {
+    console.error("[library] cancel failed", error.code, error.message);
+    return "unavailable";
+  }
+  return (data as Row[] | null)?.length ? "revoked" : "not-found";
+}
+
+/** How long Ray waits for the master check before the answer is "could not check". */
+const MASTER_CHECK_TIMEOUT_MS = 3_000;
+
+/**
+ * Whether the book's master file is in the bucket, so Ray is told when a code
+ * he just made cannot open anything yet. Null when storage cannot be asked in
+ * time; never throws, never waits past MASTER_CHECK_TIMEOUT_MS. A check that
+ * gave up finishes in the background and its answer is dropped; it only reads.
+ */
+export async function masterUploaded(book: LibraryBook): Promise<boolean | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const giveUp = new Promise<null>((resolve) => {
+    timer = setTimeout(() => {
+      console.error("[library] master check took too long");
+      resolve(null);
+    }, MASTER_CHECK_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([checkMaster(book), giveUp]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function checkMaster(book: LibraryBook): Promise<boolean | null> {
+  if (!storageClient || !libraryReady()) return null;
+  const slash = book.masterPath.lastIndexOf("/");
+  const folder = book.masterPath.slice(0, slash);
+  const name = book.masterPath.slice(slash + 1);
+  try {
+    const { data, error } = await storageClient.storage.from(LIBRARY_BUCKET).list(folder, { search: name, limit: 10 });
+    if (error) {
+      console.error("[library] master check failed", error.message);
+      return null;
+    }
+    return (data ?? []).some((file) => file.name === name);
+  } catch (err) {
+    console.error("[library] master check failed", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
 
 export type OpenResult =
   | { ok: true; url: string }

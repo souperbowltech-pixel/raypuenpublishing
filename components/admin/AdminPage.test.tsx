@@ -9,6 +9,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 let signedIn = false;
 const listSchoolRequests = vi.fn();
+const listGrants = vi.fn();
 
 vi.mock("next/headers", () => ({ cookies: () => ({ get: () => ({ value: "cookie" }) }) }));
 vi.mock("@/lib/admin-auth", () => ({
@@ -17,13 +18,15 @@ vi.mock("@/lib/admin-auth", () => ({
   isAdminCookie: () => signedIn,
 }));
 vi.mock("@/lib/patrol-store", () => ({ listPendingGuideClaims: async () => [] }));
+vi.mock("@/lib/library-store", () => ({ GRANTS_PAGE_SIZE: 50, listGrants: (...a: unknown[]) => listGrants(...a) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
 vi.mock("@/lib/school-request-store", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/school-request-store")>()),
   listSchoolRequests: (...a: unknown[]) => listSchoolRequests(...a),
 }));
 
 const { default: AdminPage } = await import("@/app/admin/page");
-const render = async (searchParams: { before?: string } = {}) => renderToStaticMarkup(await AdminPage({ searchParams }));
+const render = async (searchParams: { before?: string; lbefore?: string } = {}) => renderToStaticMarkup(await AdminPage({ searchParams }));
 
 const row = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -42,12 +45,16 @@ beforeEach(() => {
   signedIn = false;
   listSchoolRequests.mockReset();
   listSchoolRequests.mockResolvedValue([row]);
+  listGrants.mockReset();
+  listGrants.mockResolvedValue([]);
 });
 
 describe("/admin", () => {
   it("reads no request and shows none without the admin cookie", async () => {
     const html = await render();
     expect(listSchoolRequests).not.toHaveBeenCalled();
+    expect(listGrants).not.toHaveBeenCalled();
+    expect(html).not.toContain("Review copies");
     expect(html).not.toContain("Requests from leaders");
     expect(html).not.toContain("grace@example.com");
     expect(html).toContain("Enter the admin key");
@@ -59,6 +66,8 @@ describe("/admin", () => {
     expect(listSchoolRequests).toHaveBeenCalledWith(undefined);
     expect(html).toContain("Requests from leaders");
     expect(html).toContain("Hope Homeschool Co-op");
+    expect(html).toContain("Review copies");
+    expect(html).toContain("No codes yet.");
   });
 
   it("passes an older-page cursor on, and calls it an older page only when it is a real one", async () => {
@@ -72,5 +81,20 @@ describe("/admin", () => {
     expect(junk).not.toContain("Back to the newest");
     expect(listSchoolRequests).toHaveBeenLastCalledWith("2026-11-18T14:05:00 00:00|garbage");
     expect(junk).toContain("Hope Homeschool Co-op");
+  });
+
+  it("says the codes could not be loaded when the library list fails", async () => {
+    signedIn = true;
+    listGrants.mockResolvedValue(null);
+    expect(await render()).toContain("The codes could not be loaded");
+  });
+
+  it("passes the codes cursor on, separately from the requests cursor", async () => {
+    signedIn = true;
+    const cursor = "2026-11-18T14:05:00+00:00|00000000-0000-4000-8000-000000000002";
+    const html = await render({ lbefore: cursor });
+    expect(listGrants).toHaveBeenCalledWith(cursor);
+    expect(listSchoolRequests).toHaveBeenCalledWith(undefined);
+    expect(html).toContain('href="/admin#library-codes"');
   });
 });
