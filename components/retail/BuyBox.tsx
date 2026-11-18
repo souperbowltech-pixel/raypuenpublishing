@@ -4,6 +4,8 @@ import { useState } from "react";
 import { RETAIL_PRICE, formatCurrency } from "@/lib/pricing";
 import { initiateRetailCheckout } from "@/lib/checkout";
 import { Spinner } from "@/components/ui/Spinner";
+import { WorldCharacter } from "@/components/world/WorldCharacter";
+import { WORLD_LAYER } from "@/lib/world";
 
 /**
  * The retail purchase control. "Buy Now" triggers real Stripe Checkout.
@@ -26,7 +28,8 @@ export function BuyBox() {
   return (
     <div
       id="buy"
-      className="rounded-xl2 border border-ink/10 bg-paper p-6 shadow-card"
+      data-world-trigger={WORLD_LAYER.enabled ? "" : undefined}
+      className="relative rounded-xl2 border border-ink/10 bg-paper p-6 shadow-card"
     >
       <div className="flex items-end justify-between">
         <div>
@@ -110,6 +113,7 @@ export function BuyBox() {
         <span className="font-semibold">Sandbox Test Mode:</span> Use card{" "}
         <code className="rounded bg-paper px-1 font-mono font-bold text-ink">4242 4242 4242 4242</code> (Do not enter real cards).
       </div>
+      <WorldCharacter placement={WORLD_LAYER.placements.buy} />
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import { book1 } from "@/lib/book";
 import { Reveal } from "@/components/ui/Reveal";
 import { CountUp } from "@/components/motion/CountUp";
+import { WorldCharacter } from "@/components/world/WorldCharacter";
+import { WORLD_LAYER } from "@/lib/world";
+import { WorldPaper } from "@/components/world/WorldPaper";
 
 const specs = [
   { label: "Age range", value: book1.ageRange },
@@ -11,7 +14,8 @@ const specs = [
 
 export function BookDetails() {
   return (
-    <section id="details" className="bg-paper-deep py-16">
+    <section id="details" className="relative isolate overflow-hidden bg-paper-deep py-16">
+      <WorldPaper />
       <Reveal className="container-page grid gap-10 lg:grid-cols-[1.2fr_1fr]">
         <div>
           <p className="eyebrow">About the book</p>
@@ -36,6 +40,7 @@ export function BookDetails() {
           ))}
         </dl>
       </Reveal>
+      <WorldCharacter placement={WORLD_LAYER.placements.details} />
     </section>
   );
 }

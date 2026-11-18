@@ -1,5 +1,6 @@
 import { shippingReturns } from "@/lib/book";
 import { Reveal } from "@/components/ui/Reveal";
+import { WorldPaper } from "@/components/world/WorldPaper";
 
 const items = [
   {
@@ -18,7 +19,8 @@ const items = [
 
 export function ShippingReturns() {
   return (
-    <section className="container-page pb-8">
+    <section className="container-page relative isolate pb-8">
+      <WorldPaper />
       <Reveal className="grid gap-4 sm:grid-cols-3">
         {items.map((item) => (
           <div

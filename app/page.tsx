@@ -13,7 +13,7 @@ export default function RetailLandingPage() {
       <SiteHeader />
       <main>
         <Hero />
-        <VirtueMarquee badges={BOOK1_VIRTUE_BADGES} />
+        <VirtueMarquee badges={BOOK1_VIRTUE_BADGES} world />
         <IllustrationGallery />
         <BookDetails />
         <AboutAuthor />

@@ -212,3 +212,28 @@ client communication.
 
 **Open:** the book is moving from 19 virtues to 25. Six more badges are owed by Aymen
 (the guide already names them). When they land, regenerate this sheet at the same path.
+
+## World layer (2026-11-18)
+
+Images: done. All 11 requested generated PNGs are in public/world. Seven transparent characters are 1024 x 1024, three scenes are 1600 x 900, and the seamless paper tile is 1024 x 1024. Every file was decoded and checked below 800000 bytes. See docs/codex/world-images.md. No image was skipped. The local image prompt file is excluded from commits. Implementation follows the approved brief on world-layer; no push, merge or deployment.
+
+
+World hero and shared character: done. Geezy peeks from behind the cover after its image loads, slides 24 px, then settles after a finite sway. Shared tests cover all five entrance types, reduced motion changes, once-only triggers, hidden placements, image and chunk failure, cancellation and cleanup. Lint and types pass; full suite 920 tests in 82 files passed with two workers. Git commits are blocked because the real worktree Git directory is read-only; the images and each section are preserved as separate patches in analysis/world-layer/commit-series.
+
+
+World virtue strip: done. A lazy owl perches on the top edge, hidden below sm, and wiggles once on entry. The storefront opts into the decoration; the strip's existing list, pause control and keyboard behavior stay intact. All 14 existing marquee DOM tests and two placement tests pass. Lint has only the pre-existing Lightbox warning; typecheck passes. Patch snapshots use a non-source suffix so TypeScript never compiles the stored review copies.
+
+
+World gallery: done. A lazy, decorative woods image sits in a clipped layer behind the unchanged gallery. Its 12 px scroll drift reverts for reduced motion and on cleanup. Scene loading and animation failures are tested. Gallery and shared scene tests pass; lint has no new warnings, and types pass. At 6 percent scene opacity, even an entirely black scene preserves at least 5.13:1 for the gallery eyebrow and 6.42:1 for body copy on paper.
+
+
+World book details: done. The bear rises once from a clipped bottom edge in the existing 64 px padding, outside the details grid, and is hidden below sm. The shared entrance test covers once-only follow-through and reduced motion. All four section placement tests, lint and typecheck pass, with only the existing Lightbox lint warning.
+
+
+World author: done. A lazy 64 px explorer walks once beside the lower edge of the author card, entirely inside the section's existing bottom padding. Hidden below sm so the portrait and biography keep their full space. All five placement tests, lint and typecheck pass; no new lint warnings.
+
+
+World buy box: done. A lazy 64 px waving Geezy sits in the free gutter to the right of the card, hidden on phones. Its once-only trigger uses the buy box itself. Checkout, quantity and error behavior remain unchanged. All 38 tap-target tests and six placement tests pass; lint and types pass with no new warnings.
+
+
+World paper and final review (2026-11-19): done. Static paper texture decorates the gallery, details, author and shipping sections at 3 percent opacity, using lazy image decoding and a no-JavaScript repeating fallback. One switch removes all decorations. All 11 PNGs decode with the requested dimensions and alpha, each below 800000 bytes. Browser checks at 375, 768, 1280 and 1536 px with normal motion, reduced motion and JavaScript off found identical section heights and words, and no horizontal overflow. Screenshots inspected: hero, gallery, details, author. Real GSAP tests verify scroll links and transform cleanup. Final lint: exit 0, one existing Lightbox test warning, no new errors or warnings. Typecheck: exit 0. Full tests with two workers: 87 files, 939 tests passed, zero failures. The default worker count exhausted memory; no tests were skipped, weakened or reconfigured. npm ci reported 19 existing dependency vulnerabilities; package files are unchanged. Git commits remain blocked by read-only metadata outside this workspace. Eight per-section patches preserve the intended commit series. No push, merge or deployment. See docs/codex/world-layer-notes.md for review steps and local evidence.

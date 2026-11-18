@@ -6,6 +6,8 @@ import { loadGsap } from "@/components/motion/load-gsap";
 import { CountUp } from "@/components/motion/CountUp";
 import { PAGE_STICKER_META } from "@/lib/stickers";
 import { stickerBadgePath } from "@/lib/gamification";
+import { WorldCharacter } from "@/components/world/WorldCharacter";
+import { WORLD_LAYER } from "@/lib/world";
 
 export interface VirtueBadge {
   label: string;
@@ -44,7 +46,7 @@ function syncLoop(loop: Ref<Loop | null>, paused: Ref<boolean>, visible: Ref<boo
  * For reduced motion it is a still list that wraps, so every virtue shows.
  * Before script it is a single row that can be scrolled, by keyboard too.
  */
-export function VirtueMarquee({ badges }: { badges: VirtueBadge[] }) {
+export function VirtueMarquee({ badges, world = false }: { badges: VirtueBadge[]; world?: boolean }) {
   const area = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
   const loop = useRef<Loop | null>(null);
@@ -126,7 +128,8 @@ export function VirtueMarquee({ badges }: { badges: VirtueBadge[] }) {
   );
 
   return (
-    <section aria-labelledby="virtues-heading" className="border-y border-ink/10 bg-paper-deep py-6">
+    <section aria-labelledby="virtues-heading" className="relative border-y border-ink/10 bg-paper-deep py-6">
+      {world && <WorldCharacter placement={WORLD_LAYER.placements.virtues} />}
       {/* Tall enough for the button from the start, so its arrival moves nothing. */}
       <div className="container-page flex min-h-11 items-center justify-between gap-4">
         <h2 id="virtues-heading" className="eyebrow">

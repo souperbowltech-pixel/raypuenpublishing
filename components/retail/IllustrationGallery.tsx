@@ -5,13 +5,18 @@ import Image from "next/image";
 import { book1 } from "@/lib/book";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { Reveal } from "@/components/ui/Reveal";
+import { WorldScene } from "@/components/world/WorldScene";
+import { WORLD_LAYER } from "@/lib/world";
+import { WorldPaper } from "@/components/world/WorldPaper";
 
 export function IllustrationGallery() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const images = book1.gallery;
 
   return (
-    <section id="gallery" className="container-page py-16">
+    <section id="gallery" className="container-page relative isolate py-16">
+      <WorldPaper />
+      <WorldScene placement={WORLD_LAYER.placements.gallery} />
       <div className="max-w-2xl">
         <p className="eyebrow">Peek inside</p>
         <h2 className="mt-2 font-display text-3xl font-bold text-ink sm:text-4xl">

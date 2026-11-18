@@ -3,6 +3,8 @@ import { book1 } from "@/lib/book";
 import { BuyBox } from "./BuyBox";
 import { HeroTitle } from "@/components/motion/HeroTitle";
 import { CoverParallax } from "@/components/motion/CoverParallax";
+import { WorldCharacter } from "@/components/world/WorldCharacter";
+import { WORLD_LAYER } from "@/lib/world";
 
 export function Hero() {
   return (
@@ -43,6 +45,7 @@ export function Hero() {
         <div className="order-1 flex justify-center lg:order-2">
           <CoverParallax>
             <div className="relative">
+              <WorldCharacter placement={WORLD_LAYER.placements.hero} />
               <div
                 aria-hidden
                 className="absolute -inset-4 -rotate-3 rounded-xl2 bg-crayon-goldsoft"

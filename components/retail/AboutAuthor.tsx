@@ -1,10 +1,14 @@
 import Image from "next/image";
 import { author } from "@/lib/book";
 import { Reveal } from "@/components/ui/Reveal";
+import { WorldCharacter } from "@/components/world/WorldCharacter";
+import { WORLD_LAYER } from "@/lib/world";
+import { WorldPaper } from "@/components/world/WorldPaper";
 
 export function AboutAuthor() {
   return (
-    <section className="container-page py-16">
+    <section className="container-page relative isolate py-16">
+      <WorldPaper />
       <Reveal>
         <div className="flex flex-col items-center gap-8 rounded-xl2 border border-ink/10 bg-paper p-8 shadow-card sm:flex-row sm:p-10">
           <Image
@@ -25,6 +29,7 @@ export function AboutAuthor() {
           </div>
         </div>
       </Reveal>
+      <WorldCharacter placement={WORLD_LAYER.placements.author} />
     </section>
   );
 }
