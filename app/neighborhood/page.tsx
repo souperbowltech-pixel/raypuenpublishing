@@ -9,15 +9,17 @@ import {
   pageImage,
 } from "@/lib/neighborhood";
 import { SchoolRequestForm } from "@/components/neighborhood/SchoolRequestForm";
+import { BuyBox } from "@/components/retail/BuyBox";
+import { isStripeTestMode } from "@/lib/stripe";
 
 const TITLE = "The Neighborhood Chronicles: Sample Kit";
 const DESCRIPTION =
-  "A Bible-based character curriculum for ages 3 to 7. Watch the videos, see three coloring pages with their badges and Parent's Guide entries, and ask about co-op pricing.";
+  "A Bible-based character curriculum for ages 3 to 7. Watch the videos, see three coloring pages with their badges and Parent's Guide entries, order a copy, or ask about co-op pricing.";
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  // Reached from Ray's letter, not from search or the site header.
+  // Reached from Ray's letter and the table kit, not from search or the site header.
   robots: { index: false, follow: false },
   openGraph: {
     type: "website",
@@ -31,7 +33,8 @@ export const metadata: Metadata = {
 /**
  * puenpublishing.com/neighborhood: the sample kit Ray's letter to homeschool
  * leaders points to. Static on purpose: no database read, so the page stays up
- * even when Supabase is paused. Only the form at the foot talks to the server.
+ * even when Supabase is paused. Only the order box (Stripe Checkout, the same
+ * route as Geezy Goober) and the form at the foot talk to the server.
  */
 export default function NeighborhoodPage() {
   return (
@@ -61,7 +64,10 @@ export default function NeighborhoodPage() {
               Guide entry with a parable and a Scripture verse, and four sing-speak videos guide children through the
               story.
             </p>
-            <a href="#request" className="btn-primary mt-6">Ask about co-op pricing</a>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a href="#order" className="btn-primary">Order a copy</a>
+              <a href="#request" className="btn-secondary">Ask about co-op pricing</a>
+            </div>
           </div>
         </section>
 
@@ -163,6 +169,20 @@ export default function NeighborhoodPage() {
                 </div>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section aria-labelledby="order-heading" className="mt-16 scroll-mt-8">
+          <div className="mx-auto max-w-md">
+            <h2 id="order-heading" className="text-center font-display text-2xl font-bold text-ink sm:text-3xl">
+              Order a copy
+            </h2>
+            <p className="mt-3 text-center text-ink-soft">
+              The Neighborhood Chronicles, Book 1: David and Goliath, printed and sent to your home.
+            </p>
+            <div className="mt-6">
+              <BuyBox book="neighborhood-book-1" id="order" testMode={isStripeTestMode()} />
+            </div>
           </div>
         </section>
 

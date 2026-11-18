@@ -62,6 +62,9 @@ export default async function AdminPage({
             Open approvals
           </button>
         </form>
+        <a href="/" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-ink-soft underline">
+          Back to the site
+        </a>
         {searchParams.error && (
           <p className="mt-4 text-sm font-semibold text-clay">
             {searchParams.error === "rate"
@@ -85,11 +88,16 @@ export default async function AdminPage({
     <Shell wide>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="font-display text-2xl font-bold text-ink">Guides waiting for approval</h1>
-        <form method="POST" action="/api/admin/session?signout=1">
-          <button type="submit" className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-soft underline">
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-4">
+          <a href="/" className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-soft underline">
+            Back to the site
+          </a>
+          <form method="POST" action="/api/admin/session?signout=1">
+            <button type="submit" className="inline-flex min-h-11 items-center text-sm font-semibold text-ink-soft underline">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
 
       {claims.length === 0 ? (

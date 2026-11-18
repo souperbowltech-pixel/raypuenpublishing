@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { book1 } from "@/lib/book";
 import { BuyBox } from "./BuyBox";
+import { isStripeTestMode } from "@/lib/stripe";
 import { HeroTitle } from "@/components/motion/HeroTitle";
 import { CoverParallax } from "@/components/motion/CoverParallax";
 import { WorldCharacter } from "@/components/world/WorldCharacter";
@@ -38,7 +39,7 @@ export function Hero() {
           </div>
 
           <div className="mt-8 max-w-sm">
-            <BuyBox />
+            <BuyBox testMode={isStripeTestMode()} />
           </div>
         </div>
 

@@ -1,6 +1,13 @@
 import Link from "next/link";
+import { PRINTED_BOOKS, findPrintedBook } from "@/lib/checkout";
 
-export default function CheckoutCancelPage() {
+/**
+ * Where Stripe sends a buyer who backs out. The retail route names the book in
+ * cancel_url, so "Try Again" leads back to that book's own buy box; anything
+ * unknown leads to Geezy Goober's, as before.
+ */
+export default function CheckoutCancelPage({ searchParams }: { searchParams: { book?: string } }) {
+  const book = findPrintedBook(searchParams?.book) ?? PRINTED_BOOKS["geezy-book-1"];
   return (
     <main className="min-h-[80vh] flex items-center justify-center px-4 py-16">
       <div className="max-w-md w-full rounded-2xl border border-ink/10 bg-paper p-8 text-center shadow-card">
@@ -19,7 +26,7 @@ export default function CheckoutCancelPage() {
         </p>
 
         <div className="mt-8 flex flex-col gap-3">
-          <Link href="/#buy" className="btn-primary w-full text-center">
+          <Link href={book.returnPath} className="btn-primary w-full text-center">
             Return to Store & Try Again
           </Link>
           <Link

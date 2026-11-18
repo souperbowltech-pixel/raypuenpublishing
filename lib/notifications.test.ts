@@ -168,6 +168,7 @@ describe("the book order email to Ray", () => {
   const order = {
     sessionId: "cs_live_abc123",
     sku: "PUEN-CB-001",
+    title: "The Adventures of Geezy Goober, Volume 1: The Search for the Magic Pen",
     quantity: 2,
     unitAmount: 1499,
     amountTotal: 2998,
@@ -187,10 +188,15 @@ describe("the book order email to Ray", () => {
     expect(body.text).toContain("Buyer: Grace Miller, grace@example.com");
     expect(body.text).toContain(formatAddress(address));
     expect(body.text).toContain("Order reference: cs_live_abc123");
-    expect(body.text).toContain("(PUEN-CB-001)");
+    expect(body.text).toContain("A paid order for The Adventures of Geezy Goober, Volume 1: The Search for the Magic Pen (PUEN-CB-001)");
     // A send that timed out here but reached Resend is not sent twice by the retry.
     expect(fetchMock.mock.calls[0][1].headers["Idempotency-Key"]).toBe("book-order/cs_live_abc123");
     expect(body.text).not.toContain("does not match");
+  });
+
+  it("names the book that was bought, so Ray prints the right one", async () => {
+    await sendBookOrderNotice({ ...order, sku: "PUEN-NC-001", title: "The Neighborhood Chronicles, Book 1: David and Goliath" });
+    expect(sentBody().text).toContain("A paid order for The Neighborhood Chronicles, Book 1: David and Goliath (PUEN-NC-001)");
   });
 
   it("warns him before printing when the amount paid does not match the copies", async () => {

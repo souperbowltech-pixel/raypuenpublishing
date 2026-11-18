@@ -3,8 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { addSubscriberToMailerLite } from "@/lib/mailerlite";
 import { updateScoutAsync } from "@/lib/scout-store";
 import { recordOrder, markOrder, claimOrderNotice, markOrderNoticeSent, releaseOrderNotice } from "@/lib/orders";
-import { BOOK_1_SKU } from "@/lib/checkout";
-import { RETAIL_PRICE } from "@/lib/pricing";
+import { printedBookBySku, type PrintedBook } from "@/lib/checkout";
 import { alertFailure } from "@/lib/alerts";
 import { isProduction } from "@/lib/supabase";
 import { createPatrolLeader } from "@/lib/patrol-store";
@@ -88,9 +87,10 @@ export async function POST(req: NextRequest) {
     // checkout's own session counts: any other paid session without an
     // order_type (a payment link, say) would otherwise read as a print order.
     if (orderType === "retail" && (recorded.ok || recorded.skipped)) {
-      if (session.metadata?.channel !== "retail" || session.metadata?.sku !== BOOK_1_SKU) {
+      const book = session.metadata?.channel === "retail" ? printedBookBySku(session.metadata?.sku) : null;
+      if (!book) {
         await alertFailure("Paid session not recognised: no order email was sent", { session: session.id });
-      } else if (!(await sendBookNoticeOnce(session, customerName, customerEmail, recorded.ok))) {
+      } else if (!(await sendBookNoticeOnce(session, book, customerName, customerEmail, recorded.ok))) {
         retryNeeded = true;
       }
     }
@@ -241,6 +241,7 @@ function emailFailureIsTransient(reason: string, error?: string): boolean {
  */
 async function sendBookNoticeOnce(
   session: any,
+  book: PrintedBook,
   customerName: string | undefined,
   customerEmail: string | null | undefined,
   saved: boolean
@@ -257,9 +258,10 @@ async function sendBookNoticeOnce(
   try {
     const notice = await sendBookOrderNotice({
       sessionId: session.id,
-      sku: BOOK_1_SKU,
+      sku: book.sku,
+      title: book.title,
       quantity: /^\d+$/.test(rawQuantity) ? Number(rawQuantity) : null,
-      unitAmount: Math.round(RETAIL_PRICE * 100),
+      unitAmount: book.unitAmountCents,
       amountTotal: session.amount_total ?? null,
       currency: session.currency ?? null,
       buyerName: customerName,

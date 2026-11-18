@@ -57,12 +57,17 @@ describe("storefront world placements", () => {
     expect(html).toContain('loading="lazy"');
   });
   it("keeps the waving Geezy outside the purchase card and anchors its trigger to the card", () => {
-    const html = renderToStaticMarkup(<BuyBox />);
+    const html = renderToStaticMarkup(<BuyBox testMode />);
     expect(html).toContain('id="buy" data-world-trigger=""');
     expect(html).toContain('data-world-character="wave"');
     expect(html).toContain('-right-20 bottom-2 hidden h-16 w-16 sm:block');
     expect(html.match(/<button/g)).toHaveLength(3);
     expect(html).toContain('aria-label="Increase quantity"');
+  });
+  it("never puts the waving Geezy on another book's buy box", () => {
+    const html = renderToStaticMarkup(<BuyBox book="neighborhood-book-1" id="order" testMode />);
+    expect(html).not.toContain('data-world-character="wave"');
+    expect(html).not.toContain("data-world-trigger");
   });
   it("ships a static repeating paper fallback without JavaScript and lazy loading with it", () => {
     const html = renderToStaticMarkup(<WorldPaper />);

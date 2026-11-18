@@ -24,7 +24,7 @@ const page = (title: string, body: string, accent = "#2E6B5E") =>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <title>${title} — Puen Publishing</title>
+    <title>${title} | Puen Publishing</title>
     <style>
       body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #FCF8F1; color: #26211C; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
       .card { background: #fff; border: 2px solid ${accent}; border-radius: 20px; max-width: 520px; width: 100%; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,.06); }
@@ -38,9 +38,10 @@ const page = (title: string, body: string, accent = "#2E6B5E") =>
       .approve { background: #2E6B5E; color: #fff; }
       .reject { background: transparent; color: #B34738; border: 2px solid #B34738; margin-top: 10px; }
       form { margin: 0; }
+      .back { display: inline-flex; align-items: center; min-height: 44px; margin-top: 16px; color: #5A5148; font-weight: 600; }
     </style>
   </head>
-  <body><div class="card">${body}</div></body>
+  <body><div class="card">${body}<a class="back" href="/admin">Back to approvals</a></div></body>
 </html>`;
 
 const html = (content: string, status = 200) =>

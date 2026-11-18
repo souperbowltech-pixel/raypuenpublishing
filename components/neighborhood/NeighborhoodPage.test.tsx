@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { SAMPLE_ENTRIES, badgeImage, pageImage } from "@/lib/neighborhood";
+import { formatCurrency } from "@/lib/pricing";
+import { PRINTED_BOOKS } from "@/lib/checkout";
 
 // next/image needs the Next runtime; only the markup it produces matters here.
 vi.mock("next/image", () => ({
@@ -47,7 +49,16 @@ describe("/neighborhood", () => {
     expect(og.images[0].url).toBe("/neighborhood/og.jpg");
   });
 
-  it("promises no price, since the book is not on sale on the site", () => {
-    expect(html).not.toMatch(/\$\d/);
+  it("sells this book from its own order box, which the hero button jumps to", () => {
+    expect(html).toContain('href="#order"');
+    expect(html).toContain('id="order"');
+    expect(html).toContain('id="order-qty"');
+    expect(html).toContain(formatCurrency(PRINTED_BOOKS["neighborhood-book-1"].unitAmountCents / 100));
+  });
+
+  it("sells The Neighborhood Chronicles from that box, never Geezy Goober", () => {
+    const box = html.slice(html.indexOf('id="order"'));
+    expect(box).not.toContain("Free coloring fun");
+    expect(html).toContain("The Neighborhood Chronicles, Book 1: David and Goliath, printed and sent to your home.");
   });
 });
