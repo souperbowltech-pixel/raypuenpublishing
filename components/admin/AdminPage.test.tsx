@@ -97,4 +97,12 @@ describe("/admin", () => {
     expect(listSchoolRequests).toHaveBeenCalledWith(undefined);
     expect(html).toContain('href="/admin#library-codes"');
   });
+
+  it("offers a way back to the site, signed in or not, and a way out once signed in", async () => {
+    expect(await render()).toContain('href="/"');
+    signedIn = true;
+    const html = await render();
+    expect(html).toContain("Back to the site");
+    expect(html).toContain("Sign out");
+  });
 });
