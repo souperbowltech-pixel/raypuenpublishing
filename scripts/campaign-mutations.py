@@ -11,10 +11,11 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = Path(tempfile.mkdtemp(prefix="puen-campaign-mutations-"))
 GROUP = sys.argv[1] if len(sys.argv) > 1 else "domain"
-TESTS = {"domain": "lib/campaign.test.ts", "store": "lib/campaign-store.test.ts"}
+TESTS = {"domain": ["lib/campaign.test.ts"], "store": ["lib/campaign-store.test.ts"],
+         "delivery": ["lib/campaign-delivery.test.ts", "lib/campaign-http.test.ts", "app/api/campaign/routes.test.ts"]}
 if GROUP not in TESTS:
-    raise SystemExit("Choose domain or store")
-CMD = ["npx.cmd", "vitest", "run", TESTS[GROUP], "--minWorkers=1", "--maxWorkers=2", "--reporter=json"]
+    raise SystemExit("Choose domain, store or delivery")
+CMD = ["npx.cmd", "vitest", "run", *TESTS[GROUP], "--minWorkers=1", "--maxWorkers=2", "--reporter=json"]
 
 
 def run(label):
@@ -52,6 +53,21 @@ if GROUP == "store":
         ("acknowledgement-blind", "lib/campaign-store.ts", lambda t: t.replace('return !error && data === true;', 'return true;')),
         ("pagination-unbounded", "lib/campaign-store.ts", lambda t: t.replace('.limit(CAMPAIGN_PAGE_SIZE)', '.limit(100000)')),
     ]
+if GROUP == "delivery":
+    cases = [
+        ("delivery-removed", "lib/campaign-delivery.ts", lambda t: t.replace('const jobs = await claimCampaignJobs(voteId);', 'return { ok: true, accepted: 100, pending: 0 };\n  const jobs = await claimCampaignJobs(voteId);')),
+        ("worker-authentication-removed", "lib/campaign-delivery.ts", lambda t: t.replace('if (!workerConfigured() || !header) return false;', 'return true;')),
+        ("worker-configuration-removed", "lib/campaign-delivery.ts", lambda t: t.replace('return (process.env.CRON_SECRET?.length ?? 0) >= 32;', 'return false;')),
+        ("body-validation-removed", "lib/campaign-http.ts", lambda t: t.replace('const origin = req.headers.get("origin");', 'return { ok: true, body: {} };\n  const origin = req.headers.get("origin");')),
+        ("public-vote-removed", "app/api/campaign/vote/route.ts", lambda t: t.replace('const parsed = await readCampaignJson(req);', 'return campaignJson({ receipt: "invalid" });\n  const parsed = await readCampaignJson(req);')),
+        ("kit-authorization-removed", "app/api/campaign/kit/route.ts", lambda t: t.replace('if (!await receiptVote(parsed.body.receipt))', 'if (false)')),
+        ("reservation-mode-check-removed", "app/api/campaign/reserve/route.ts", lambda t: t.replace('if (!isStripeTestMode())', 'if (false)')),
+        ("receipt-revocation-check-removed", "lib/campaign-http.ts", lambda t: t.replace('return vote && !vote.revoked ? vote : null;', 'return vote;')),
+        ("private-email-disclosed", "app/api/campaign/receipt/route.ts", lambda t: t.replace('firstName: vote.firstName,', 'email: vote.email, firstName: vote.firstName,')),
+        ("kit-readiness-removed", "app/api/campaign/kit/route.ts", lambda t: t.replace('if (!await campaignReady())', 'if (false)')),
+        ("reservation-save-removed", "app/api/campaign/reserve/route.ts", lambda t: t.replace('const saved = await reserveCopy(vote.id, quantity);', 'return campaignJson({});\n  const saved = await reserveCopy(vote.id, quantity);')),
+        ("receipt-route-removed", "app/api/campaign/receipt/route.ts", lambda t: t.replace('const parsed = await readCampaignJson(req);', 'return campaignJson({});\n  const parsed = await readCampaignJson(req);')),
+    ]
 
 clean_exit, clean = run("baseline")
 if clean_exit:
@@ -62,7 +78,7 @@ records = []
 for name, relative, change in cases:
     path = ROOT / relative
     original = path.read_bytes()
-    source = original.decode("utf-8")
+    source = original.decode("utf-8").replace("\r\n", "\n")
     mutant = change(source)
     if mutant == source:
         raise SystemExit("Mutation no longer matches: " + name)
