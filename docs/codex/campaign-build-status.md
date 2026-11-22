@@ -21,7 +21,7 @@ Date: 22 November 2026. Branch: `feat/character-vote-campaign`.
 ## Evidence
 
 - Original baseline: 980 tests passed across 90 files.
-- Final full suite: 1,120 tests passed across 101 files, exit 0.
+- Latest full suite: 1,121 tests passed across 102 files, exit 0.
 - `npx.cmd tsc --noEmit`: exit 0.
 - `npm.cmd run lint`: exit 0. Existing `Lightbox.test.tsx` image warning remains;
   no rule was weakened or test skipped.
@@ -44,14 +44,33 @@ included in campaign commits.
 ## Deliberately unclaimed
 
 No production push, migration, storage upload, customer email, scheduler
-registration or real payment was performed. No full browser viewport check or
-production build was run, per local server/build restrictions. DOM tests exercise
-interaction logic but do not prove phone layout.
+registration or real payment was performed. No production build was run.
+
+A later user-authorized Playwright pass completed 24 checks with no page errors:
+real YouTube playback, validation/focus, separate consent, busy/retry behavior,
+network failure, missing/forged private links, phone widths 375/320, keyboard radio
+selection, malformed API rejection and unauthenticated admin API rejection.
+Success confirmation, download failure, reservation and live-order UI branches
+were checked using clearly labelled browser API fixtures. These do not prove
+actual storage, database writes or provider delivery. A 64-second captioned MP4
+and JSON results are in the private delivery folder's Browser_QA evidence.
+
+The Welcome iframe now uses strict-origin-when-cross-origin to identify the site
+to YouTube. Its first request was observed with origin-only Referer, and actual
+video currentTime advanced while paused was false. Global page/private-receipt
+no-referrer policies remain intact. The rendered-page regression test failed
+with the entire iframe fix removed (exit 1), then passed after exact byte restore
+(exit 0). Other embedded players already used the working iframe policy.
+
+Use http://localhost:3000/welcome for this local Next instance. Requests from the
+127.0.0.1 alias fail its strict origin comparison because Next constructs the
+canonical request URL using localhost. The policy was not weakened. Deployment
+must verify the canonical public hostname and origin handling in staging.
 
 Before release, follow campaign-launch.md: execute SQL acceptance and genuine
 concurrency/permission checks in staging; upload and verify the approved private
 kit and URL expiry; configure secrets and an active scheduler; exercise actual
-provider delivery/recovery; check phone/keyboard layouts; approve final character
+provider delivery/recovery; verify supported devices and playback in staging; approve final character
 portraits/color badges and a print proof. Campaign health checks configuration,
 schema and file readiness, not inbox delivery or scheduler registration.
 
