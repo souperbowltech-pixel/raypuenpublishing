@@ -1,0 +1,62 @@
+name: NC browser acceptance
+
+on:
+  push:
+    paths:
+      - 'app/nc/**'
+      - 'lib/nc-portals.ts'
+      - 'components/neighborhood/NcPortalPage*'
+      - 'components/retail/SiteHeader.tsx'
+      - 'scripts/verify-nc-geometry.py'
+      - 'scripts/prove-nc-layout.py'
+      - 'scripts/requirements-browser.txt'
+      - '.github/workflows/nc-browser.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nc-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nc-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install project and browser tools
+        run: |
+          npm ci
+          python3 -m venv /tmp/nc-browser-tools
+          /tmp/nc-browser-tools/bin/pip install -r scripts/requirements-browser.txt
+          /tmp/nc-browser-tools/bin/python -m playwright install --with-deps chromium
+      - name: Start isolated preview
+        run: |
+          node node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3000 > /tmp/nc-preview.log 2>&1 &
+          echo $! > /tmp/nc-preview.pid
+          for attempt in $(seq 1 60); do
+            if curl --connect-timeout 2 --max-time 10 --silent --fail http://localhost:3000/nc/welcome > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/nc-preview.log
+          exit 1
+      - name: Verify routes, mobile bounds, large text and missing codes
+        run: /tmp/nc-browser-tools/bin/python scripts/verify-nc-geometry.py --output artifacts/nc-browser
+      - name: Prove the observed layout regressions fail without their fixes
+        run: /tmp/nc-browser-tools/bin/python scripts/prove-nc-layout.py --output artifacts/nc-browser/mutations
+      - name: Stop owned preview
+        if: always()
+        run: |
+          if test -f /tmp/nc-preview.pid; then kill "$(cat /tmp/nc-preview.pid)" || true; fi
+      - name: Save browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nc-browser-evidence
+          path: artifacts/nc-browser
+          if-no-files-found: warn

@@ -11,9 +11,9 @@ import { siteMeta } from "@/lib/book";
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-ink/10 bg-paper/85 backdrop-blur">
-      <div className="container-page flex h-16 items-center justify-between">
-        <Link href="/" className="flex min-h-11 items-baseline gap-2 py-1.5">
-          <span className="font-display text-2xl font-bold text-ink">
+      <div className="container-page flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2">
+        <Link href="/" className="flex min-h-11 min-w-0 flex-1 flex-wrap items-baseline gap-2 py-1.5">
+          <span className="break-words font-display text-2xl font-bold text-ink">
             {siteMeta.name}
           </span>
           <span className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-clay sm:inline">
