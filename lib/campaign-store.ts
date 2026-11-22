@@ -1,6 +1,6 @@
 import { supabase, storageClient, usingServiceRole } from "@/lib/supabase";
 import { campaignConfigured, voteFingerprint, makeReceipt } from "@/lib/campaign-token";
-import { isCharacter, UUID_PATTERN, KIT_URL_SECONDS, type VoteInput, type Character } from "@/lib/campaign";
+import { isCharacter, SOURCES, UUID_PATTERN, KIT_URL_SECONDS, type VoteInput, type Character } from "@/lib/campaign";
 import { parsePageCursor } from "@/lib/page-cursor";
 
 export const CAMPAIGN_BUCKET = "library";
@@ -43,12 +43,22 @@ export interface CampaignVote {
   id: string; createdAt: string; character: Character; firstName: string; email: string;
   source: string; phone: string | null; answer: string | null; marketingConsent: boolean;
   smsConsent: boolean; quantity: number | null; revoked: boolean;
+  deliveries: { kind: "welcome" | "reservation"; sent: boolean; attempts: number; failure: string | null; busy: boolean }[];
 }
 function voteRow(raw: unknown): CampaignVote | null {
   const r = record(raw);
   if (!r || typeof r.id !== "string" || !UUID_PATTERN.test(r.id) || !isCharacter(r.character)
-    || typeof r.created_at !== "string" || typeof r.email !== "string" || typeof r.first_name !== "string") return null;
-  return { id: r.id, createdAt: r.created_at, character: r.character, firstName: r.first_name, email: r.email,
+    || typeof r.created_at !== "string" || !Number.isFinite(Date.parse(r.created_at)) || typeof r.email !== "string" || typeof r.first_name !== "string") return null;
+  const deliveries: CampaignVote["deliveries"] = [];
+  if (r.campaign_outbox !== undefined && !Array.isArray(r.campaign_outbox)) return null;
+  for (const rawDelivery of Array.isArray(r.campaign_outbox) ? r.campaign_outbox : []) {
+    const d = record(rawDelivery);
+    if (!d || (d.kind !== "welcome" && d.kind !== "reservation") || typeof d.attempts !== "number") return null;
+    deliveries.push({ kind: d.kind, sent: typeof d.sent_at === "string", attempts: d.attempts,
+      failure: typeof d.last_failure === "string" ? d.last_failure : null,
+      busy: typeof d.lease_until === "string" && Date.parse(d.lease_until) > Date.now() });
+  }
+  return { id: r.id, createdAt: r.created_at, character: r.character, firstName: r.first_name, email: r.email, deliveries,
     source: String(r.source), phone: typeof r.phone === "string" ? r.phone : null,
     answer: typeof r.answer === "string" ? r.answer : null, marketingConsent: r.marketing_consent === true,
     smsConsent: r.sms_consent === true, quantity: typeof r.reserved_quantity === "number" ? r.reserved_quantity : null,
@@ -58,7 +68,7 @@ export async function getCampaignVote(id: string): Promise<CampaignVote | null> 
   const client = db();
   if (!client || !UUID_PATTERN.test(id)) return null;
   try {
-    const { data, error } = await client.from("campaign_votes").select("*").eq("id", id).single();
+    const { data, error } = await client.from("campaign_votes").select("*,campaign_outbox(kind,sent_at,attempts,last_failure,lease_until)").eq("id", id).single();
     return error ? null : voteRow(data);
   } catch { console.error("[campaign] receipt lookup failed"); return null; }
 }
@@ -89,14 +99,19 @@ export async function campaignAdminData(cursor?: string): Promise<{ rows: Campai
   const client = db();
   if (!client) return null;
   try {
-    let query = client.from("campaign_votes").select("*").order("created_at", { ascending: false })
+    let query = client.from("campaign_votes").select("*,campaign_outbox(kind,sent_at,attempts,last_failure,lease_until)").order("created_at", { ascending: false })
       .order("id", { ascending: false }).limit(CAMPAIGN_PAGE_SIZE);
     const before = parsePageCursor(cursor);
     if (before) query = query.or(`created_at.lt."${before.createdAt}",and(created_at.eq."${before.createdAt}",id.lt.${before.id})`);
     const [list, totals] = await Promise.all([query, client.rpc("campaign_summary")]);
     const summary = record(totals.data);
     if (list.error || totals.error || !summary || !Array.isArray(list.data) || !Array.isArray(summary.groups)
-      || ![summary.votes, summary.reservations, summary.pendingEmails, summary.failedEmails].every((v) => typeof v === "number" && Number.isFinite(v))) return null;
+      || ![summary.votes, summary.reservations, summary.pendingEmails, summary.failedEmails].every((v) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0)) return null;
+    if (summary.groups.some((raw: unknown) => {
+      const group = record(raw);
+      return !group || !isCharacter(group.character) || !SOURCES.some((s) => s === group.source)
+        || typeof group.votes !== "number" || !Number.isSafeInteger(group.votes) || group.votes < 0;
+    })) return null;
     const rows = list.data.map(voteRow);
     if (rows.some((row) => row === null)) return null;
     return { rows: rows as CampaignVote[], summary: summary as unknown as CampaignSummary };
@@ -130,4 +145,21 @@ export async function finishCampaignJob(job: CampaignJob, sent: boolean, reason:
     });
     return !error && data === true;
   } catch { console.error("[campaign] outbox acknowledgement failed"); return false; }
+}
+
+/** Reset only unsent, unleased work. A successful message can never be resent here. */
+export async function retryCampaignMessages(id: string): Promise<"reset" | "busy" | "unavailable"> {
+  const client = db();
+  if (!client || !UUID_PATTERN.test(id)) return "unavailable";
+  try {
+    const vote = await getCampaignVote(id);
+    if (!vote) return "unavailable";
+    if (vote.revoked) return "busy";
+    const now = new Date().toISOString();
+    const { data, error } = await client.from("campaign_outbox")
+      .update({ attempts: 0, next_attempt_at: now, last_failure: null }).eq("vote_id", id)
+      .is("sent_at", null).or(`lease_until.is.null,lease_until.lt."${now}"`).select("id");
+    if (error || !Array.isArray(data)) return "unavailable";
+    return data.length ? "reset" : "busy";
+  } catch { console.error("[campaign] email retry reset failed"); return "unavailable"; }
 }

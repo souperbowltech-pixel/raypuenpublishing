@@ -13,9 +13,10 @@ RESULTS = Path(tempfile.mkdtemp(prefix="puen-campaign-mutations-"))
 GROUP = sys.argv[1] if len(sys.argv) > 1 else "domain"
 TESTS = {"domain": ["lib/campaign.test.ts"], "store": ["lib/campaign-store.test.ts"],
          "delivery": ["lib/campaign-delivery.test.ts", "lib/campaign-http.test.ts", "app/api/campaign/routes.test.ts"],
-         "ui": ["components/campaign/Campaign.dom.test.tsx", "lib/campaign-client.test.ts"]}
+         "ui": ["components/campaign/Campaign.dom.test.tsx", "lib/campaign-client.test.ts"],
+         "admin": ["lib/campaign-store.test.ts", "app/api/admin/campaign/route.test.ts", "components/campaign/CampaignAdmin.test.tsx", "components/campaign/CampaignAdmin.dom.test.tsx"]}
 if GROUP not in TESTS:
-    raise SystemExit("Choose domain, store, delivery or ui")
+    raise SystemExit("Choose domain, store, delivery, ui or admin")
 CMD = ["npx.cmd", "vitest", "run", *TESTS[GROUP], "--minWorkers=1", "--maxWorkers=2", "--reporter=json"]
 
 
@@ -42,7 +43,7 @@ cases = [
     ("receipt-validation-removed", "lib/campaign-token.ts", lambda t: t.replace('if (typeof raw !== "string" || raw.length > 160) return null;', 'return { id: "forged", expires: 9999999999 };')),
     ("fingerprint-binding-removed", "lib/campaign-token.ts", lambda t: t.replace('JSON.stringify(input)', '"constant"')),
 ]
-if GROUP == "store":
+if GROUP in ("store", "admin"):
     cases = [
         ("save-removed", "lib/campaign-store.ts", lambda t: replace_function(t, "export async function saveVote", "export interface CampaignVote", 'export async function saveVote(input: VoteInput): Promise<SaveVote> { return { status: "duplicate" }; }\n')),
         ("duplicate-contract-broken", "lib/campaign-store.ts", lambda t: t.replace('return { status: row.status };', 'return { status: "unavailable" };')),
@@ -53,6 +54,18 @@ if GROUP == "store":
         ("outbox-claim-removed", "lib/campaign-store.ts", lambda t: t.replace('p_limit: voteId ? 2 : 3', 'p_limit: 100000')),
         ("acknowledgement-blind", "lib/campaign-store.ts", lambda t: t.replace('return !error && data === true;', 'return true;')),
         ("pagination-unbounded", "lib/campaign-store.ts", lambda t: t.replace('.limit(CAMPAIGN_PAGE_SIZE)', '.limit(100000)')),
+        ("retry-sent-guard-removed", "lib/campaign-store.ts", lambda t: t.replace('.is("sent_at", null)', '.is("sent_at", "sent")')),
+        ("retry-withdrawal-guard-removed", "lib/campaign-store.ts", lambda t: t.replace('if (vote.revoked) return "busy";', 'if (false) return "busy";')),
+    ]
+if GROUP == "admin":
+    cases += [
+        ("admin-authentication-removed", "lib/campaign-admin.ts", lambda t: t.replace('return adminConfigured() && isAdminCookie(cookie);', 'return true;')),
+        ("admin-page-removed", "app/admin/campaign/page.tsx", lambda t: t.replace('if (!campaignAdminSignedIn(cookies()', 'return <main />;\n  if (!campaignAdminSignedIn(cookies()')),
+        ("admin-csv-removed", "lib/campaign-admin.ts", lambda t: t.replace('const columns = [', 'return "";\n  const columns = [')),
+        ("delivery-status-removed", "lib/campaign-admin.ts", lambda t: t.replace('const job = row.deliveries.find', 'return "Not requested";\n  const job = row.deliveries.find')),
+        ("admin-get-removed", "app/api/admin/campaign/route.ts", lambda t: t.replace('export async function GET(req: NextRequest) {', 'export async function GET(req: NextRequest) { return campaignJson({});')),
+        ("admin-retry-route-removed", "app/api/admin/campaign/route.ts", lambda t: t.replace('export async function POST(req: NextRequest) {', 'export async function POST(req: NextRequest) { return campaignJson({});')),
+        ("admin-retry-control-removed", "components/campaign/CampaignEmailRetry.tsx", lambda t: t.replace('const router = useRouter();', 'return <button>Unavailable</button>;\n  const router = useRouter();')),
     ]
 if GROUP == "delivery":
     cases = [

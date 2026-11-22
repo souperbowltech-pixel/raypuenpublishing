@@ -142,6 +142,8 @@ export default async function AdminPage({
 
       <SchoolRequestsList rows={requests} paged={parsePageCursor(before) !== null} />
 
+      <a href="/admin/campaign" className="btn-secondary mt-6 inline-flex min-h-11">Character Vote Campaign Results</a>
+
       <LibraryCodes
         books={libraryBookOptions()}
         rows={libraryCodeRows(grants, new Date())}

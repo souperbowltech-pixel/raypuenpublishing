@@ -5,14 +5,16 @@ const created = "2026-11-22T00:00:00Z";
 let configured = true;
 let role = true;
 let queryAnswer: { data: unknown; error: unknown };
+let voteLookupOverride: unknown = undefined;
 const calls: { method: string; args: unknown[] }[] = [];
 const rpc = vi.fn(); const getBucket = vi.fn(); const list = vi.fn(); const sign = vi.fn();
 function query() {
   const q: Record<string, unknown> = {};
-  for (const method of ["from", "select", "eq", "single", "order", "limit", "or"]) {
-    q[method] = (...args: unknown[]) => { calls.push({ method, args }); return q; };
+  let table = "";
+  for (const method of ["from", "select", "eq", "single", "order", "limit", "or", "update", "is"]) {
+    q[method] = (...args: unknown[]) => { if (method === "from") table = String(args[0]); calls.push({ method, args }); return q; };
   }
-  q.then = (resolve: (v: unknown) => unknown) => Promise.resolve(queryAnswer).then(resolve);
+  q.then = (resolve: (v: unknown) => unknown) => Promise.resolve(table === "campaign_votes" && voteLookupOverride !== undefined ? { data: voteLookupOverride, error: null } : queryAnswer).then(resolve);
   q.rpc = rpc; return q;
 }
 vi.mock("@/lib/supabase", () => ({
@@ -31,7 +33,7 @@ const input = () => {
 const row = () => ({ id, created_at: created, character: "sunny", first_name: "Ana", email: "ana@example.com",
   phone: null, answer: null, source: "fiesta", sms_consent: false, marketing_consent: false, reserved_quantity: null, revoked_at: null });
 beforeEach(() => {
-  configured = true; role = true; calls.length = 0; queryAnswer = { data: row(), error: null };
+  configured = true; role = true; calls.length = 0; voteLookupOverride = undefined; queryAnswer = { data: row(), error: null };
   vi.stubEnv("CAMPAIGN_SECRET", "test-".repeat(10));
   rpc.mockReset(); getBucket.mockReset(); list.mockReset(); sign.mockReset();
   getBucket.mockResolvedValue({ data: { public: false }, error: null });
@@ -123,5 +125,30 @@ describe("outbox and bounded administration E02/A03", () => {
     expect(calls).toContainEqual({ method: "or", args: [`created_at.lt."${created}",and(created_at.eq."${created}",id.lt.${id})`] });
     expect(rpc).toHaveBeenCalledWith("campaign_summary");
     rpc.mockResolvedValue({ data: {}, error: null }); expect(await store.campaignAdminData()).toBeNull();
+  });
+  it("maps email acceptance/failure state without exposing provider payloads", async () => {
+    queryAnswer = { data: { ...row(), campaign_outbox: [
+      { kind: "welcome", sent_at: created, attempts: 1, last_failure: null, lease_until: null },
+      { kind: "reservation", sent_at: null, attempts: 5, last_failure: "timeout", lease_until: null },
+    ] }, error: null };
+    expect((await store.getCampaignVote(id))?.deliveries).toEqual([
+      { kind: "welcome", sent: true, attempts: 1, failure: null, busy: false },
+      { kind: "reservation", sent: false, attempts: 5, failure: "timeout", busy: false },
+    ]);
+  });
+  it("retries only unsent unleased messages for the chosen vote", async () => {
+    voteLookupOverride = row();
+    queryAnswer = { data: [{ id }], error: null };
+    expect(await store.retryCampaignMessages(id)).toBe("reset");
+    expect(calls).toContainEqual({ method: "eq", args: ["vote_id", id] });
+    expect(calls).toContainEqual({ method: "is", args: ["sent_at", null] });
+    expect(calls.find((c) => c.method === "or")?.args[0]).toMatch(/^lease_until.is.null,lease_until.lt\."/);
+    queryAnswer = { data: [], error: null }; expect(await store.retryCampaignMessages(id)).toBe("busy");
+    queryAnswer = { data: null, error: {} }; expect(await store.retryCampaignMessages(id)).toBe("unavailable");
+  });
+  it("does not reset work belonging to a withdrawn vote", async () => {
+    voteLookupOverride = { ...row(), revoked_at: created };
+    expect(await store.retryCampaignMessages(id)).toBe("busy");
+    expect(calls.some((c) => c.method === "update")).toBe(false);
   });
 });

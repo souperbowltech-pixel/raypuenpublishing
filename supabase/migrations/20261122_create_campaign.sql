@@ -131,8 +131,8 @@ returns jsonb language sql set search_path = public as $$
   select jsonb_build_object(
     'votes',(select count(*) from public.campaign_votes where revoked_at is null),
     'reservations',(select count(*) from public.campaign_votes where reserved_quantity is not null and revoked_at is null),
-    'pendingEmails',(select count(*) from public.campaign_outbox where sent_at is null),
-    'failedEmails',(select count(*) from public.campaign_outbox where sent_at is null and attempts >= 5),
+    'pendingEmails',(select count(*) from public.campaign_outbox o join public.campaign_votes v on v.id = o.vote_id where o.sent_at is null and v.revoked_at is null),
+    'failedEmails',(select count(*) from public.campaign_outbox o join public.campaign_votes v on v.id = o.vote_id where o.sent_at is null and o.attempts >= 5 and v.revoked_at is null),
     'groups',coalesce((select jsonb_agg(g) from (
       select character,source,count(*) as votes from public.campaign_votes
       where revoked_at is null group by character,source order by character,source

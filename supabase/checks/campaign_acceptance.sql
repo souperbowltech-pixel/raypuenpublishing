@@ -52,4 +52,26 @@ begin
     if exists(select 1 from public.campaign_votes where id = qa_vote_id) then raise exception 'V09: partial transaction'; end if;
   end;
 end $$;
+
+-- Fault-inject the actual RPC's second write. Its vote must roll back too.
+create function pg_temp.reject_campaign_outbox() returns trigger language plpgsql as $$
+begin raise exception 'QA outbox failure' using errcode = '23514'; end $$;
+create trigger qa_reject_campaign_outbox before insert on public.campaign_outbox
+  for each row execute function pg_temp.reject_campaign_outbox();
+do $$
+declare request_id uuid := gen_random_uuid(); input jsonb;
+begin
+  input = jsonb_build_object('submissionId',request_id,'character','lucy','firstName','Rollback',
+    'email','qa-' || gen_random_uuid() || '@example.invalid','source','direct',
+    'smsConsent',false,'marketingConsent',false);
+  begin
+    perform public.submit_campaign_vote(input,repeat('e',64));
+    raise exception 'V09: actual RPC did not encounter injected outbox failure';
+  exception when check_violation then
+    if exists(select 1 from public.campaign_votes where submission_id = request_id) then
+      raise exception 'V09: actual RPC left an orphan vote';
+    end if;
+  end;
+end $$;
+drop trigger qa_reject_campaign_outbox on public.campaign_outbox;
 rollback;
