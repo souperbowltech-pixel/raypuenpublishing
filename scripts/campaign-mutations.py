@@ -12,9 +12,10 @@ ROOT = Path(__file__).resolve().parent.parent
 RESULTS = Path(tempfile.mkdtemp(prefix="puen-campaign-mutations-"))
 GROUP = sys.argv[1] if len(sys.argv) > 1 else "domain"
 TESTS = {"domain": ["lib/campaign.test.ts"], "store": ["lib/campaign-store.test.ts"],
-         "delivery": ["lib/campaign-delivery.test.ts", "lib/campaign-http.test.ts", "app/api/campaign/routes.test.ts"]}
+         "delivery": ["lib/campaign-delivery.test.ts", "lib/campaign-http.test.ts", "app/api/campaign/routes.test.ts"],
+         "ui": ["components/campaign/Campaign.dom.test.tsx", "lib/campaign-client.test.ts"]}
 if GROUP not in TESTS:
-    raise SystemExit("Choose domain, store or delivery")
+    raise SystemExit("Choose domain, store, delivery or ui")
 CMD = ["npx.cmd", "vitest", "run", *TESTS[GROUP], "--minWorkers=1", "--maxWorkers=2", "--reporter=json"]
 
 
@@ -67,6 +68,15 @@ if GROUP == "delivery":
         ("kit-readiness-removed", "app/api/campaign/kit/route.ts", lambda t: t.replace('if (!await campaignReady())', 'if (false)')),
         ("reservation-save-removed", "app/api/campaign/reserve/route.ts", lambda t: t.replace('const saved = await reserveCopy(vote.id, quantity);', 'return campaignJson({});\n  const saved = await reserveCopy(vote.id, quantity);')),
         ("receipt-route-removed", "app/api/campaign/receipt/route.ts", lambda t: t.replace('const parsed = await readCampaignJson(req);', 'return campaignJson({});\n  const parsed = await readCampaignJson(req);')),
+    ]
+if GROUP == "ui":
+    cases = [
+        ("vote-form-removed", "components/campaign/VoteForm.tsx", lambda t: t.replace('const router = useRouter();', 'return <div />;\n  const router = useRouter();')),
+        ("receipt-screen-removed", "components/campaign/CampaignReceipt.tsx", lambda t: t.replace('const [receipt, setReceipt] = useState("");', 'return <div />;\n  const [receipt, setReceipt] = useState("");')),
+        ("secure-uuid-removed", "lib/campaign-client.ts", lambda t: t.replace('if (typeof crypto.randomUUID === "function") return crypto.randomUUID();', 'return "00000000-0000-4000-8000-000000000001";')),
+        ("download-protocol-check-removed", "lib/campaign-client.ts", lambda t: t.replace('if (typeof raw !== "string" || new URL(raw).protocol !== "https:")', 'if (false)')),
+        ("download-navigation-removed", "lib/campaign-client.ts", lambda t: t.replace('window.location.assign(raw);', 'return;')),
+        ("request-timeout-removed", "lib/campaign-client.ts", lambda t: t.replace('controller.abort(), 30000', 'controller.abort(), 300000')),
     ]
 
 clean_exit, clean = run("baseline")
