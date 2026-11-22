@@ -2,8 +2,8 @@
 
 The implementation is local on `feat/character-vote-campaign`. Do not advertise the
 campaign until the gates below are complete. Existing storefront and checkout stay
-on their existing deployment. No migration, external message or deployment was
-performed by this build.
+on their existing deployment. No hosted migration, external client message or production deployment was
+performed by this build. Isolated local PostgreSQL verification was later run.
 
 ## Routes and boundaries
 
@@ -55,8 +55,16 @@ printing remains manual through IngramSpark.
 6. Withdraw a staged vote. Receipt/kit/reservation fail, no new job can be claimed,
    no retry control appears and its jobs leave pending/failed totals.
 
-These SQL/concurrency checks have not been executed locally: no PostgreSQL runner
-was available. Mocked application tests are separate evidence, not a substitute.
+Local execution is now verified on portable PostgreSQL 17.12, with real roles,
+BYPASSRLS, transactions and independent concurrent sessions. Run:
+
+`python supabase/checks/run_campaign_local.py --pg-bin <portable-bin> --output <private-evidence-folder>`
+
+Nineteen groups passed, including actual service-role summary totals and all six
+RPC denials for both public roles. Real permission, worker-lock and summary-total
+regressions were rejected under deliberate SQL mutation; restored runs passed.
+This is not hosted Supabase REST/storage verification. Repeat the hosted checks
+above in staging before release.
 
 ## Starter Kit and artwork
 
@@ -116,10 +124,13 @@ duplicate after that window. No exactly-once delivery guarantee is made.
 
 ## Phone/browser verification
 
-Use a staging deployment or an already authorized preview. Local project rules
-prohibit starting/stopping a dev server in this workflow. No browser-control tool
-or running preview server was available, so viewport screenshots and a real phone
-journey remain unverified despite passing DOM interaction tests.
+Use a staging deployment or an already authorized preview. The user authorized a local server and Playwright on 22 November. Twenty-four
+campaign browser checks passed, including actual Welcome playback, validation,
+focus, retry, missing/forged receipts and 320/375px layout bounds. Success receipt
+and reservation UI used explicitly labelled API fixtures; they do not prove
+hosted persistence or delivery. A real phone journey remains a release gate.
+The NC printed portals have a separate browser geometry job with external media
+blocked; it must not be presented as five-video playback verification.
 
 Check 320, 375, 768 and desktop widths; keyboard-only radio and checkbox operation;
 clear required/optional labels and focus after errors/success; blocked video;
@@ -147,3 +158,35 @@ For rollback, stop campaign ads and scheduler, remove campaign links, and deploy
 previous application version. Preserve campaign tables/outbox and private storage
 for recovery; do not drop customer data. Campaign code does not change existing
 retail prices, payment verification or print dispatch behavior.
+
+## Supabase Cron option, pending connected account verification
+
+Supabase documents pg_cron with pg_net HTTP calls and Vault-backed tokens:
+https://supabase.com/docs/guides/functions/schedule-functions
+
+Once the project's extensions and permissions are confirmed, store the canonical
+HTTPS worker URL as Vault name `campaign_worker_url` and the same CRON_SECRET used
+by Vercel as `campaign_worker_secret`. Set values securely through the connected
+accounts, never as literal SQL in a file or chat. Verify the target does not
+redirect, the secret is independent and at least 32 characters, and the worker
+returns HTTP200 with authorized credentials before scheduling.
+
+An owner can then schedule this request every five minutes:
+
+```sql
+select cron.schedule('nc-campaign-retry', '*/5 * * * *', $job$
+  select net.http_get(
+    url := (select decrypted_secret from vault.decrypted_secrets where name = 'campaign_worker_url'),
+    headers := jsonb_build_object('Authorization', 'Bearer ' ||
+      (select decrypted_secret from vault.decrypted_secrets where name = 'campaign_worker_secret')),
+    timeout_milliseconds := 65000
+  );
+$job$);
+```
+
+This is an activation recipe, not an executed migration or verified scheduler.
+An enqueued pg_net request does not prove HTTP success. Check cron job runs and
+net._http_response for a successful200 response and the worker's JSON result;
+then prove queued-email recovery with the approved test inbox. Inspect the
+extension/vault/request queue privileges and protect token-bearing queue entries.
+No scheduler, paid plan change or new service account was activated locally.

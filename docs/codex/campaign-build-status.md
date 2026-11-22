@@ -21,7 +21,7 @@ Date: 22 November 2026. Branch: `feat/character-vote-campaign`.
 ## Evidence
 
 - Original baseline: 980 tests passed across 90 files.
-- Latest full suite: 1,121 tests passed across 102 files, exit 0.
+- Latest full suite: 1,125 tests passed across 103 files, exit 0.
 - `npx.cmd tsc --noEmit`: exit 0.
 - `npm.cmd run lint`: exit 0. Existing `Lightbox.test.tsx` image warning remains;
   no rule was weakened or test skipped.
@@ -78,3 +78,21 @@ The local delivery folder is `Campaign_Delivery_2026-11-22` outside this public 
 It contains the kit PDF, rendered previews, PDF and QR verification JSON, tagged
 QR PNG/SVG pairs and per-group mutation evidence. No private transcript, full book
 or client commercial ledger was committed.
+
+## Follow-up integration work
+
+Real local PostgreSQL 17.12: nineteen verification groups passed, including
+migration/acceptance rollback, exhaustive public-role RPC denials, service-role
+RLS behavior, actual concurrent submission/email/reservation/worker sessions,
+lease replacement, exhausted/withdrawn jobs and admin summary totals. Three SQL
+mutants failed; restored runs passed with exact bytes restored. Evidence is in
+Campaign_Delivery_2026-11-22/Database_QA. Hosted Supabase REST/storage/provider
+checks still require connected Supabase and Vercel accounts.
+
+GitHub credential verification succeeded with repository push permission. Vercel
+CLI reports logged out, and the Supabase/Vercel integrations are not confirmed
+connected. An approved test inbox is recorded privately outside this repository;
+no real email was sent. Final portraits/colour badges were not found in supplied
+files. Seven NC print destinations and QR files are separate from the six
+campaign source codes; see nc-qr-spec.md. The Club page truthfully discloses that
+NC club accounts/referral rewards are pending. No free Book2 reward is claimed.
