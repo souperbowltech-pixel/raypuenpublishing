@@ -66,6 +66,13 @@ entries and badges. The confirmed layout is six PDF pages, not three: one colori
 page and one matching Guide page per activity. No full book or private client
 transcript is included. The generated delivery PDF stays outside the public repo.
 
+The delivery draft uses 300 DPI grayscale renders from the latest high-resolution
+interior, with source-page first lines checked against Purpose, Fairness and
+Sincerity before rendering. Supply those reviewed images using
+`--coloring-dir <absolute-folder>` with filenames `page-3.jpg`, `page-4.jpg` and
+`page-5.jpg`, matching the canonical web sample names. The default web images are
+lower-resolution preview sources; do not describe a default build as a print master.
+
 Inspect all six pages at 100%, print one activity, check text fits, badges match and
 no image is missing. Current badges are black and white; final color badges and
 five approved character portraits still depend on supplied artwork. Do not claim

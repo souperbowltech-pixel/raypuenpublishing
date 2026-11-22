@@ -1,6 +1,7 @@
 # Character vote campaign: specification and QA contract
 
-Status: local implementation in progress. No production deployment authorized.
+Status: local implementation complete; production verification remains gated.
+No production deployment authorized. See campaign-build-status.md for evidence.
 
 ## Scope and decisions
 

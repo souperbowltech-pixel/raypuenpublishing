@@ -14,9 +14,10 @@ GROUP = sys.argv[1] if len(sys.argv) > 1 else "domain"
 TESTS = {"domain": ["lib/campaign.test.ts"], "store": ["lib/campaign-store.test.ts"],
          "delivery": ["lib/campaign-delivery.test.ts", "lib/campaign-http.test.ts", "app/api/campaign/routes.test.ts"],
          "ui": ["components/campaign/Campaign.dom.test.tsx", "lib/campaign-client.test.ts"],
-         "admin": ["lib/campaign-store.test.ts", "app/api/admin/campaign/route.test.ts", "components/campaign/CampaignAdmin.test.tsx", "components/campaign/CampaignAdmin.dom.test.tsx"]}
+         "admin": ["lib/campaign-store.test.ts", "app/api/admin/campaign/route.test.ts", "components/campaign/CampaignAdmin.test.tsx", "components/campaign/CampaignAdmin.dom.test.tsx"],
+         "kit": ["lib/campaign-kit.test.ts"]}
 if GROUP not in TESTS:
-    raise SystemExit("Choose domain, store, delivery, ui or admin")
+    raise SystemExit("Choose domain, store, delivery, ui, admin or kit")
 CMD = ["npx.cmd", "vitest", "run", *TESTS[GROUP], "--minWorkers=1", "--maxWorkers=2", "--reporter=json"]
 
 
@@ -90,6 +91,14 @@ if GROUP == "ui":
         ("download-protocol-check-removed", "lib/campaign-client.ts", lambda t: t.replace('if (typeof raw !== "string" || new URL(raw).protocol !== "https:")', 'if (false)')),
         ("download-navigation-removed", "lib/campaign-client.ts", lambda t: t.replace('window.location.assign(raw);', 'return;')),
         ("request-timeout-removed", "lib/campaign-client.ts", lambda t: t.replace('controller.abort(), 30000', 'controller.abort(), 300000')),
+    ]
+if GROUP == "kit":
+    cases = [
+        ("guide-pages-removed", "scripts/build-campaign-kit.mjs", lambda t: t.replace('const guide = pdf.addPage([612, 792]);', 'const guide = coloring;')),
+        ("missing-source-silently-substituted", "scripts/build-campaign-kit.mjs", lambda t: t.replace('const artFolder = option("--coloring-dir") ? path.resolve(option("--coloring-dir")) : path.join(root, "public", "neighborhood");', 'const artFolder = path.join(root, "public", "neighborhood");')),
+        ("coloring-art-not-drawn", "scripts/build-campaign-kit.mjs", lambda t: t.replace('coloring.drawImage(art,', 'coloring.drawRectangle(')),
+        ("guide-content-not-drawn", "scripts/build-campaign-kit.mjs", lambda t: t.replace('section("Parent connection", entry.parentConnection);', '')),
+        ("guide-body-not-drawn", "scripts/build-campaign-kit.mjs", lambda t: t.replace('guide.drawText(line,', 'guide.drawText("",')),
     ]
 
 clean_exit, clean = run("baseline")
