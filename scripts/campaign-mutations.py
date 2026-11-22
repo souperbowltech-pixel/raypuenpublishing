@@ -6,10 +6,15 @@ from pathlib import Path
 import json
 import subprocess
 import tempfile
+import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = Path(tempfile.mkdtemp(prefix="puen-campaign-mutations-"))
-CMD = ["npx.cmd", "vitest", "run", "lib/campaign.test.ts", "--minWorkers=1", "--maxWorkers=2", "--reporter=json"]
+GROUP = sys.argv[1] if len(sys.argv) > 1 else "domain"
+TESTS = {"domain": "lib/campaign.test.ts", "store": "lib/campaign-store.test.ts"}
+if GROUP not in TESTS:
+    raise SystemExit("Choose domain or store")
+CMD = ["npx.cmd", "vitest", "run", TESTS[GROUP], "--minWorkers=1", "--maxWorkers=2", "--reporter=json"]
 
 
 def run(label):
@@ -35,6 +40,18 @@ cases = [
     ("receipt-validation-removed", "lib/campaign-token.ts", lambda t: t.replace('if (typeof raw !== "string" || raw.length > 160) return null;', 'return { id: "forged", expires: 9999999999 };')),
     ("fingerprint-binding-removed", "lib/campaign-token.ts", lambda t: t.replace('JSON.stringify(input)', '"constant"')),
 ]
+if GROUP == "store":
+    cases = [
+        ("save-removed", "lib/campaign-store.ts", lambda t: replace_function(t, "export async function saveVote", "export interface CampaignVote", 'export async function saveVote(input: VoteInput): Promise<SaveVote> { return { status: "duplicate" }; }\n')),
+        ("duplicate-contract-broken", "lib/campaign-store.ts", lambda t: t.replace('return { status: row.status };', 'return { status: "unavailable" };')),
+        ("receipt-row-read-removed", "lib/campaign-store.ts", lambda t: t.replace('if (!client || !UUID_PATTERN.test(id)) return null;', 'return null;')),
+        ("reservation-write-removed", "lib/campaign-store.ts", lambda t: t.replace('const row = record(data);\n    return !error && row', 'const row = record(data);\n    return { status: "unavailable" };\n    return !error && row')),
+        ("readiness-gate-removed", "lib/campaign-store.ts", lambda t: t.replace('if (!client || !storageClient || !campaignConfigured()) return false;', 'return true;')),
+        ("kit-delivery-removed", "lib/campaign-store.ts", lambda t: t.replace('if (!storageClient) return null;', 'return null;')),
+        ("outbox-claim-removed", "lib/campaign-store.ts", lambda t: t.replace('p_limit: voteId ? 2 : 3', 'p_limit: 100000')),
+        ("acknowledgement-blind", "lib/campaign-store.ts", lambda t: t.replace('return !error && data === true;', 'return true;')),
+        ("pagination-unbounded", "lib/campaign-store.ts", lambda t: t.replace('.limit(CAMPAIGN_PAGE_SIZE)', '.limit(100000)')),
+    ]
 
 clean_exit, clean = run("baseline")
 if clean_exit:
