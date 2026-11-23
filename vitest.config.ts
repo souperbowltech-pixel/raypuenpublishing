@@ -13,6 +13,10 @@ export default defineConfig({
     environment: "node",
     // Gives every test file its own local data folder (see vitest.setup.ts).
     setupFiles: ["./vitest.setup.ts"],
+    // One worker per core ran this machine out of memory ("Worker exited
+    // unexpectedly") once the jsdom suites grew; two workers run every test.
+    maxWorkers: 2,
+    minWorkers: 1,
     include: [
       "lib/**/*.test.ts",
       "lib/**/*.test.tsx",
