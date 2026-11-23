@@ -1,6 +1,6 @@
 # Character Vote Campaign: staging and release runbook
 
-The implementation is local on `feat/character-vote-campaign`. Do not advertise the
+The implementation is on `feat/character-vote-campaign`, with a protected Vercel preview. Do not advertise the
 campaign until the gates below are complete. Existing storefront and checkout stay
 on their existing deployment. No hosted migration, external client message or production deployment was
 performed by this build. Isolated local PostgreSQL verification was later run.
@@ -190,3 +190,26 @@ net._http_response for a successful200 response and the worker's JSON result;
 then prove queued-email recovery with the approved test inbox. Inspect the
 extension/vault/request queue privileges and protect token-bearing queue entries.
 No scheduler, paid plan change or new service account was activated locally.
+
+## 23 November: verified browser CI and protected preview
+
+GitHub Actions run 45055572899 completed successfully:
+https://github.com/souperbowltech-pixel/raypuenpublishing/actions/runs/45055572899
+
+Thirteen server-rendered browser checks passed: seven NC routes, four viewport
+widths, 200% text and an actual unknown-route 404. External media was deliberately
+blocked and JavaScript disabled in this geometry pass; it does not prove media
+playback or client-side campaign persistence. The entire header fix was removed:
+the expected enlarged-text overflow at 768px failed with exit 1, then restoration
+passed with exit 0. Removing the player width caused the expected horizontal
+overflow at 320px, also exit 1/restored0. The proof runner rejects infrastructure
+failures as a substitute for either specific regression. Artifact screenshots
+were downloaded and inspected locally.
+
+Preview deployment succeeded for commit f38d174. Its address is:
+https://raypuenpublishing-89giyvwkh-souperbowltech-pixel.vercel.app
+
+Unauthenticated requests redirect to Vercel sign-in. A final HTTP200 on that login
+page is not application verification. Production remains on its earlier commit;
+print destinations are not activated on the canonical public domain. Hosted
+backend/storage/email/scheduler work still requires Supabase/Vercel connections.

@@ -37,14 +37,16 @@ Date: 22 November 2026. Branch: `feat/character-vote-campaign`.
   inspected locally; actual home-printer proof remains pending.
 
 Commands use `--minWorkers=1 --maxWorkers=2` to avoid the machine's worker minimum
-conflict. No dependencies or framework versions were changed. Existing unrelated
+conflict. No npm runtime dependencies or framework versions were changed. Browser QA
+uses a pinned Python development requirement. Existing unrelated
 worktree files and the separately modified Vitest worker configuration were not
 included in campaign commits.
 
 ## Deliberately unclaimed
 
-No production push, migration, storage upload, customer email, scheduler
-registration or real payment was performed. No production build was run.
+No production push, hosted migration, storage upload, customer email, scheduler
+registration or real payment was performed. No local production build was run.
+Vercel built a protected preview after the feature branch was pushed.
 
 A later user-authorized Playwright pass completed 24 checks with no page errors:
 real YouTube playback, validation/focus, separate consent, busy/retry behavior,
@@ -96,3 +98,26 @@ no real email was sent. Final portraits/colour badges were not found in supplied
 files. Seven NC print destinations and QR files are separate from the six
 campaign source codes; see nc-qr-spec.md. The Club page truthfully discloses that
 NC club accounts/referral rewards are pending. No free Book2 reward is claimed.
+
+## 23 November: verified browser CI and protected preview
+
+GitHub Actions run 45055572899 completed successfully:
+https://github.com/souperbowltech-pixel/raypuenpublishing/actions/runs/45055572899
+
+Thirteen server-rendered browser checks passed: seven NC routes, four viewport
+widths, 200% text and an actual unknown-route 404. External media was deliberately
+blocked and JavaScript disabled in this geometry pass; it does not prove media
+playback or client-side campaign persistence. The entire header fix was removed:
+the expected enlarged-text overflow at 768px failed with exit 1, then restoration
+passed with exit 0. Removing the player width caused the expected horizontal
+overflow at 320px, also exit 1/restored0. The proof runner rejects infrastructure
+failures as a substitute for either specific regression. Artifact screenshots
+were downloaded and inspected locally.
+
+Preview deployment succeeded for commit f38d174. Its address is:
+https://raypuenpublishing-89giyvwkh-souperbowltech-pixel.vercel.app
+
+Unauthenticated requests redirect to Vercel sign-in. A final HTTP200 on that login
+page is not application verification. Production remains on its earlier commit;
+print destinations are not activated on the canonical public domain. Hosted
+backend/storage/email/scheduler work still requires Supabase/Vercel connections.

@@ -78,3 +78,12 @@ That job blocks external media and explicitly does not verify playback.
 
 Python browser tooling is pinned in scripts/requirements-browser.txt. No npm
 runtime dependency was added. Production has not been deployed by this work.
+
+## 23 November: browser acceptance completed
+
+The dedicated GitHub job passed all 13 geometry checks and both specific layout
+mutations. Artifact evidence was downloaded and320px/enlarged-text screenshots
+were inspected. The mutation proof identifies exact failure kinds and viewport
+sizes, then requires a passing restored run. Vercel preview deployed successfully
+but redirects unauthenticated readers to sign-in. Production/public QR addresses
+remain gated on backend activation. This supersedes the earlier pending-CI note.
