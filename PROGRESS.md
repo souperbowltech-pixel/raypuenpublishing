@@ -4,6 +4,13 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## Campaign vote retry after reload (2026-11-23)
+
+- Persist the validated vote attempt in tab-scoped sessionStorage before sending. Unchanged retries reuse its submission id across mounts; changed input starts a new attempt. Clear it only on a non-empty receipt. Storage access, read, write and removal failures warn without personal data and preserve in-memory retry behavior.
+- Reproduced the missing stored id before fixing. Campaign DOM coverage now has 33 passing tests, including saved vote/lost response/fresh mount replay, receipt cleanup, changed input, duplicate responses without receipts, invalid storage and storage failures. Server receipt authorization is unchanged; knowing an email alone grants no receipt.
+- Validation: `npm run lint` exit 0 (existing Lightbox image warning); `npm run typecheck` exit 0; `npx vitest run --maxWorkers=2` exit 0: `Test Files 109 passed (109)`, `Tests 1265 passed (1265)`. Windows `.cmd` wrappers used. Independent qa-reviewer: APPROVE; focused rerun: 33 tests passed.
+- Scale/security: one bounded attempt per tab; no new queries, N+1 loops, indexes, dependencies, external calls or rate-limit changes at 100x usage. Existing request guard prevents concurrent submissions in one mount. Stored attempt includes adult form values for exact payload matching and is cleared on receipt or tab closure; storage availability limits reload recovery. No commit, push or branch change.
+
 ## External response body deadlines (2026-11-23)
 
 - Supabase now buffers database responses inside its existing deadline, preserving caller signals, status and headers. MailerLite keeps each 6-second attempt active through JSON consumption; body timeouts fail without a misleading success or 422 retry. Alert webhooks have a nonthrowing 3-second deadline covering headers and body, with delivery failures logged.

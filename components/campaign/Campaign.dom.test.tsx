@@ -6,6 +6,7 @@ import { VoteForm } from "@/components/campaign/VoteForm";
 import { CampaignReceipt } from "@/components/campaign/CampaignReceipt";
 
 const push = vi.fn(); const openDownload = vi.fn();
+const attemptStorageKey = "campaign:nc-book-1:vote-attempt";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("@/lib/campaign-client", async (actual) => ({
   ...(await actual<typeof import("@/lib/campaign-client")>()), openCampaignDownload: (...args: unknown[]) => openDownload(...args),
@@ -28,11 +29,12 @@ function fillVote() { check("character", "sunny"); type("firstName", "Ana"); typ
 const view = { title: "Woohoo, Ana! Sunny says thank you!", message: "Sunny opened her trusty guidebook.", character: "Sunny",
   canOrder: false, reservationTitle: "Reserve a copy", quantity: null };
 beforeEach(() => {
+  window.sessionStorage.clear();
   window.history.replaceState({}, "", "/welcome?ref=fiesta");
   container = document.createElement("div"); document.body.appendChild(container); root = createRoot(container);
   push.mockReset(); openDownload.mockReset();
 });
-afterEach(() => { act(() => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
+afterEach(() => { act(() => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 describe("parent vote form U01-U02", () => {
   it("shows five native choices with separate unchecked permissions and an optional answer", () => {
     act(() => root.render(<VoteForm />));
@@ -43,7 +45,10 @@ describe("parent vote form U01-U02", () => {
     expect(container.querySelector<HTMLInputElement>('[name="website"]')!.tabIndex).toBe(-1);
   });
   it("sends normalized adult data and source, then navigates with only a private fragment", async () => {
-    const fetcher = vi.fn(async () => json({ receipt: "private-token" })); vi.stubGlobal("fetch", fetcher);
+    const fetcher = vi.fn(async (_path: string, init: RequestInit) => {
+      expect(JSON.parse(window.sessionStorage.getItem(attemptStorageKey)!).id).toBe(JSON.parse(String(init.body)).submissionId);
+      return json({ receipt: "private-token" });
+    }); vi.stubGlobal("fetch", fetcher);
     act(() => root.render(<VoteForm />)); fillVote(); await submit();
     const [path, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
     expect(path).toBe("/api/campaign/vote");
@@ -51,11 +56,13 @@ describe("parent vote form U01-U02", () => {
       phone: null, marketingConsent: false, smsConsent: false });
     expect(push).toHaveBeenCalledWith("/welcome/thanks#receipt=private-token");
     expect(push.mock.calls[0][0]).not.toContain("ana@example.com");
+    expect(window.sessionStorage.getItem(attemptStorageKey)).toBeNull();
   });
   it("focuses a missing field and makes no request for invalid input", async () => {
     const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher); act(() => root.render(<VoteForm />));
     await submit(); expect(fetcher).not.toHaveBeenCalled(); expect(document.activeElement).toBe(container.querySelector('[name="character"]'));
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("Choose one");
+    expect(window.sessionStorage.getItem(attemptStorageKey)).toBeNull();
   });
   it("prevents a double submit while the first request is pending", async () => {
     let resolve: (value: Response) => void = () => {};
@@ -72,6 +79,83 @@ describe("parent vote form U01-U02", () => {
     await submit();
     const first = JSON.parse(String(fetcher.mock.calls[0][1].body)); const second = JSON.parse(String(fetcher.mock.calls[1][1].body));
     expect(second.submissionId).toBe(first.submissionId); expect(push).toHaveBeenCalled();
+  });
+  it("replays a saved vote after a lost response and a fresh mount with the stored submission id", async () => {
+    let saved: Record<string, unknown> | undefined;
+    const fetcher = vi.fn(async (_path: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body));
+      if (!saved) { saved = body; throw new Error("Response lost after save"); }
+      return body.submissionId === saved.submissionId
+        ? json({ receipt: "replayed-private-token" })
+        : json({ message: "Use your earlier private link." });
+    });
+    vi.stubGlobal("fetch", fetcher); act(() => root.render(<VoteForm />)); fillVote(); await submit();
+    const stored = JSON.parse(window.sessionStorage.getItem(attemptStorageKey)!);
+    expect(stored.id).toBe(saved!.submissionId); expect(push).not.toHaveBeenCalled();
+    act(() => root.unmount()); root = createRoot(container);
+    act(() => root.render(<VoteForm />)); fillVote(); await submit();
+    expect(JSON.parse(String(fetcher.mock.calls[1][1].body))).toEqual(saved);
+    expect(push).toHaveBeenCalledWith("/welcome/thanks#receipt=replayed-private-token");
+    expect(window.sessionStorage.getItem(attemptStorageKey)).toBeNull();
+  });
+  it("starts a new attempt for changed input after reload instead of replaying another payload", async () => {
+    const fetcher = vi.fn().mockRejectedValue(new Error("offline")); vi.stubGlobal("fetch", fetcher);
+    act(() => root.render(<VoteForm />)); fillVote(); await submit();
+    const firstId = JSON.parse(String(fetcher.mock.calls[0][1].body)).submissionId;
+    act(() => root.unmount()); root = createRoot(container);
+    act(() => root.render(<VoteForm />)); fillVote(); check("marketingConsent"); await submit();
+    const body = JSON.parse(String(fetcher.mock.calls[1][1].body));
+    expect(body.submissionId).not.toBe(firstId); expect(body.marketingConsent).toBe(true);
+    expect(JSON.parse(window.sessionStorage.getItem(attemptStorageKey)!).id).toBe(body.submissionId);
+  });
+  it.each([
+    ["duplicate", { message: "Use your earlier private link." }, 200],
+    ["empty receipt", { receipt: "" }, 200],
+    ["malformed receipt", { receipt: 123 }, 200],
+    ["missing receipt", {}, 200],
+    ["server failure", { error: "Temporarily unavailable." }, 503],
+  ])("retains the attempt after %s and never opens a receipt based on email alone", async (_label, response, status) => {
+    const fetcher = vi.fn().mockResolvedValueOnce(json(response, status)).mockResolvedValueOnce(json({ receipt: "confirmed" }));
+    vi.stubGlobal("fetch", fetcher); act(() => root.render(<VoteForm />)); fillVote(); await submit();
+    const id = JSON.parse(String(fetcher.mock.calls[0][1].body)).submissionId;
+    expect(JSON.parse(window.sessionStorage.getItem(attemptStorageKey)!).id).toBe(id);
+    expect(push).not.toHaveBeenCalled();
+    act(() => root.unmount()); root = createRoot(container);
+    act(() => root.render(<VoteForm />)); fillVote(); await submit();
+    expect(JSON.parse(String(fetcher.mock.calls[1][1].body)).submissionId).toBe(id);
+    expect(push).toHaveBeenCalledWith("/welcome/thanks#receipt=confirmed");
+    expect(window.sessionStorage.getItem(attemptStorageKey)).toBeNull();
+  });
+  it.each(["{broken", "null", "[]", '"text"', '{"key":4,"id":true}', '{"key":"payload","id":"not-a-uuid"}'])(
+    "recovers from invalid stored attempt %s", async (stored) => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      window.sessionStorage.setItem(attemptStorageKey, stored);
+      const fetcher = vi.fn(async () => json({ receipt: "confirmed" })); vi.stubGlobal("fetch", fetcher);
+      act(() => root.render(<VoteForm />)); fillVote(); await submit();
+      expect(fetcher).toHaveBeenCalledTimes(1); expect(push).toHaveBeenCalledWith("/welcome/thanks#receipt=confirmed");
+      expect(window.sessionStorage.getItem(attemptStorageKey)).toBeNull();
+    },
+  );
+  it.each(["access", "getItem", "setItem", "removeItem"] as const)("works when sessionStorage %s throws", async (operation) => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const unavailable = () => { throw new DOMException("Storage disabled", "SecurityError"); };
+    if (operation === "access") vi.spyOn(window, "sessionStorage", "get").mockImplementation(unavailable);
+    else vi.spyOn(Storage.prototype, operation).mockImplementation(unavailable);
+    const fetcher = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(json({ receipt: "confirmed" }));
+    vi.stubGlobal("fetch", fetcher); act(() => root.render(<VoteForm />)); fillVote(); await submit();
+    expect(push).not.toHaveBeenCalled(); await submit();
+    expect(JSON.parse(String(fetcher.mock.calls[1][1].body)).submissionId).toBe(JSON.parse(String(fetcher.mock.calls[0][1].body)).submissionId);
+    expect(push).toHaveBeenCalledWith("/welcome/thanks#receipt=confirmed");
+    expect(warning).toHaveBeenCalled();
+    expect(JSON.stringify(warning.mock.calls)).not.toContain("ana@example.com");
+  });
+  it("uses a fresh id on a later mount once a receipt has confirmed the previous attempt", async () => {
+    const fetcher = vi.fn(async () => json({ receipt: "confirmed" })); vi.stubGlobal("fetch", fetcher);
+    act(() => root.render(<VoteForm />)); fillVote(); await submit();
+    act(() => root.unmount()); root = createRoot(container);
+    act(() => root.render(<VoteForm />)); fillVote(); await submit();
+    expect(JSON.parse(String((fetcher.mock.calls[1] as unknown as [string, RequestInit])[1].body)).submissionId)
+      .not.toBe(JSON.parse(String((fetcher.mock.calls[0] as unknown as [string, RequestInit])[1].body)).submissionId);
   });
   it("shows a server field error and a neutral duplicate response without losing input", async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(json({ error: "Check your email.", field: "email" }, 400)).mockResolvedValueOnce(json({ message: "Use your earlier private link." }));

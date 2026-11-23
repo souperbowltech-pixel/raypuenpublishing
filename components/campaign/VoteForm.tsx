@@ -1,9 +1,28 @@
 "use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CHARACTERS, CHARACTER_NAMES, campaignSource, validateVote, type Character } from "@/lib/campaign";
+import { CAMPAIGN_ID, CHARACTERS, CHARACTER_NAMES, UUID_PATTERN, campaignSource, validateVote, type Character } from "@/lib/campaign";
 import { CHARACTER_DESCRIPTIONS, VOTE_QUESTION, optionalQuestion } from "@/lib/campaign-content";
 import { campaignRequest, newCampaignSubmissionId, CampaignRequestError } from "@/lib/campaign-client";
+
+type VoteAttempt = { key: string; id: string };
+const attemptStorageKey = `campaign:${CAMPAIGN_ID}:vote-attempt`;
+function readAttempt(): VoteAttempt | null {
+  try {
+    const stored: unknown = JSON.parse(window.sessionStorage.getItem(attemptStorageKey) ?? "null");
+    if (stored && typeof stored === "object" && "key" in stored && typeof stored.key === "string"
+      && "id" in stored && typeof stored.id === "string" && UUID_PATTERN.test(stored.id)) {
+      return { key: stored.key, id: stored.id };
+    }
+  } catch { console.warn("[campaign] Could not restore the vote attempt; using in-memory retry."); }
+  return null;
+}
+function storeAttempt(attempt: VoteAttempt | null): void {
+  try {
+    if (attempt) window.sessionStorage.setItem(attemptStorageKey, JSON.stringify(attempt));
+    else window.sessionStorage.removeItem(attemptStorageKey);
+  } catch { console.warn("[campaign] Could not update the vote attempt; using in-memory retry."); }
+}
 
 export function VoteForm() {
   const router = useRouter();
@@ -12,7 +31,7 @@ export function VoteForm() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const waiting = useRef(false);
-  const attempt = useRef<{ key: string; id: string } | null>(null);
+  const attempt = useRef<VoteAttempt | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   function fail(message: string, field?: string) {
     setError({ message, field });
@@ -25,14 +44,19 @@ export function VoteForm() {
       phone: form.get("phone"), adultConsent: form.has("adultConsent"), marketingConsent: form.has("marketingConsent"),
       smsConsent: form.has("smsConsent"), source: campaignSource(new URLSearchParams(window.location.search).get("ref")) };
     const key = JSON.stringify(raw);
+    if (!attempt.current) attempt.current = readAttempt();
     const submissionId = attempt.current?.key === key ? attempt.current.id : newCampaignSubmissionId();
     const parsed = validateVote({ ...raw, submissionId });
     if (!parsed.ok) { fail(parsed.error, parsed.field); return; }
     waiting.current = true; setBusy(true); setError(null); setNotice("");
     attempt.current = { key, id: submissionId };
+    storeAttempt(attempt.current);
     try {
       const result = await campaignRequest("vote", { ...parsed.value, adultConsent: true, website: form.get("website") });
-      if (typeof result.receipt === "string") router.push(`/welcome/thanks#receipt=${encodeURIComponent(result.receipt)}`);
+      if (typeof result.receipt === "string" && result.receipt.length > 0) {
+        storeAttempt(null); attempt.current = null;
+        router.push(`/welcome/thanks#receipt=${encodeURIComponent(result.receipt)}`);
+      }
       else if (typeof result.message === "string") setNotice(result.message);
       else fail("We could not open your kit. Please try again.");
     } catch (caught) {
