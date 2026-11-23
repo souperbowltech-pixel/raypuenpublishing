@@ -4,6 +4,16 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## Patrol approval security fixes (2026-11-23)
+
+- Public Patrol state now explicitly returns only fields used by the dashboard. Approval credentials, shipping details, internal identifiers and unrelated family details stay server-side. The claim route already returns an explicit success/message response; regression tests cover first and repeated submissions.
+- Guide decisions now use one database update filtered by approval token and pending status, returning the affected id. Both database and local paths reject repeat or reversed decisions. Emailed confirmation links and admin form buttons keep working.
+- Failed approval emails alert with only the persisted claim id and fixed failure category. Approval tokens, names, addresses and email addresses are excluded. The insert returns its id in the same request.
+- Regression tests exercise real routes/store functions, local persistence and the real Supabase client with a stateful HTTP fixture. They cover public JSON, all decision combinations, competing decisions, unknown tokens, database failure and email failure categories. No live database or email service was contacted.
+- Scale/security review: no new dependency, migration, background task, rate-limit behavior or N+1 query. The existing unique approval-token index supports the conditional update, which removes the previous read-before-write race and one database round trip. Existing local file persistence remains intended for development/testing.
+- Validation: npm run lint and npm run typecheck passed (exit 0); lint retains the existing Lightbox test image warning. npx vitest run --maxWorkers=2 passed (exit 0): Test Files 105 passed (105), Tests 1146 passed (1146). Independent qa-reviewer found no actionable issue; git diff --check passed.
+- Git limitation: switching to main, staging and committing were denied because the sandbox cannot write .git/index.lock. Changes remain unstaged on feat/character-vote-campaign; unrelated untracked files are untouched. No push or deployment.
+
 ## Components
 
 | Component | Status | Notes |

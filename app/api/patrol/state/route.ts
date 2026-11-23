@@ -22,5 +22,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Patrol Leader not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ success: true, ...details });
+  // Public fields are opt-in so new store fields cannot expose credentials.
+  return NextResponse.json({
+    success: true,
+    leader: {
+      email: details.leader.email,
+      giftsRedeemedCount: details.leader.giftsRedeemedCount,
+      status: details.leader.status,
+    },
+    gifts: details.gifts.map((gift) => ({
+      code: gift.code,
+      slotNumber: gift.slotNumber,
+      redeemedAt: gift.redeemedAt,
+    })),
+    approval: details.approval ? {
+      status: details.approval.status,
+      recipientName: details.approval.recipientName,
+    } : undefined,
+  });
 }

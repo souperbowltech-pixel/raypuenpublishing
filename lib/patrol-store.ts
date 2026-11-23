@@ -373,12 +373,12 @@ export async function redeemPatrolGift(
 /**
  * Tell Ray a free printed Guide is waiting for him.
  *
- * Email first, because that is the only channel that actually reaches him. If
- * email is not configured or the send fails, the approval URL still goes to the
- * alert webhook and the server log, so a claim can never vanish silently — but
- * nobody should mistake that fallback for having told him.
+ * Email is the only channel that sends the approval credential to Ray. If it
+ * fails, alert with the claim id and failure category only. The claim remains
+ * available on the authenticated admin page.
  */
 async function notifyGuideClaim(
+  claimId: string,
   leaderEmail: string,
   recipientName: string,
   shippingAddress: ShippingAddress,
@@ -394,9 +394,8 @@ async function notifyGuideClaim(
   if (result.sent) return;
 
   void alertFailure('Free Parent Guide claim could not be emailed for approval', {
+    claimId,
     reason: result.reason,
-    recipient: recipientName,
-    approvalToken,
   });
 }
 
@@ -436,21 +435,21 @@ export async function submitGuideClaim(
     store.approvals.push(approval);
     writeLocal(store);
 
-    await notifyGuideClaim(details.leader.email, recipientName, shippingAddress, approvalToken);
+    await notifyGuideClaim(approval.id, details.leader.email, recipientName, shippingAddress, approvalToken);
 
     return { ok: true, approvalToken };
   }
 
-  const { error: approvalError } = await supabase.from('guide_approvals').insert({
+  const { data: approvalRow, error: approvalError } = await supabase.from('guide_approvals').insert({
     patrol_leader_id: details.leader.id,
     approval_token: approvalToken,
     recipient_name: recipientName,
     shipping_address: shippingAddress,
     status: 'pending',
-  });
+  }).select('id').single();
 
-  if (approvalError) {
-    void alertFailure('Guide approval record insert failed', { error: approvalError.message });
+  if (approvalError || !approvalRow) {
+    void alertFailure('Guide approval record insert failed', { error: approvalError?.message || 'No claim id returned' });
     return { ok: false, error: 'Could not submit claim. Please try again.' };
   }
 
@@ -459,7 +458,7 @@ export async function submitGuideClaim(
     .update({ status: 'claimed', updated_at: now })
     .eq('id', details.leader.id);
 
-  await notifyGuideClaim(details.leader.email, recipientName, shippingAddress, approvalToken);
+  await notifyGuideClaim(approvalRow.id, details.leader.email, recipientName, shippingAddress, approvalToken);
 
   return { ok: true, approvalToken };
 }
@@ -534,30 +533,28 @@ export async function reviewGuideApproval(
     const store = readLocal();
     const approval = store.approvals.find((a) => a.approvalToken === approvalToken);
     if (!approval) return { ok: false, error: 'Approval request not found or invalid token' };
+    if (approval.status !== 'pending') return { ok: false, error: 'Approval request has already been decided' };
     approval.status = targetStatus;
     approval.reviewedAt = now;
     writeLocal(store);
     return { ok: true, status: targetStatus };
   }
 
-  const { data: approvalRow, error: findError } = await supabase
-    .from('guide_approvals')
-    .select('*')
-    .eq('approval_token', approvalToken)
-    .maybeSingle();
-
-  if (findError || !approvalRow) {
-    return { ok: false, error: 'Approval request not found or invalid token' };
-  }
-
-  const { error: updateError } = await supabase
+  const { data: approvalRow, error: updateError } = await supabase
     .from('guide_approvals')
     .update({ status: targetStatus, reviewed_at: now })
-    .eq('approval_token', approvalToken);
+    .eq('approval_token', approvalToken)
+    .eq('status', 'pending')
+    .select('id')
+    .maybeSingle();
 
   if (updateError) {
     void alertFailure('Review guide approval update failed', { error: updateError.message });
     return { ok: false, error: 'Could not update approval status' };
+  }
+
+  if (!approvalRow) {
+    return { ok: false, error: 'Approval request not found or already decided' };
   }
 
   return { ok: true, status: targetStatus };

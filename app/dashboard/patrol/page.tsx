@@ -18,7 +18,6 @@ interface GiftSlot {
 interface PatrolState {
   leader: {
     email: string;
-    token: string;
     giftsRedeemedCount: number;
     status: "in_progress" | "completed" | "claimed";
   };
