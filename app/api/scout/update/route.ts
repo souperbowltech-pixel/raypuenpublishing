@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateScoutAsync, PersistentScoutState } from '@/lib/scout-store';
+import { updateScoutAsync, PersistentScoutState, toPublicScoutState } from '@/lib/scout-store';
 import {
   gradeQuiz,
   REFERRAL_FRIEND_REQUIREMENT,
@@ -7,7 +7,7 @@ import {
 } from '@/lib/gamification';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { resolveScoutAccess } from '@/lib/scout-access';
-import { validateFirstName } from '@/lib/family';
+import { validateFirstName, DEMO_SCOUT_TOKEN } from '@/lib/family';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,9 +115,12 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await updateScoutAsync(access.scoutToken, updates);
-    const out = access.kind === 'family'
-      ? { ...result.state, token: undefined, shareCode: access.family.shareCode }
-      : result.state;
+    const out = {
+      ...toPublicScoutState(result.state),
+      ...(access.kind === 'family'
+        ? { shareCode: access.family.shareCode }
+        : { token: DEMO_SCOUT_TOKEN }),
+    };
 
     if (!result.persisted) {
       // Never report a save that did not happen: the dashboard rolls its

@@ -44,6 +44,25 @@ export interface ScoutInput {
   updatedAt: string;
 }
 
+/** Only public progress fields may cross the API boundary. Keep referral tokens internal. */
+export function toPublicScoutState(s: PersistentScoutState) {
+  return {
+    scoutName: s.scoutName,
+    completedPages: s.completedPages,
+    quizScore: s.quizScore,
+    friendsCompleted: s.friendsCompleted,
+    referralScore: s.referralScore,
+    totalScore: s.totalScore,
+    hasPassedQuiz: s.hasPassedQuiz,
+    hasRecruitedFriend: s.hasRecruitedFriend,
+    book2Unlocked: s.book2Unlocked,
+    book3Sponsored: s.book3Sponsored,
+    book3Unlocked: s.book3Unlocked,
+    status: s.status,
+    updatedAt: s.updatedAt,
+  };
+}
+
 /**
  * Recompute every derived field from the authoritative inputs (`quizScore` and
  * `friendsCompleted`) plus the `book3Sponsored` flag, so the peer (Book 2) and

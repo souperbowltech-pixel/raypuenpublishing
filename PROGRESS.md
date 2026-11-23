@@ -4,6 +4,14 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## Buyer log and scout response privacy (2026-11-23)
+
+- MailerLite success and invalid-input logs use the existing redactEmail helper. Scout state and update responses explicitly select public progress fields, excluding referral and future private tokens on family/demo and failed-save paths. Internal referral tracking remains intact.
+- Added 19 regression/integration cases for normalized, short and long emails, retries, invalid input, missing configuration, API/network failures, public response shapes and real local persistence. Original code failed 15 regression cases. Validation: npm run lint exit 0 (existing Lightbox image warning), npm run typecheck exit 0; npx vitest run --maxWorkers=2 exit 0: Test Files 110 passed (110), Tests 1284 passed (1284). Windows .cmd wrappers used.
+- Added the requested SECURITY INVOKER/service_role explanation as SQL comments only. The tracked migration already contained only b1; its existing non-comment content is unchanged, so function definitions and grants cannot be verified from this checkout.
+- Scale/security: constant-size response projection, no new queries, N+1 calls, indexes, dependencies, external calls, rate limits or concurrency changes at 100x usage. Existing authorization and demo behavior remain. No commit, push or branch change.
+- Independent qa-reviewer: APPROVE, no actionable findings. .claude/hooks/run-checks.sh exit 0: npm lint passed, npm typecheck passed, npm test passed. git diff --check passed.
+
 ## Campaign vote retry after reload (2026-11-23)
 
 - Persist the validated vote attempt in tab-scoped sessionStorage before sending. Unchanged retries reuse its submission id across mounts; changed input starts a new attempt. Clear it only on a non-empty receipt. Storage access, read, write and removal failures warn without personal data and preserve in-memory retry behavior.

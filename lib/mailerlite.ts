@@ -1,4 +1,5 @@
 import { isEmailAddress } from "@/lib/family";
+import { redactEmail } from "@/lib/redact";
 
 /**
  * MailerLite integration helper for Puen Publishing.
@@ -20,7 +21,7 @@ export async function addSubscriberToMailerLite(params: {
 
   const email = params.email.trim().toLowerCase();
   if (!isEmailAddress(email)) {
-    console.error("[MailerLite] Invalid email address, skipping sync:", params.email);
+    console.error("[MailerLite] Invalid email address, skipping sync:", redactEmail(params.email));
     return null;
   }
 
@@ -90,7 +91,7 @@ export async function addSubscriberToMailerLite(params: {
     if (!res.ok) {
       console.error("[MailerLite API Error]:", res.status, data);
     } else {
-      console.log(`[MailerLite] Subscriber synced successfully: ${email} (ID: ${data?.data?.id})`);
+      console.log(`[MailerLite] Subscriber synced successfully: ${redactEmail(email)} (ID: ${data?.data?.id})`);
     }
     return data;
   } catch (error) {

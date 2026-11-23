@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrCreateScoutAsync } from '@/lib/scout-store';
+import { getOrCreateScoutAsync, toPublicScoutState } from '@/lib/scout-store';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 import { resolveScoutAccess } from '@/lib/scout-access';
+import { DEMO_SCOUT_TOKEN } from '@/lib/family';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,10 +24,12 @@ export async function GET(req: NextRequest) {
   }
 
   const scout = await getOrCreateScoutAsync(access.scoutToken);
-  // A registered family's private token stays on the server.
-  const body = access.kind === 'family'
-    ? { ...scout, token: undefined, shareCode: access.family.shareCode }
-    : scout;
+  const body = {
+    ...toPublicScoutState(scout),
+    ...(access.kind === 'family'
+      ? { shareCode: access.family.shareCode }
+      : { token: DEMO_SCOUT_TOKEN }),
+  };
   return NextResponse.json(
     { success: true, mode: access.kind, scout: body },
     { headers: { 'Cache-Control': 'no-store' } }
