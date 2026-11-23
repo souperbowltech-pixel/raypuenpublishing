@@ -121,3 +121,19 @@ Unauthenticated requests redirect to Vercel sign-in. A final HTTP200 on that log
 page is not application verification. Production remains on its earlier commit;
 print destinations are not activated on the canonical public domain. Hosted
 backend/storage/email/scheduler work still requires Supabase/Vercel connections.
+
+## Full media acceptance: external provider blocker
+
+The separate full playback run45107452925 failed at the Welcome player:
+https://github.com/souperbowltech-pixel/raypuenpublishing/actions/runs/45107452925
+
+The captured screenshot shows YouTube's "Sign in to confirm you're not a bot"
+challenge on the GitHub runner. Playback remained at0, paused=true, readyState0.
+This is recorded as a failed external-media gate, not passed or silently skipped.
+No challenge bypass was attempted. Verify all five films in an ordinary approved
+browser/phone before release. The thirteen-check geometry job remains separately
+successful; it deliberately blocks media and cannot substitute for this gate.
+
+GitHub repository and Preview/Production environment secret-name listings were
+checked: no service credentials are stored there. Supabase/Vercel account-owner
+connection remains required for hosted operations. No secret values were read.
