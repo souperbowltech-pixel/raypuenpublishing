@@ -1,4 +1,4 @@
-/** Build a six-page free kit from the canonical sample entries, without evaluating TS. */
+/** Build a seven-page free kit from the canonical sample entries, without evaluating TS. */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,6 +49,7 @@ function lines(text, font, size, width) {
   }
   if (line) out.push(line); return out;
 }
+const badges = [];
 for (const entry of entries) {
   const coloring = pdf.addPage([612, 792]);
   const art = await pdf.embedJpg(fs.readFileSync(path.join(artFolder, `page-${entry.page}.jpg`)));
@@ -60,6 +61,7 @@ for (const entry of entries) {
   guide.drawText(`Parent's Guide: ${entry.trait}`, { x: 40, y: 722, size: 24, font: bold });
   guide.drawText(`Activity ${entry.entry} / ${entry.badge}`, { x: 40, y: 697, size: 12, font: regular });
   const badge = await pdf.embedPng(fs.readFileSync(path.join(root, "public", "neighborhood", `badge-${entry.entry}.png`)));
+  badges.push(badge);
   const badgeSize = badge.scaleToFit(64, 72);
   guide.drawImage(badge, { x: 508, y: 675, width: badgeSize.width, height: badgeSize.height });
   let y = 657;
@@ -78,9 +80,34 @@ for (const entry of entries) {
   section("Parent connection", entry.parentConnection);
   guide.drawText("Free family activity / Puen Publishing / Print the matching badge above", { x: 40, y: 25, size: 9, font: regular });
 }
+const sheet = pdf.addPage([612, 792]);
+sheet.drawText("The Neighborhood Chronicles", { x: 40, y: 744, size: 24, font: bold });
+sheet.drawText("Three Matching Sticker Badges", { x: 40, y: 686, size: 18, font: bold });
+sheet.drawText("Black-and-white badge sheet for the Starter Kit", { x: 40, y: 638, size: 13, font: regular });
+// Fixed cut-out slots also fit replacement colour artwork without moving the layout.
+const slot = { left: 40, step: 180, width: 164, bottom: 382, height: 180, artWidth: 108, artHeight: 150 };
+for (const [i, entry] of entries.entries()) {
+  const x = slot.left + i * slot.step;
+  sheet.drawText(entry.trait, { x, y: 593, size: 16, font: bold });
+  sheet.drawRectangle({ x, y: slot.bottom, width: slot.width, height: slot.height,
+    borderColor: rgb(0.55, 0.55, 0.55), borderWidth: 0.6 });
+  const badge = badges[i];
+  const size = badge.scaleToFit(slot.artWidth, slot.artHeight);
+  sheet.drawImage(badge, { x: x + (slot.width - size.width) / 2,
+    y: slot.bottom + (slot.height - size.height) / 2, ...size });
+  sheet.drawText(`Matches Activity ${entry.entry}`, { x, y: 358, size: 12, font: regular });
+}
+sheet.drawText("How to use your badges", { x: 40, y: 289, size: 18, font: bold });
+let instructionY = 241;
+for (const line of lines("Print this page at Actual Size (100%) on US Letter paper. Use sticker paper, or print on plain paper and glue the cut-out badges onto the matching activity. An adult can help cut out each badge. Celebrate Purpose, Fairness and Sincerity as you finish the three coloring activities together.", regular, 13, 532)) {
+  sheet.drawText(line, { x: 40, y: instructionY, size: 13, font: regular });
+  instructionY -= 17.5;
+}
+sheet.drawText("Free family activity / Puen Publishing", { x: 40, y: 55, size: 11, font: regular });
+sheet.drawText("The Neighborhood Chronicles, Book 1: David and Goliath", { x: 40, y: 39, size: 11, font: regular });
 pdf.setTitle("The Neighborhood Chronicles: Free Character Starter Kit");
 pdf.setAuthor("Puen Publishing");
-pdf.setSubject("Three coloring activities and three matching Parent's Guide pages with badges");
+pdf.setSubject("Three coloring activities, three matching Parent's Guide pages and a cut-out badge sheet");
 const bytes = await pdf.save();
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, bytes);

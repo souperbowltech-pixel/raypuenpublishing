@@ -4,6 +4,15 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## Campaign Starter Kit badge sheet (2026-11-23)
+
+- Added page 7 with the three canonical matching black-and-white badges in fixed cut-out slots, preserving aspect ratios and allowing replacement colour PNGs without layout changes. Reuses the Guide badge images. VF-ART-01: preserve the existing composition and coherent supplied artwork.
+- Regression reproduced as `expected 6 to be 7`. Real CLI tests now check seven Letter pages, three drawn badge images with canonical image pixels, cut-out sizes, spacing, aspect ratios, labels and page bounds; nested output paths, missing/corrupt final badges, preservation of existing output on failure and rejection of public output are covered. No mocks or skipped tests.
+- Rebuilt `data/campaign/starter-kit.pdf` (ignored private artifact, 2,813,635 bytes) using the reviewed high-resolution coloring sources. Rendered page 7 for visual review; all text fits and the first six pages render pixel-identically to the previous delivery PDF. Site storage target remains private `library/campaign/starter-kit.pdf`; hosted upload was not performed in this restricted workspace.
+- Validation: `npm run lint` passed (exit 0, existing Lightbox test image warning); `npm run typecheck` passed (exit 0); `npx vitest run --maxWorkers=2` passed (exit 0): `Test Files 106 passed (106)`, `Tests 1169 passed (1169)`. Windows `.cmd` wrappers were used because PowerShell blocks `.ps1` wrappers.
+- Independent qa-reviewer: APPROVE, no actionable findings; targeted rerun: `Test Files 1 passed (1)`, `Tests 5 passed (5)`. `git diff --check` passed.
+- Scale/security: fixed seven-page offline generation, three reused image objects, no network calls, new dependencies, database queries or shared request state. Private output guard retained; missing/corrupt art fails before writing. Current source badges remain low-resolution black-and-white art, pending final colour files. No commit, push or branch change.
+
 ## Campaign shared event rate limits (2026-11-23)
 
 - Public vote, receipt, kit and reservation actions now allow 600 requests per IP per hour, plus 20 per submission or verified receipt vote ID per action per hour. Admin stays at 60. Shared counters still fail closed; receipt credentials never become limiter keys.
