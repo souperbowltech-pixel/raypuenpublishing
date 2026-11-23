@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { CAMPAIGN_BODY_BYTES } from "@/lib/campaign";
+import { CAMPAIGN_BODY_BYTES, UUID_PATTERN } from "@/lib/campaign";
 import { verifyReceipt } from "@/lib/campaign-token";
 import { getCampaignVote } from "@/lib/campaign-store";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
@@ -40,9 +40,23 @@ export async function readCampaignJson(req: Request): Promise<Body> {
   } catch { return { ok: false, response: campaignJson({ error: "Invalid request." }, 400) }; }
   finally { clearTimeout(timer); reader.releaseLock(); }
 }
-export async function campaignLimit(req: Request, action: string) {
-  const result = await rateLimit(`campaign-${action}:${clientIp(req)}`, 60, 3600000, { whenUnavailable: "refuse" });
-  return result.ok ? null : campaignJson({ error: "Too many requests. Please try again later." }, 429, { "Retry-After": String(result.retryAfter) });
+const PUBLIC_REQUESTS_PER_HOUR_PER_IP = 600;
+const ADMIN_REQUESTS_PER_HOUR_PER_IP = 60;
+const REQUESTS_PER_HOUR_PER_SUBJECT = 20;
+const LIMIT_WINDOW_MS = 60 * 60_000;
+type CampaignAction = "vote" | "receipt" | "kit" | "reserve" | "admin";
+
+export async function campaignLimit(req: Request, action: CampaignAction, subject?: unknown) {
+  const ipLimit = action === "admin" ? ADMIN_REQUESTS_PER_HOUR_PER_IP : PUBLIC_REQUESTS_PER_HOUR_PER_IP;
+  const result = await rateLimit(`campaign-${action}:${clientIp(req)}`, ipLimit, LIMIT_WINDOW_MS, { whenUnavailable: "refuse" });
+  if (!result.ok) return campaignJson({ error: "Too many requests. Please try again later." }, 429, { "Retry-After": String(result.retryAfter) });
+  // Only verified receipts may consume a vote's budget. A reissued receipt keeps the same vote ID.
+  const subjectId = action === "admin" ? null : action === "vote"
+    ? (typeof subject === "string" && UUID_PATTERN.test(subject) ? subject.toLowerCase() : null)
+    : verifyReceipt(subject)?.id.toLowerCase();
+  if (!subjectId) return null;
+  const subjectResult = await rateLimit(`campaign-${action}-subject:${subjectId}`, REQUESTS_PER_HOUR_PER_SUBJECT, LIMIT_WINDOW_MS, { whenUnavailable: "refuse" });
+  return subjectResult.ok ? null : campaignJson({ error: "Too many requests. Please try again later." }, 429, { "Retry-After": String(subjectResult.retryAfter) });
 }
 export async function receiptVote(receipt: unknown) {
   const parsed = verifyReceipt(receipt);

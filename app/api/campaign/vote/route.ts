@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   if (parsed.body.website) return campaignJson({ error: "Please check the form." }, 400);
   const input = validateVote(parsed.body);
   if (!input.ok) return campaignJson({ error: input.error, field: input.field }, 400);
-  const limited = await campaignLimit(req, "vote");
+  const limited = await campaignLimit(req, "vote", input.value.submissionId);
   if (limited) return limited;
   if (!await campaignReady()) return campaignJson({ error: "The Starter Kit is temporarily unavailable. Please try again soon." }, 503);
   const saved = await saveVote(input.value);

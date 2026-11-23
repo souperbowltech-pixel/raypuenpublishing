@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   const parsed = await readCampaignJson(req); if (!parsed.ok) return parsed.response;
-  const limited = await campaignLimit(req, "reserve"); if (limited) return limited;
+  const limited = await campaignLimit(req, "reserve", parsed.body.receipt); if (limited) return limited;
   if (!isStripeTestMode()) return campaignJson({ error: "Ordering is open. Please use the book order page.", orderPath: "/neighborhood#order" }, 409);
   const quantity = reservationQuantity(parsed.body.quantity);
   if (quantity === null) return campaignJson({ error: "Choose between 1 and 10 copies." }, 400);

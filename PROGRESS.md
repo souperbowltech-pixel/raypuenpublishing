@@ -4,6 +4,13 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## Campaign shared event rate limits (2026-11-23)
+
+- Public vote, receipt, kit and reservation actions now allow 600 requests per IP per hour, plus 20 per submission or verified receipt vote ID per action per hour. Admin stays at 60. Shared counters still fail closed; receipt credentials never become limiter keys.
+- Added route regression tests using the real rateLimit and memoryLimit: 600 distinct families on one IP, request 601, repeated submissions across IPs, separate action budgets, exact window reset, UUID casing, reissued/forged/invalid receipts and shared-store failures. The original code failed at family 61 and allowed submission hammering.
+- Scale/security: one extra bounded shared counter check per valid public request, no per-family database lookup for limiting, migration or dependency. Existing atomic shared counters, HMAC keys, expiry cleanup and timeouts remain in use.
+- Validation: npm run lint and npm run typecheck passed (exit 0); lint retains the existing Lightbox test image warning. npx vitest run --maxWorkers=2 passed (exit 0): Test Files 106 passed (106), Tests 1166 passed (1166). Independent qa-reviewer: APPROVE, no actionable findings. No commit, push or branch change.
+
 ## Patrol approval security fixes (2026-11-23)
 
 - Public Patrol state now explicitly returns only fields used by the dashboard. Approval credentials, shipping details, internal identifiers and unrelated family details stay server-side. The claim route already returns an explicit success/message response; regression tests cover first and repeated submissions.
