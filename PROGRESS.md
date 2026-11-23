@@ -4,6 +4,12 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## Expiring and revocable admin sessions (2026-11-23)
+
+- Cookies now carry `v1.expiry.randomId.HMAC`, signed with ADMIN_TOKEN for 12 hours. Every consumer checks signature, server expiry and an active `rate_limits` marker (`admin-session:<randomId>`, count 0, reset_at equal to expiry). Sign-out deletes only that session across instances, idempotently. Existing indexes, expiry cleanup and `rateLimitsTable` health check apply; no migration or dependency. Legacy cookies require sign-in again.
+- Service-role database operations abort after 2 seconds and fail closed. Failed login saves issue no cookie; failed sign-out returns 503 and preserves the cookie for retry. One indexed lookup per valid request, no N+1 queries or process-local fallback at 100x load. Expired markers await the existing probabilistic cleanup; signed expiry always closes access. Already authorized requests can finish after sign-out.
+- Reproduced legacy, expiry and sign-out failures before fixing. The 45 auth tests exercise real auth, routes, pages and Supabase query builders with local HTTP/data fixtures, including tampering, malformed values, key rotation, separate sessions, fresh instances and database failures/timeouts. Froze the expiry test clock and aligned two affected campaign mutation strings; both selected mutants fail, restored baseline passes all 14 tests. Validation: `npm run lint` exit 0 (existing Lightbox image warning); `npm run typecheck` exit 0; `npx vitest run --maxWorkers=2` exit 0: `Test Files 107 passed (107)`, `Tests 1223 passed (1223)`. Windows `.cmd` wrappers used. Independent qa-reviewer: APPROVE. No commit, push or branch change.
+
 ## Source punctuation and manual shipping copy (2026-11-23)
 
 - Removed literal em and en dashes from all app, components and lib sources, including comments and tests. Kept numeric ranges readable and preserved the PDF font test's Unicode input using an escape. Replaced both shipping-time promises with "printed for you and sent to the address you gave".

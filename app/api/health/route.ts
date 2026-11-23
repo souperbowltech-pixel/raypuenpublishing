@@ -164,7 +164,7 @@ export async function GET(req: NextRequest) {
    * names of the checks, which is all an uptime monitor needs.
    */
   const detailed =
-    isAdminCookie(req.cookies.get(ADMIN_COOKIE)?.value) ||
+    await isAdminCookie(req.cookies.get(ADMIN_COOKIE)?.value) ||
     isAdminKey(req.headers.get("x-admin-key"));
 
   const body = detailed

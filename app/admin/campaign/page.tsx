@@ -9,7 +9,7 @@ import { CampaignEmailRetry } from "@/components/campaign/CampaignEmailRetry";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Campaign Results | Puen Publishing", robots: { index: false, follow: false }, referrer: "no-referrer" };
 export default async function CampaignAdminPage({ searchParams }: { searchParams: { before?: string } }) {
-  if (!campaignAdminSignedIn(cookies().get(ADMIN_COOKIE)?.value)) return <main className="p-8"><h1 className="font-display text-2xl">Campaign results</h1><p className="mt-4">Please sign in to the admin page first.</p><a href="/admin" className="btn-primary mt-4 inline-flex">Open Admin Sign-In</a></main>;
+  if (!await campaignAdminSignedIn(cookies().get(ADMIN_COOKIE)?.value)) return <main className="p-8"><h1 className="font-display text-2xl">Campaign results</h1><p className="mt-4">Please sign in to the admin page first.</p><a href="/admin" className="btn-primary mt-4 inline-flex">Open Admin Sign-In</a></main>;
   const before = typeof searchParams.before === "string" ? searchParams.before : undefined;
   const data = await campaignAdminData(before);
   return <main className="min-h-screen bg-paper px-4 py-10"><div className="mx-auto max-w-5xl">

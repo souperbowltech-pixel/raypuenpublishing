@@ -18,7 +18,7 @@ export function adminJson(body: unknown, status = 200) {
 export type AdminBody = { ok: true; body: Record<string, unknown> } | { ok: false; response: NextResponse };
 
 export async function readAdminJson(req: NextRequest, limitKey: string): Promise<AdminBody> {
-  if (!adminConfigured() || !isAdminCookie(req.cookies.get(ADMIN_COOKIE)?.value)) {
+  if (!adminConfigured() || !await isAdminCookie(req.cookies.get(ADMIN_COOKIE)?.value)) {
     return { ok: false, response: adminJson({ error: "Please sign in to the admin page again." }, 401) };
   }
   const mediaType = (req.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();

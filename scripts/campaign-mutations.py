@@ -60,8 +60,8 @@ if GROUP in ("store", "admin"):
     ]
 if GROUP == "admin":
     cases += [
-        ("admin-authentication-removed", "lib/campaign-admin.ts", lambda t: t.replace('return adminConfigured() && isAdminCookie(cookie);', 'return true;')),
-        ("admin-page-removed", "app/admin/campaign/page.tsx", lambda t: t.replace('if (!campaignAdminSignedIn(cookies()', 'return <main />;\n  if (!campaignAdminSignedIn(cookies()')),
+        ("admin-authentication-removed", "lib/campaign-admin.ts", lambda t: t.replace('return adminConfigured() && await isAdminCookie(cookie);', 'return true;')),
+        ("admin-page-removed", "app/admin/campaign/page.tsx", lambda t: t.replace('if (!await campaignAdminSignedIn(cookies()', 'return <main />;\n  if (!await campaignAdminSignedIn(cookies()')),
         ("admin-csv-removed", "lib/campaign-admin.ts", lambda t: t.replace('const columns = [', 'return "";\n  const columns = [')),
         ("delivery-status-removed", "lib/campaign-admin.ts", lambda t: t.replace('const job = row.deliveries.find', 'return "Not requested";\n  const job = row.deliveries.find')),
         ("admin-get-removed", "app/api/admin/campaign/route.ts", lambda t: t.replace('export async function GET(req: NextRequest) {', 'export async function GET(req: NextRequest) { return campaignJson({});')),

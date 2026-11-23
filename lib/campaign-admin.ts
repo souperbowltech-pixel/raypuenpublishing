@@ -4,11 +4,11 @@ import { campaignJson, campaignLimit } from "@/lib/campaign-http";
 import { csvCell, CHARACTER_NAMES } from "@/lib/campaign";
 import type { CampaignVote } from "@/lib/campaign-store";
 
-export function campaignAdminSignedIn(cookie: string | undefined): boolean {
-  return adminConfigured() && isAdminCookie(cookie);
+export async function campaignAdminSignedIn(cookie: string | undefined): Promise<boolean> {
+  return adminConfigured() && await isAdminCookie(cookie);
 }
 export async function campaignAdminGate(req: NextRequest) {
-  if (!campaignAdminSignedIn(req.cookies.get(ADMIN_COOKIE)?.value)) return campaignJson({ error: "Please sign in to admin." }, 401);
+  if (!await campaignAdminSignedIn(req.cookies.get(ADMIN_COOKIE)?.value)) return campaignJson({ error: "Please sign in to admin." }, 401);
   return campaignLimit(req, "admin");
 }
 export function deliveryLabel(row: CampaignVote, kind: "welcome" | "reservation"): string {
