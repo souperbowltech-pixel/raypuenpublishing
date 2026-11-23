@@ -26,7 +26,7 @@ def main():
         try:
             slugs = ["welcome", "video-1", "video-2", "video-3", "video-4", "bring-two-friends", "join"]
             for slug in slugs if not args.layout_only else ["video-2"]:
-                response = page.goto(args.base_url + "/nc/" + slug, wait_until="domcontentloaded", timeout=60000)
+                response = page.goto(args.base_url + "/nc/" + slug, wait_until="load", timeout=60000)
                 assert response.status == 200, (slug, response.status)
                 expect(page.get_by_role("heading", level=1)).to_be_visible()
                 is_video = slug not in ["bring-two-friends", "join"]
@@ -64,7 +64,7 @@ def main():
 
             for width in [320, 375, 768, 1280]:
                 page.set_viewport_size({"width": width, "height": 900})
-                page.goto(args.base_url + "/nc/video-2", wait_until="domcontentloaded")
+                page.goto(args.base_url + "/nc/video-2", wait_until="load")
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), width
                 box = page.locator("iframe").bounding_box()
                 assert box["height"] >= 200 and box["width"] >= 200, box
@@ -76,7 +76,7 @@ def main():
             report["checks"].append({"width": 768, "textSize": "200%", "noOverflow": True})
             page.screenshot(path=str(out / "text-200-percent.png"))
             if not args.layout_only:
-                response = page.goto(args.base_url + "/nc/not-a-book-page", wait_until="domcontentloaded")
+                response = page.goto(args.base_url + "/nc/not-a-book-page", wait_until="load")
                 assert response.status == 404
                 report["checks"].append({"unknownRoute": 404})
                 if args.qr_folder:
@@ -84,7 +84,7 @@ def main():
                     manifest = json.loads((qr / "manifest.json").read_text())
                     for entry in manifest["entries"]:
                         name = "NC_" + entry["key"] + "_PRINT.svg"
-                        page.goto((qr / name).as_uri(), wait_until="domcontentloaded")
+                        page.goto((qr / name).as_uri(), wait_until="load")
                         page.locator("svg").screenshot(path=str(out / (name + ".png")))
                     report["svgFilesRendered"] = len(manifest["entries"])
             report["result"] = "passed"
