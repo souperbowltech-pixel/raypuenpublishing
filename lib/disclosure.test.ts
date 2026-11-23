@@ -7,8 +7,8 @@ const repo = path.resolve(__dirname, "..");
 const read = (p: string) => fs.readFileSync(path.join(repo, p), "utf8");
 
 /**
- * AUDIT SEC-07 — the health endpoint is a diagnosis, not a map of the building.
- * AUDIT BUG-08 — one definition of an email address, not three.
+ * AUDIT SEC-07, the health endpoint is a diagnosis, not a map of the building.
+ * AUDIT BUG-08, one definition of an email address, not three.
  */
 
 const HEALTH_KEY = "an-admin-key-long-enough-1234";

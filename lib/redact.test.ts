@@ -4,8 +4,8 @@ import path from "node:path";
 import { redactEmail, redactToken } from "@/lib/redact";
 
 /**
- * Logs and alerts leave the building — an alert is POSTed to a chat webhook, a
- * log line sits in Vercel's history — so neither may carry a customer's address
+ * Logs and alerts leave the building, an alert is POSTed to a chat webhook, a
+ * log line sits in Vercel's history, so neither may carry a customer's address
  * or a scout token. The token is a credential: one alert in a chat channel would
  * hand it to everyone in that channel (AUDIT SEC-05).
  */

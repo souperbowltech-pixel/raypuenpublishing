@@ -41,12 +41,12 @@ describe("Real Friend Referral Tracking (t16)", () => {
     const scoutB = getOrCreateScoutLocal(scoutTokenB);
     expect(scoutB.referredBy).toBe(scoutTokenA);
 
-    // Bob colours Page 2 only — Alice's progress should remain 0
+    // Bob colours Page 2 only, Alice's progress should remain 0
     updateScoutLocal(scoutTokenB, { completedPages: [2] });
     let currentA = getOrCreateScoutLocal(scoutTokenA);
     expect(currentA.friendsCompleted).toBe(0);
 
-    // Bob colours Page 1 — Alice's friendsCompleted becomes 1
+    // Bob colours Page 1, Alice's friendsCompleted becomes 1
     updateScoutLocal(scoutTokenB, { completedPages: [1, 2] });
     currentA = getOrCreateScoutLocal(scoutTokenA);
     expect(currentA.friendsCompleted).toBe(1);
@@ -61,7 +61,7 @@ describe("Real Friend Referral Tracking (t16)", () => {
 
     const scoutTokenC = regC.session.scoutToken;
 
-    // Charlie colours Page 1 — Alice's friendsCompleted reaches 2!
+    // Charlie colours Page 1, Alice's friendsCompleted reaches 2!
     updateScoutLocal(scoutTokenC, { completedPages: [1] });
     currentA = getOrCreateScoutLocal(scoutTokenA);
     expect(currentA.friendsCompleted).toBe(2);

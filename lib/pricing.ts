@@ -3,7 +3,7 @@
  *
  * Institutions are priced with the flat `SPONSOR_TIERS` below. An earlier
  * per-copy model ($4.19/book plus a $20 digital fee waived at 100 copies) was
- * superseded and removed on 2026-09-23 — the live portal says "no per-copy
+ * superseded and removed on 2026-09-23, the live portal says "no per-copy
  * math". It is in git history if that model is ever revived.
  */
 
@@ -15,7 +15,7 @@ export const PARENTS_GUIDE_DIGITAL_PRICE = 29.97;
  * does not exist (Ray is still on his second draft, confirmed 28 Sept 2026) and
  * nothing in this codebase can email a download link to a buyer.
  *
- * Selling it would take money for a file we cannot send — the same class of
+ * Selling it would take money for a file we cannot send, the same class of
  * false promise as the checkout bug fixed in September. It stays closed until
  * **all three** of these are true:
  *   1. the Guide PDF is delivered and hosted behind a per-buyer link;

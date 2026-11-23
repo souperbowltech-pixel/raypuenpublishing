@@ -14,7 +14,7 @@ export interface PersistentScoutState {
   scoutName: string;
   completedPages: number[];
   quizScore: number;
-  /** Number of invited friends (0–3) who logged in and coloured their Page 1. */
+  /** Number of invited friends (0 to 3) who logged in and coloured their Page 1. */
   friendsCompleted: number;
   /** Derived: 300 once `friendsCompleted` reaches the 2-friend requirement. */
   referralScore: number;
@@ -278,7 +278,7 @@ export interface ScoutWriteResult {
 /** Re-read, re-merge and retry this many times when a competing write lands first. */
 const MAX_WRITE_ATTEMPTS = 3;
 
-/** Postgres "undefined column" — the friends_completed/book3_sponsored migration is missing. */
+/** Postgres "undefined column", the friends_completed/book3_sponsored migration is missing. */
 const UNDEFINED_COLUMN = '42703';
 
 type WriteOutcome =
@@ -295,7 +295,7 @@ type WriteOutcome =
 
 /**
  * Merge a caller's partial onto a known state. Defense-in-depth: never let a
- * caller change the token or push out-of-range values — force the token,
+ * caller change the token or push out-of-range values, force the token,
  * sanitize pages, then recompute every derived field from the authoritative
  * inputs (deriveScoutFields also clamps).
  */

@@ -10,7 +10,7 @@ export { redactEmail };
  * Guide download, the Patrol receipt, Ray's free-guide approval, and signing in
  * on a second device. MailerLite sends newsletters and cannot do any of them.
  *
- * Sent through Resend's HTTP API directly rather than its SDK — one POST with a
+ * Sent through Resend's HTTP API directly rather than its SDK, one POST with a
  * bearer token needs no new dependency, and calling `fetch` ourselves is the
  * only way to put a deadline on it.
  *
@@ -25,7 +25,7 @@ export type EmailResult =
   | { sent: false; reason: EmailFailure; error?: string };
 
 export type EmailFailure =
-  | "not-configured" // no API key or no from address — expected in local dev
+  | "not-configured" // no API key or no from address, expected in local dev
   | "invalid-recipient"
   | "timeout"
   | "rejected" // Resend answered, and said no

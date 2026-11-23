@@ -81,7 +81,7 @@ export function printedBookBySku(sku: unknown): PrintedBook | null {
 }
 
 /* ---------------------------------------------------------------------------
- * initiateRetailCheckout — calls /api/checkout/retail & redirects to Stripe
+ * initiateRetailCheckout, calls /api/checkout/retail & redirects to Stripe
  * ------------------------------------------------------------------------- */
 
 export async function initiateRetailCheckout(

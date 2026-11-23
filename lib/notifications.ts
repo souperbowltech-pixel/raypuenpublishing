@@ -9,7 +9,7 @@ import type { ShippingAddress } from "@/lib/patrol-store";
  *
  * Both exist because something real was unreachable: a parent who paid $10 could
  * only find their Patrol if they kept the checkout page open, and a completed
- * Patrol reached Ray nowhere at all — the approval link went into a log.
+ * Patrol reached Ray nowhere at all, the approval link went into a log.
  *
  * Every function here returns the send result unchanged. A caller that wants to
  * tell somebody "we have emailed you" has to look at it first.
@@ -39,7 +39,7 @@ export async function sendPatrolReceipt({ to, token, giftCodes }: PatrolReceipt)
   const text = [
     "Thank you for starting a Chief Scout Patrol.",
     "",
-    "Your Patrol hub — keep this link, it is the only way back in:",
+    "Your Patrol hub (keep this link; it is the only way back in):",
     hubUrl,
     "",
     "Your three gift invitations:",
@@ -57,7 +57,7 @@ export async function sendPatrolReceipt({ to, token, giftCodes }: PatrolReceipt)
 
   return sendEmail({
     to,
-    subject: "Your Chief Scout Patrol — your link and your three gift codes",
+    subject: "Your Chief Scout Patrol: your link and your three gift codes",
     text,
   });
 }
@@ -117,7 +117,7 @@ export async function sendGuideApprovalRequest({
 
   return sendEmail({
     to: approvalRecipient(),
-    subject: `Free Parent's Guide claim to approve — ${recipientName}`,
+    subject: `Free Parent's Guide claim to approve: ${recipientName}`,
     text,
     replyTo: patrolLeaderEmail,
   });

@@ -11,7 +11,7 @@ import {
 /**
  * These addresses are printed on paper. The two behaviours that must never
  * regress are therefore:
- *  1. nothing resolves to an error or a 404 — every bad input becomes "pending";
+ *  1. nothing resolves to an error or a 404, every bad input becomes "pending";
  *  2. nothing but a validated id from a known host ever reaches an iframe src.
  */
 

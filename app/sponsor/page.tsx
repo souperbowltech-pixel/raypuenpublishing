@@ -74,7 +74,7 @@ export default function SponsorLandingPage() {
         setLoading(false);
       }
     } catch {
-      setError("Network error — please try again.");
+      setError("Network error; please try again.");
       setLoading(false);
     }
   };
@@ -91,7 +91,7 @@ export default function SponsorLandingPage() {
             </h1>
             <p className="mt-4 text-base text-ink-soft leading-relaxed">
               A single <strong>{price}</strong> gift instantly pre-approves and unlocks
-              Book 3 free for this Scout — a wonderful way for a grandparent, relative,
+              Book 3 free for this Scout, a wonderful way for a grandparent, relative,
               or family friend to cheer them on.
             </p>
 
@@ -143,7 +143,7 @@ export default function SponsorLandingPage() {
             <h1 className="font-display text-3xl font-black text-ink sm:text-4xl">Thank you!</h1>
             <p className="mt-4 text-base text-ink-soft leading-relaxed">
               Your {price} gift went through. We&apos;re still finishing the unlock on
-              {scoutName ? ` ${scoutName}'s` : " the child's"} dashboard — our team has
+              {scoutName ? ` ${scoutName}'s` : " the child's"} dashboard; our team has
               been alerted and it will be in place shortly. Nothing more is needed from
               you, and you have not been charged twice.
             </p>

@@ -50,7 +50,7 @@ const COPY = {
         !
       </>
     ),
-    fulfillmentNote: "Sponsored Fulfillment Trigger ($0.00 Cost to Explorer — covered by sponsor)",
+    fulfillmentNote: "Sponsored Fulfillment Trigger ($0.00 Cost to Explorer, covered by sponsor)",
     cta: "Confirm Address & Trigger Sponsored Book 3 Printing",
     gifted: "$0.00 (Covered by the $40 Grandpa Sponsorship)",
   },

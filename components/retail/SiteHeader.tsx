@@ -3,7 +3,7 @@ import { siteMeta } from "@/lib/book";
 
 /**
  * Public site header. Note: the institutional portal (/institutions) is
- * intentionally NOT linked here — it is reachable by direct URL only.
+ * intentionally NOT linked here, it is reachable by direct URL only.
  *
  * The section links start with "/" because the header is also shown on
  * /certificate and /guide, where a bare "#buy" points at nothing.

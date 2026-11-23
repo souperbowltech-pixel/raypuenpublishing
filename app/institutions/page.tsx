@@ -8,11 +8,11 @@ import { siteMeta } from "@/lib/book";
  * Hidden institutional wholesale portal.
  *
  * This route is intentionally NOT linked from the main navigation and is
- * flagged noindex so search engines do not surface it — it is reachable by
+ * flagged noindex so search engines do not surface it, it is reachable by
  * direct URL only, as specified.
  */
 export const metadata: Metadata = {
-  title: `Bulk & Institutional Orders — ${siteMeta.name}`,
+  title: `Bulk & Institutional Orders: ${siteMeta.name}`,
   description:
     "Flat-rate book sponsorship packages for schools, preschools, churches and libraries.",
   robots: { index: false, follow: false },
@@ -41,7 +41,7 @@ export default function InstitutionsPage() {
           </h1>
           <p className="mt-4 text-lg text-ink-soft">
             Sponsor books for schools, preschools, churches and libraries with
-            a flat-rate package — from{" "}
+            a flat-rate package, from{" "}
             <span className="font-semibold text-ink">
               {formatCurrency(SPONSOR_TIERS[1].flatPrice)}
             </span>{" "}
@@ -59,7 +59,7 @@ export default function InstitutionsPage() {
           {[
             {
               t: "Flat-rate packages",
-              d: `${formatCurrency(SPONSOR_TIERS[1].flatPrice)}, ${formatCurrency(SPONSOR_TIERS[2].flatPrice)} or ${formatCurrency(SPONSOR_TIERS[3].flatPrice)} — no per-copy math.`,
+              d: `${formatCurrency(SPONSOR_TIERS[1].flatPrice)}, ${formatCurrency(SPONSOR_TIERS[2].flatPrice)} or ${formatCurrency(SPONSOR_TIERS[3].flatPrice)}, no per-copy math.`,
             },
             {
               t: "1:1 match",

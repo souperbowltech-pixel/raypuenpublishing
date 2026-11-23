@@ -7,8 +7,8 @@ import { getVideo, type VideoSlug } from "@/lib/videos";
  * (`puenpublishing.com/v1` ... `/v5`).
  *
  * Two states, decided by the row in `public.videos`:
- *  - live    — the video plays here, embedded, so the child stays on our page;
- *  - pending — a friendly "on its way" screen.
+ *  - live, the video plays here, embedded, so the child stays on our page;
+ *  - pending, a friendly "on its way" screen.
  *
  * There is no third state on purpose. Every failure resolves to `pending` in
  * `lib/videos.ts`, because the address is printed on paper and a child who scans
@@ -52,7 +52,7 @@ export async function VideoPage({ slug }: { slug: VideoSlug }) {
               will play right here as soon as it is ready.
             </p>
             <p className="mt-3 text-center text-ink-soft">
-              Nothing to do — this is the right page. Scan the code in your book again in a few days,
+              Nothing to do; this is the right page. Scan the code in your book again in a few days,
               or type{" "}
               <span className="whitespace-nowrap font-semibold text-ink">{printedAddress}</span>{" "}
               into any browser.

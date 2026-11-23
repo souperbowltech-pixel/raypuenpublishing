@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 /**
- * The route that moves money — and the last CRITICAL gap left by the audit
+ * The route that moves money, and the last CRITICAL gap left by the audit
  * (TEST-01). Until now nothing tested it, including the two rules that cost
  * real money if they break:
  *
@@ -243,7 +243,7 @@ describe("the $10 Patrol", () => {
 
   it("keeps the order fulfilled when only the email failed", async () => {
     // The success page shows the same link, so a missing email is not a missing
-    // Patrol — but it must still raise an alert rather than pass silently.
+    // Patrol, but it must still raise an alert rather than pass silently.
     sendPatrolReceipt.mockResolvedValue({ sent: false, reason: "not-configured" });
     const res = await post();
 

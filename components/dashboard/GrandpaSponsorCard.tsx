@@ -15,7 +15,7 @@ interface GrandpaSponsorCardProps {
 }
 
 /**
- * Ray's directive #6 — the "Grandpa multiplier". An adult relative or family
+ * Ray's directive #6, the "Grandpa multiplier". An adult relative or family
  * friend can sponsor a flat $40, which leap-frogs the peer track and unlocks
  * Book 3 free, independently of the 700-point Book 2 path.
  */
@@ -40,7 +40,7 @@ export default function GrandpaSponsorCard({ shareCode, scoutName, demoToken }: 
         setLoading(false);
       }
     } catch {
-      setError("Network error — please try again.");
+      setError("Network error; please try again.");
       setLoading(false);
     }
   };
@@ -64,12 +64,12 @@ export default function GrandpaSponsorCard({ shareCode, scoutName, demoToken }: 
           <div>
             <span className="eyebrow">Advanced Relative Track</span>
             <h3 className="mt-1 text-2xl font-bold font-display text-ink">
-              The Grandpa Multiplier — Sponsor Book 3
+              The Grandpa Multiplier: Sponsor Book 3
             </h3>
             <p className="mt-1 max-w-2xl text-sm text-ink-soft">
               Are you a grandparent, relative, or family friend? A single{" "}
               <strong>{price} contribution</strong> leap-frogs the peer track and
-              unlocks <strong>Book 3 completely free</strong> for {scoutName || "this Scout"} —
+              unlocks <strong>Book 3 completely free</strong> for {scoutName || "this Scout"},
               on top of the Book 2 they&apos;ll earn through their own quest.
             </p>
           </div>
@@ -95,8 +95,8 @@ export default function GrandpaSponsorCard({ shareCode, scoutName, demoToken }: 
           </p>
         </div>
 
-        {/* Legacy QR checkout — a relative can scan to sponsor from a printed page or shared screen */}
-        <SponsorQRCode value={sponsorLink} caption="Scan to sponsor Book 3 — hand this to a relative!" />
+        {/* Legacy QR checkout, a relative can scan to sponsor from a printed page or shared screen */}
+        <SponsorQRCode value={sponsorLink} caption="Scan to sponsor Book 3; hand this to a relative!" />
       </div>
 
       {error && (

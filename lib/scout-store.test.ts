@@ -7,8 +7,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
  * database misbehaves.
  *
  * The Supabase client is replaced with a fake at the module boundary. The
- * assertions are about observable outcomes — what ended up in the row, and what
- * the result object says — never about "was this mock called", so the tests
+ * assertions are about observable outcomes, what ended up in the row, and what
+ * the result object says, never about "was this mock called", so the tests
  * still fail if the real logic breaks.
  */
 
@@ -134,7 +134,7 @@ beforeEach(() => {
   env.isProduction = false;
 });
 
-describe("deriveScoutFields — the reward thresholds", () => {
+describe("deriveScoutFields, the reward thresholds", () => {
   const base = {
     token: "SCOUT-1",
     scoutName: "Ali",
@@ -189,7 +189,7 @@ describe("deriveScoutFields — the reward thresholds", () => {
   });
 });
 
-describe("updateScoutAsync — never report a save that did not happen", () => {
+describe("updateScoutAsync, never report a save that did not happen", () => {
   it("reports persisted:false when the database rejects the write", async () => {
     const { db, client } = makeFakeSupabase();
     env.supabase = client;
@@ -258,7 +258,7 @@ describe("updateScoutAsync — never report a save that did not happen", () => {
   it("refuses to claim a sponsorship saved when the database lacks the column for it", async () => {
     // A database that never got the friends_completed/book3_sponsored migration
     // rejects those columns. The rest of the row still saves, but the unlock the
-    // sponsor paid for did not — reporting success here is the original bug.
+    // sponsor paid for did not, reporting success here is the original bug.
     const { db, client } = makeFakeSupabase();
     env.supabase = client;
     db.rejectNewColumns = true;
@@ -266,7 +266,7 @@ describe("updateScoutAsync — never report a save that did not happen", () => {
     const result = await updateScoutAsync("SCOUT-1", { book3Sponsored: true });
 
     // The legacy half of the row saves fine, so it is tempting to call this a
-    // success — but the one value the sponsor paid for was dropped.
+    // success, but the one value the sponsor paid for was dropped.
     expect(db.row.scout_name).toBe("Ali");
     expect(result.persisted).toBe(false);
     expect(result.error).toContain("book3_sponsored");

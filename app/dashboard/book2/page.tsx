@@ -67,7 +67,7 @@ export default function Book2DashboardPage() {
         return;
       }
       // Anything else that is not OK (rate limit, server error) must not fall
-      // through to the empty defaults — that would show a child with real
+      // through to the empty defaults, that would show a child with real
       // progress a dashboard reset to zero.
       if (!res.ok) {
         setMode("error");
@@ -248,7 +248,7 @@ export default function Book2DashboardPage() {
         <div className="max-w-md w-full rounded-2xl border border-ink/10 bg-paper p-8 text-center shadow-card">
           <h1 className="font-display text-2xl font-bold">We couldn&apos;t load your progress</h1>
           <p className="mt-3 text-ink-soft leading-relaxed">
-            Your stickers and points are safe — we just couldn&apos;t reach them right
+            Your stickers and points are safe; we just couldn&apos;t reach them right
             now. Please try again in a moment.
           </p>
           <button onClick={loadScout} className="btn-primary mt-6 w-full">
@@ -305,7 +305,7 @@ export default function Book2DashboardPage() {
           </div>
         )}
 
-        {/* Rule 2: Book 2 Continuation Hook — persistent nudge toward the Grandpa path,
+        {/* Rule 2: Book 2 Continuation Hook, persistent nudge toward the Grandpa path,
             shown once Book 2 is unlocked but no relative has sponsored yet. */}
         {isBook2Unlocked && !book3Unlocked && <Book2ContinuationBanner />}
 

@@ -79,7 +79,7 @@ export async function addSubscriberToMailerLite(params: {
     // 422 = MailerLite rejected an undeclared custom field. Retry once without
     // the custom fields so the subscribe still succeeds.
     if (res.status === 422 && hasFields) {
-      console.error("[MailerLite API Error]:", res.status, data, "— retrying without custom fields");
+      console.error("[MailerLite API Error]:", res.status, data, "(retrying without custom fields)");
       ({ res, data } = await post(false));
     }
 

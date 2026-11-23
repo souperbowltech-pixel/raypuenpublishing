@@ -479,7 +479,7 @@ export interface PendingGuideClaim {
  *
  * His approval is half of the anti-fraud rule he chose, and until now the only
  * way to reach a claim was the one-click link in an email. If that email never
- * arrives — no key configured, a spam folder, a deleted message — the claim is
+ * arrives, no key configured, a spam folder, a deleted message, the claim is
  * invisible. This is the list that does not depend on a message getting through.
  */
 export async function listPendingGuideClaims(): Promise<PendingGuideClaim[]> {

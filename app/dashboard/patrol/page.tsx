@@ -311,7 +311,7 @@ function PatrolHubContent() {
                     ? "Reward Approved for Printing!"
                     : approval.status === "rejected"
                     ? "Review Status: Declined"
-                    : "Submitted — Awaiting Ray's One-Click Approval"}
+                    : "Submitted: Awaiting Ray's One-Click Approval"}
                 </h4>
                 <p className="mt-2 text-xs text-ink-soft">
                   Recipient: <strong>{approval.recipientName}</strong>

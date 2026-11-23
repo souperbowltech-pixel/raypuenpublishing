@@ -67,7 +67,7 @@ export default function ParentsGuidePage() {
                 <h3 className="text-2xl font-bold font-display text-ink">
                   {PARENTS_GUIDE_DIGITAL_LIVE
                     ? "Instant Master PDF Download"
-                    : "The Master PDF — coming soon"}
+                    : "The Master PDF: coming soon"}
                 </h3>
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="text-4xl font-black font-display text-ink">
@@ -90,7 +90,7 @@ export default function ParentsGuidePage() {
                     <span className="text-spruce font-bold">✓</span>{" "}
                     {PARENTS_GUIDE_DIGITAL_LIVE
                       ? "Instant download link delivered immediately"
-                      : "Being finalised by the publisher — not on sale yet"}
+                      : "Being finalised by the publisher, not on sale yet"}
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="text-spruce font-bold">✓</span> Unlimited home &amp; family printing license

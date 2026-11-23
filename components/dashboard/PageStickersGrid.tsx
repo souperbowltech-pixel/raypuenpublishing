@@ -58,10 +58,10 @@ export default function PageStickersGrid({
         </div>
       </div>
 
-      {/* Master Sticker Sheet — server-generated PDF of all 19 badges for home printing */}
+      {/* Master Sticker Sheet, server-generated PDF of all 19 badges for home printing */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-spruce/25 bg-spruce/5 p-3.5">
         <p className="text-xs sm:text-sm text-ink-soft">
-          Print all 19 merit badges on one page — ready for adhesive sticker paper.
+          Print all 19 merit badges on one page, ready for adhesive sticker paper.
         </p>
         <a
           href="/api/stickers/sheet"
@@ -105,7 +105,7 @@ export default function PageStickersGrid({
                   </span>
                 </div>
 
-                {/* Merit Badge — full-colour PNG when achieved; gray numbered silhouette when locked */}
+                {/* Merit Badge, full-colour PNG when achieved; gray numbered silhouette when locked */}
                 <div
                   className={`mx-auto h-16 w-16 transition-transform duration-300 group-hover:scale-110 ${
                     isAchieved && lastToggled === page.pageNumber ? "animate-stamp" : ""

@@ -16,7 +16,7 @@ type Db = NonNullable<typeof supabase>;
  *
  * A HEAD response carries no body, so PostgREST has nowhere to put its error:
  * supabase-js sees no error object and the check passes even when the table does
- * not exist — which is the single thing these checks exist to catch. Asking for
+ * not exist, which is the single thing these checks exist to catch. Asking for
  * one row costs the same and actually fails when it should.
  */
 
@@ -119,7 +119,7 @@ async function runChecks(db: Db, checks: Record<string, Check>, signal: AbortSig
 
 /**
  * Database health for the live site. Reports whether Supabase is configured,
- * which key kind is in use, and whether each table can be read and written —
+ * which key kind is in use, and whether each table can be read and written,
  * never any key material.
  */
 export async function GET(req: NextRequest) {
@@ -159,7 +159,7 @@ export async function GET(req: NextRequest) {
    * Anyone may ask whether the site is well; only we may ask how it is built.
    *
    * The full answer names the database host, which key is in use and what shape
-   * it has, and quotes database errors verbatim — enough to map the schema and
+   * it has, and quotes database errors verbatim, enough to map the schema and
    * to know what to attack (AUDIT SEC-07). A stranger gets the verdict and the
    * names of the checks, which is all an uptime monitor needs.
    */

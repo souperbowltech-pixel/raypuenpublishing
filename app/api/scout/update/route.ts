@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const childLimit = await rateLimit(childKey, SAVES_PER_MINUTE_PER_CHILD, 60_000);
     if (!childLimit.ok) return tooMany(childLimit.retryAfter);
 
-    // STRICT whitelist — never accept quizScore/referralScore/totalScore/status
+    // STRICT whitelist, never accept quizScore/referralScore/totalScore/status
     // from the client. Everything is derived server-side.
     const updates: Partial<PersistentScoutState> = {};
 
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Referral (Ray's directive #2): the 300 points are derived server-side from
-    // how many of the 3 invited friends coloured their Page 1 — the points fire
+    // how many of the 3 invited friends coloured their Page 1, the points fire
     // once ANY 2 of 3 are complete. In production this count is driven by the
     // friends' own logins; here we only accept demo controls, and only when the
     // env flag is explicitly enabled.

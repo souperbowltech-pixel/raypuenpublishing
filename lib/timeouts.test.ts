@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * AUDIT BUG-04 — every call that leaves this server has a deadline.
+ * AUDIT BUG-04, every call that leaves this server has a deadline.
  *
  * Without one, a stalled MailerLite holds a paid Stripe webhook open until the
  * platform kills the function, and everything the webhook had left to do never

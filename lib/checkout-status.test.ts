@@ -13,7 +13,7 @@ describe("confirmationFromPaymentStatus", () => {
   });
 
   it("treats a fully discounted order as paid", () => {
-    // Stripe reports this when the total is $0 — a real completed purchase.
+    // Stripe reports this when the total is $0, a real completed purchase.
     expect(confirmationFromPaymentStatus("no_payment_required")).toBe("paid");
   });
 

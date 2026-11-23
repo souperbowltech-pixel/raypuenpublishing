@@ -190,7 +190,7 @@ describe("cleanRecipientName", () => {
 
 describe("isPrintableText", () => {
   it("accepts what the font can draw and nothing else", () => {
-    expect(isPrintableText("REVIEW COPY FOR JOSÉ — “Ñ” €")).toBe(true);
+    expect(isPrintableText("REVIEW COPY FOR JOSÉ \u2014 “Ñ” €")).toBe(true);
     expect(isPrintableText("Μ")).toBe(false);
     expect(isPrintableText("a­b")).toBe(false);
   });

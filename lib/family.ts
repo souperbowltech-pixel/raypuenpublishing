@@ -3,11 +3,11 @@
  * lookup and the tests. No I/O here.
  *
  * Three different identifiers exist for each child, on purpose:
- *  - the private scout token (`scout_profiles.token`) — never leaves the server
+ *  - the private scout token (`scout_profiles.token`), never leaves the server
  *    for a registered family; progress is only changed through the session;
- *  - the public share code (`GG-XXXXXX`) — printed in the Grandpa QR and the
+ *  - the public share code (`GG-XXXXXX`), printed in the Grandpa QR and the
  *    friend link; it can start a sponsorship, never edit progress;
- *  - the session token — a random secret in an httpOnly cookie, stored only as
+ *  - the session token, a random secret in an httpOnly cookie, stored only as
  *    a SHA-256 hash.
  */
 import { createHash, randomBytes } from "crypto";
@@ -23,8 +23,8 @@ const EMAIL_MAX = 254;
 /**
  * The one definition of what an email address looks like here.
  *
- * It lived in three places with two different rules — family.ts required a
- * two-character top-level domain, the other two did not — so the same address
+ * It lived in three places with two different rules, family.ts required a
+ * two-character top-level domain, the other two did not, so the same address
  * could be accepted at checkout and rejected at registration (AUDIT BUG-08).
  * The stricter rule wins: it is the one the parent-facing form already used.
  */
@@ -99,7 +99,7 @@ export function hashSessionToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-/** "Chief Explorer Sam" — Ray's display formula. */
+/** "Chief Explorer Sam", Ray's display formula. */
 export function displayRank(firstName: string): string {
   return `Chief Explorer ${firstName}`.trim();
 }

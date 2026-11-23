@@ -7,7 +7,7 @@
  * book is being printed.
  */
 export type CheckoutConfirmation =
-  /** Stripe confirms the money arrived — fulfilment promises are safe to show. */
+  /** Stripe confirms the money arrived, fulfilment promises are safe to show. */
   | 'paid'
   /** Stripe has the session and says it is not paid. */
   | 'unpaid'
@@ -22,8 +22,8 @@ export function confirmationFromPaymentStatus(
   if (paymentStatus === 'paid' || paymentStatus === 'no_payment_required') return 'paid';
 
   // Only Stripe's one documented not-paid value is treated as not paid. Anything
-  // we do not recognise — a status Stripe adds later, or one belonging to a
-  // delayed-settlement method — falls through to 'unknown', because wrongly
+  // we do not recognise, a status Stripe adds later, or one belonging to a
+  // delayed-settlement method, falls through to 'unknown', because wrongly
   // telling a real customer their payment did not happen is its own failure.
   if (paymentStatus === 'unpaid') return 'unpaid';
   return 'unknown';

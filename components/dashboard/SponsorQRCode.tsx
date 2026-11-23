@@ -12,7 +12,7 @@ interface SponsorQRCodeProps {
 
 /**
  * Renders a scannable QR code for a checkout/sponsor link, so a relative can pay
- * from a printed page or a shared screen — Ray's "legacy QR checkouts".
+ * from a printed page or a shared screen, Ray's "legacy QR checkouts".
  */
 export default function SponsorQRCode({ value, size = 132, caption }: SponsorQRCodeProps) {
   const [dataUrl, setDataUrl] = useState<string>("");

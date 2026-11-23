@@ -4,6 +4,14 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## Source punctuation and manual shipping copy (2026-11-23)
+
+- Removed literal em and en dashes from all app, components and lib sources, including comments and tests. Kept numeric ranges readable and preserved the PDF font test's Unicode input using an escape. Replaced both shipping-time promises with "printed for you and sent to the address you gave".
+- Added recursive source guards and real filesystem fixtures for nested files, both characters, empty folders and missing-folder failure. Parsed production copy tests cover strings, templates, JSX, case, whitespace, escapes and split text. Render tests cover storefront shipping/returns, confirmed sponsorships, unpaid/unknown sessions and Stripe failure. The original source failed both guards and both affected render checks; no tests were weakened or skipped.
+- Validation: `npm run lint` passed (exit 0, existing Lightbox test image warning); `npm run typecheck` passed (exit 0); `npx vitest run --maxWorkers=2` passed (exit 0): `Test Files 107 passed (107)`, `Tests 1188 passed (1188)`. Used Windows `.cmd` wrappers. `git diff --check` passed; production syntax tree structure is unchanged.
+- Independent qa-reviewer: APPROVE after restoring the font fixture's original runtime input with an ASCII source escape. Focused font and source-guard rerun: `Test Files 2 passed (2)`, `Tests 56 passed (56)`.
+- Scale/security: source guards run only in tests and grow linearly with repository size; no runtime loops, queries, indexes, blocking work, external calls, rate-limit or concurrency changes. No new dependency, auth change or secret handling. No commit, push or branch change.
+
 ## Campaign Starter Kit badge sheet (2026-11-23)
 
 - Added page 7 with the three canonical matching black-and-white badges in fixed cut-out slots, preserving aspect ratios and allowing replacement colour PNGs without layout changes. Reuses the Guide badge images. VF-ART-01: preserve the existing composition and coherent supplied artwork.

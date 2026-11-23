@@ -13,7 +13,7 @@ export const ADMIN_COOKIE = "gg_admin";
 /** A session lasts a working day, so a shared laptop does not stay signed in. */
 export const ADMIN_COOKIE_MAX_AGE = 60 * 60 * 12;
 
-/** False when no key is configured — in which case the admin view is closed. */
+/** False when no key is configured, in which case the admin view is closed. */
 export function adminConfigured(): boolean {
   return Boolean(process.env.ADMIN_TOKEN && process.env.ADMIN_TOKEN.length >= 16);
 }

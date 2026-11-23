@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * AUDIT FE-06 — the dialog keeps the promise `aria-modal` makes.
+ * AUDIT FE-06, the dialog keeps the promise `aria-modal` makes.
  *
  * `lib/focus-trap.test.ts` proves the index arithmetic. It does not prove the
  * Lightbox uses it: the whole Tab branch can be deleted from the component and
@@ -55,8 +55,8 @@ describe("the open dialog can receive focus", () => {
 /**
  * The three below read the component's source. There is no DOM in this test
  * environment and none may be added, so a keydown cannot be dispatched and
- * `document.activeElement` cannot be moved. The windows are kept narrow — the
- * body of the key handler, and one dependency array — so that deleting the
+ * `document.activeElement` cannot be moved. The windows are kept narrow, the
+ * body of the key handler, and one dependency array, so that deleting the
  * behaviour fails the test rather than merely moving it.
  */
 
