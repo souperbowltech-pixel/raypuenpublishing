@@ -137,3 +137,17 @@ successful; it deliberately blocks media and cannot substitute for this gate.
 GitHub repository and Preview/Production environment secret-name listings were
 checked: no service credentials are stored there. Supabase/Vercel account-owner
 connection remains required for hosted operations. No secret values were read.
+
+## Local normal-network media probe completed
+
+After the cloud provider challenge, an isolated lightweight HTTP/iframe probe
+was run on the owner's ordinary local network with the Next server stopped.
+All five public NC video IDs advanced past0.5 seconds with paused=false and
+readyState4, each after one real play gesture. Screenshots of the last two clips
+were inspected and show the NC cast. No authentication challenge was bypassed.
+
+This proves actual starts for all five clips in standalone embeds. It does not
+claim a full-duration watch, hosted Next page media acceptance or campaign
+persistence. Keep that evidence separate from the thirteen route/geometry checks
+and the failed GitHub full-media run. Protected preview and hosted backend gates
+still require the connected accounts.
