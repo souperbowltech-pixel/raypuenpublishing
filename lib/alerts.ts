@@ -1,6 +1,9 @@
 import { sendEmail, emailConfigured } from "@/lib/email";
 import { approvalRecipient } from "@/lib/notifications";
 
+/** Alert delivery must leave time for the paid webhook to finish. */
+const ALERT_TIMEOUT_MS = 3_000;
+
 /**
  * Failure alerting for revenue-critical server paths (Stripe webhook, etc.).
  *
@@ -21,15 +24,22 @@ export async function alertFailure(
   const url = process.env.ALERT_WEBHOOK_URL;
 
   if (url) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ALERT_TIMEOUT_MS);
     try {
-      await fetch(url, {
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: [`🚨 Puen Publishing: ${context}`, ...lines].join("\n") }),
+        signal: controller.signal,
       });
+      await response.arrayBuffer();
+      if (!response.ok) throw new Error(`Alert webhook returned HTTP ${response.status}`);
     } catch (err) {
       // Alerting must never throw into the request path.
       console.error("[ALERT] Failed to deliver alert webhook:", err);
+    } finally {
+      clearTimeout(timer);
     }
     return;
   }

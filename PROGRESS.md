@@ -4,6 +4,13 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## External response body deadlines (2026-11-23)
+
+- Supabase now buffers database responses inside its existing deadline, preserving caller signals, status and headers. MailerLite keeps each 6-second attempt active through JSON consumption; body timeouts fail without a misleading success or 422 retry. Alert webhooks have a nonthrowing 3-second deadline covering headers and body, with delivery failures logged.
+- Added 22 behavioral tests using real response streams and a real Supabase query builder through HTTP fixtures. Covered stalled headers/bodies, caller cancellation, retry, malformed JSON, bodyless statuses, errors and timer cleanup. Original code failed 8 regression cases; all existing assertions remain intact.
+- Validation: `npm run lint` exit 0 (existing Lightbox image warning); `npm run typecheck` exit 0; `npx vitest run --maxWorkers=2` exit 0: `Test Files 108 passed (108)`, `Tests 1245 passed (1245)`. Windows `.cmd` wrappers used. Independent qa-reviewer: APPROVE; `.claude/hooks/run-checks.sh` exit 0, lint/types/tests passed.
+- Scale/security: one timer per outbound attempt, cleared on every exit; no new queries, N+1 loops, indexes, dependencies, permissions or shared state. Database buffering uses memory proportional to response size and concurrent calls; large file storage retains its separate 30-second deadline. Existing API rate-limit/error handling remains. No commit, push or branch change.
+
 ## Expiring and revocable admin sessions (2026-11-23)
 
 - Cookies now carry `v1.expiry.randomId.HMAC`, signed with ADMIN_TOKEN for 12 hours. Every consumer checks signature, server expiry and an active `rate_limits` marker (`admin-session:<randomId>`, count 0, reset_at equal to expiry). Sign-out deletes only that session across instances, idempotently. Existing indexes, expiry cleanup and `rateLimitsTable` health check apply; no migration or dependency. Legacy cookies require sign-in again.

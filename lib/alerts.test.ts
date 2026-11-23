@@ -44,7 +44,7 @@ describe("alertFailure (OPS-05 structured alerting and email fallback)", () => {
 
   it("delivers alert via webhook POST when ALERT_WEBHOOK_URL is configured", async () => {
     process.env.ALERT_WEBHOOK_URL = "https://hooks.slack.com/services/TEST/WEBHOOK";
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
 
     try {

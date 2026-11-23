@@ -54,9 +54,8 @@ export async function addSubscriberToMailerLite(params: {
     // run (AUDIT BUG-04).
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), MAILERLITE_TIMEOUT_MS);
-    let res: Response;
     try {
-      res = await fetch("https://connect.mailerlite.com/api/subscribers", {
+      const res = await fetch("https://connect.mailerlite.com/api/subscribers", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -66,11 +65,16 @@ export async function addSubscriberToMailerLite(params: {
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
+      const data = await res.json().catch((error: unknown) => {
+        // A timed-out body is a failed request, not a malformed JSON response
+        // that should be logged as a successful sync or retried on HTTP 422.
+        if (controller.signal.aborted) throw error;
+        return null;
+      });
+      return { res, data };
     } finally {
       clearTimeout(timer);
     }
-    const data = await res.json().catch(() => null);
-    return { res, data };
   }
 
   try {
