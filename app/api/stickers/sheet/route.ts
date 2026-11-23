@@ -16,7 +16,7 @@ const ROWS = 5; // 4 x 5 = 20 cells, 19 used
 const TITLE_BAND = 64;
 
 /**
- * "Download Master Sticker Sheet" (Module A) — streams a print-ready PDF with all
+ * "Download Master Sticker Sheet" (Module A), streams a print-ready PDF with all
  * 19 merit badges laid out on a single Letter page for home-printing onto adhesive
  * paper. Real badge PNGs live in public/stickers (slot-01.png … slot-19.png);
  * any not yet delivered render as a clean numbered placeholder.
@@ -31,7 +31,7 @@ export async function GET() {
   const soft = rgb(0.4, 0.36, 0.32);
 
   // Title
-  const title = "The Geezy Goober — Master Sticker Sheet";
+  const title = "The Geezy Goober: Master Sticker Sheet";
   page.drawText(title, {
     x: MARGIN,
     y: PAGE_H - MARGIN - 14,

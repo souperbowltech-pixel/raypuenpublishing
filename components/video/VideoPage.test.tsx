@@ -7,7 +7,7 @@ import type { VideoView } from "@/lib/videos";
  *
  * `getVideo` is mocked because the decision it makes is already covered in
  * `lib/videos.test.ts`; what is under test here is the markup each decision
- * produces — above all that the live state embeds the player instead of sending
+ * produces, above all that the live state embeds the player instead of sending
  * a child off to the host's own site.
  */
 const getVideo = vi.fn<(slug: string) => Promise<VideoView>>();
@@ -44,7 +44,7 @@ const PENDING: VideoView = {
 
 beforeEach(() => { getVideo.mockReset(); });
 
-describe("VideoPage — live", () => {
+describe("VideoPage, live", () => {
   beforeEach(() => { getVideo.mockResolvedValue(LIVE); });
 
   it("embeds the player rather than linking out to it", async () => {
@@ -77,7 +77,7 @@ describe("VideoPage — live", () => {
   });
 });
 
-describe("VideoPage — pending", () => {
+describe("VideoPage, pending", () => {
   beforeEach(() => { getVideo.mockResolvedValue(PENDING); });
 
   it("shows the waiting screen and no player at all", async () => {
@@ -112,7 +112,7 @@ describe("VideoPage — pending", () => {
   });
 });
 
-describe("VideoPage — both states", () => {
+describe("VideoPage, both states", () => {
   it("carries the publisher credit line", async () => {
     for (const view of [LIVE, PENDING]) {
       getVideo.mockResolvedValue(view);

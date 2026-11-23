@@ -5,12 +5,12 @@ import { SPONSOR_TIERS, RETAIL_PRICE, formatCurrency } from "./pricing";
  * These are the numbers real institutions are actually charged. A typo in a
  * flatPrice, or a tier that promises a free printed copy without asking where to
  * send it, is a money-and-goodwill bug that no type checker or linter would
- * catch — so every field of every tier is asserted explicitly.
+ * catch, so every field of every tier is asserted explicitly.
  *
  * (This file previously tested a per-copy pricing model that no page used. That
  * model was removed on 2026-09-23; the coverage was moved to the live tiers.)
  */
-describe("SPONSOR_TIERS — the amounts institutions are really charged", () => {
+describe("SPONSOR_TIERS, the amounts institutions are really charged", () => {
   it("charges exactly $40 / $200 / $400", () => {
     expect(SPONSOR_TIERS[1].flatPrice).toBe(40.0);
     expect(SPONSOR_TIERS[2].flatPrice).toBe(200.0);

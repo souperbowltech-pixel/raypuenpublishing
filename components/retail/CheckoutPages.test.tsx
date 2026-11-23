@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { ShippingReturns } from "@/components/retail/ShippingReturns";
 
 /**
  * The pages Stripe sends a buyer back to (app/ .tsx tests are not collected,
@@ -66,9 +67,31 @@ describe("/checkout/success", () => {
 });
 
 describe("/checkout/success, other orders", () => {
-  it("still gives a sponsorship its invoice block", async () => {
-    const html = await success(paid({ order_type: "institutional_sponsorship" }));
+  it.each(["paid", "no_payment_required"])("gives a confirmed sponsorship (%s) its invoice and manual fulfilment copy", async (payment_status) => {
+    const html = await success({ payment_status, metadata: { order_type: "institutional_sponsorship" } });
     expect(html).toContain("An itemised invoice is emailed to you for your records");
+    expect(html).toContain("printed for you and sent to the address you gave");
+    expect(html).not.toMatch(/business\s+days/i);
+  });
+
+  it.each(["unpaid", "unknown", undefined])(
+    "makes no shipping promise for an unconfirmed sponsorship (%s)", async (payment_status) => {
+      const html = await success({ payment_status, metadata: { order_type: "institutional_sponsorship" } });
+      expect(html).not.toContain("printed for you");
+      expect(html).not.toContain("What happens next?");
+      expect(html).not.toMatch(/business\s+days/i);
+    }
+  );
+
+  it("makes no shipping promise when a sponsorship query cannot be verified", async () => {
+    stripeDown = new Error("network");
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const html = renderToStaticMarkup(await SuccessPage({
+      searchParams: { session_id: "cs_test_1", type: "institutional_sponsorship" },
+    }));
+    expect(html).not.toContain("printed for you");
+    expect(html).not.toContain("What happens next?");
+    expect(html).not.toMatch(/business\s+days/i);
   });
 
   it("names no book for a retail session without a SKU", async () => {
@@ -82,6 +105,15 @@ describe("/checkout/success, other orders", () => {
     const html = renderToStaticMarkup(await SuccessPage({ searchParams: { session_id: "cs_test_1" } }));
     expect(html).not.toContain("Your copy of");
     expect(html).toMatch(/href="\/"/);
+  });
+});
+
+describe("storefront shipping copy", () => {
+  it("renders manual fulfilment wording and keeps the separate returns policy", () => {
+    const html = renderToStaticMarkup(<ShippingReturns />);
+    expect(html).toContain("printed for you and sent to the address you gave");
+    expect(html).not.toMatch(/business\s+days/i);
+    expect(html).toContain("Unopened books can be returned within 30 days for a full refund.");
   });
 });
 

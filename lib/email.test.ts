@@ -4,8 +4,8 @@ import { sendEmail, emailConfigured, redactEmail } from "@/lib/email";
 /**
  * The one rule: a message counts as sent only when Resend says so.
  *
- * Every other outcome — no key, a bad address, a timeout, a rejection, a 200
- * with no id — must come back as `sent: false` with a reason the caller can act
+ * Every other outcome, no key, a bad address, a timeout, a rejection, a 200
+ * with no id, must come back as `sent: false` with a reason the caller can act
  * on, because a caller that believes a failed email was delivered will tell a
  * customer their download is on its way when it is not.
  */

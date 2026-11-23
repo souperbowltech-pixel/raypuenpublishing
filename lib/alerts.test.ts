@@ -44,7 +44,7 @@ describe("alertFailure (OPS-05 structured alerting and email fallback)", () => {
 
   it("delivers alert via webhook POST when ALERT_WEBHOOK_URL is configured", async () => {
     process.env.ALERT_WEBHOOK_URL = "https://hooks.slack.com/services/TEST/WEBHOOK";
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
 
     try {
@@ -57,7 +57,7 @@ describe("alertFailure (OPS-05 structured alerting and email fallback)", () => {
       expect(options.headers).toEqual({ "Content-Type": "application/json" });
 
       const parsedBody = JSON.parse(options.body);
-      expect(parsedBody.text).toContain("🚨 Puen Publishing — Critical DB failure");
+      expect(parsedBody.text).toContain("🚨 Puen Publishing: Critical DB failure");
       expect(parsedBody.text).toContain("• table: scout_profiles");
       expect(parsedBody.text).toContain("• code: 500");
 
@@ -94,7 +94,7 @@ describe("alertFailure (OPS-05 structured alerting and email fallback)", () => {
     expect(sendEmailMock).toHaveBeenCalledTimes(1);
     const emailArgs = sendEmailMock.mock.calls[0][0];
     expect(emailArgs.to).toBe("admin@puenpublishing.com");
-    expect(emailArgs.subject).toBe("🚨 Puen Publishing Alert — Webhook missing failure");
+    expect(emailArgs.subject).toBe("🚨 Puen Publishing Alert: Webhook missing failure");
     expect(emailArgs.text).toContain("Context: Webhook missing failure");
     expect(emailArgs.text).toContain("• reason: timeout");
     expect(emailArgs.text).toContain("• service: Supabase");

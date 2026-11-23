@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- *  BOOK & SITE CONTENT — Official Copy & Brand Configuration
+ *  BOOK & SITE CONTENT: Official Copy & Brand Configuration
  * ============================================================================
  */
 
@@ -43,7 +43,7 @@ export const book1: BookContent = {
   byline: "By Ray Puen inspired by Grace and Joy.",
   description:
     "Deep in the woods of Twist-and-Twirl, words are mysteriously vanishing! Co-created by Publisher Ray Puen and his young granddaughters, Grace and Joy, this interactive adventure features a precise, musical iambic rhythm that grips a child's focus. Designed as a deliberate two-part strategy, Volume 1 captures children's deep affection through high-appeal whimsical adventure coloring blocks, priming their hearts to follow our storybook heroes into future structural paths of honor, kindness, and respect.",
-  ageRange: "Ages 3–7",
+  ageRange: "Ages 3 to 7",
   pageCount: 36,
   dimensions: '8.5" × 11" (US Letter, softcover)',
   coverImage: {
@@ -59,19 +59,19 @@ export const book1: BookContent = {
   gallery: [
     {
       src: "/interior/interior-1.jpg",
-      alt: "Book 1 interior — The Woods of Twist-and-Twirl",
+      alt: "Book 1 interior: The Woods of Twist-and-Twirl",
     },
     {
       src: "/interior/interior-2.jpg",
-      alt: "Book 1 interior — The Geezy Goober walking",
+      alt: "Book 1 interior: The Geezy Goober walking",
     },
     {
       src: "/interior/interior-3.jpg",
-      alt: "Book 1 interior — The Geezy Goober saying Icky sfand",
+      alt: "Book 1 interior: The Geezy Goober saying Icky sfand",
     },
     {
       src: "/interior/interior-4.jpg",
-      alt: "Book 1 interior — Shaking head in confusion",
+      alt: "Book 1 interior: Shaking head in confusion",
     },
   ],
 };
@@ -100,13 +100,13 @@ export const author = {
     alt: "Portrait of Ray Puen, Publisher",
   },
   bio:
-    "Published under the Regency Press umbrella with the Puen Publishing educational imprint, this literary work is unshakably anchored in the scriptural truth of 2 Timothy 3:16—that all scripture is profitable for instruction in righteousness. Forged through real-world early childhood education on the mission fields of the Philippines, Thailand, and Nepal, our unique gamified curriculum templates capture children's focus and transform behavior, helping early learners discover their true identity and noble character potential.",
+    "Published under the Regency Press umbrella with the Puen Publishing educational imprint, this literary work is unshakably anchored in the scriptural truth of 2 Timothy 3:16: that all scripture is profitable for instruction in righteousness. Forged through real-world early childhood education on the mission fields of the Philippines, Thailand, and Nepal, our unique gamified curriculum templates capture children's focus and transform behavior, helping early learners discover their true identity and noble character potential.",
 };
 
 /** Shipping & returns copy. */
 export const shippingReturns = {
   shipping:
-    "Orders ship within 2–3 business days directly from our printing and distribution facility.",
+    "Your book will be printed for you and sent to the address you gave.",
   returns:
     "Unopened books can be returned within 30 days for a full refund.",
 };

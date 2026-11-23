@@ -23,7 +23,7 @@ export function IllustrationGallery() {
           A look at the pages
         </h2>
         <p className="mt-3 text-ink-soft">
-          Big, open illustrations with thick outlines — easy for little hands to
+          Big, open illustrations with thick outlines, easy for little hands to
           colour. Tap any page to see it up close.
         </p>
       </div>

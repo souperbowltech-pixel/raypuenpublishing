@@ -10,7 +10,7 @@ import {
 } from "./patrol-store";
 import { PARENTS_GUIDE_DIGITAL_PRICE, PATROL_BUNDLE_PRICE } from "./pricing";
 
-describe("Parent's Guide & Patrol Funnel (t12–t15)", () => {
+describe("Parent's Guide & Patrol Funnel (t12, t13, t14, t15)", () => {
   it("verifies pricing constants for Parent Guide and Patrol", () => {
     expect(PARENTS_GUIDE_DIGITAL_PRICE).toBe(29.97);
     expect(PATROL_BUNDLE_PRICE).toBe(10.0);

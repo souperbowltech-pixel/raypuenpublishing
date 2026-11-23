@@ -7,7 +7,7 @@ import { PARENTS_GUIDE_DIGITAL_LIVE, PARENTS_GUIDE_DIGITAL_PRICE } from "@/lib/p
  * The digital Parent's Guide may not be sold until it can be delivered.
  *
  * There is no PDF and no way to email a buyer a link, so a completed payment
- * would leave the customer with nothing — and `/checkout/success` would tell
+ * would leave the customer with nothing, and `/checkout/success` would tell
  * them a digital file ships in 2-3 business days. These tests keep the door shut
  * until all three parts of that are fixed together, rather than one of them
  * quietly flipping a flag.
@@ -48,7 +48,7 @@ describe("the digital Parent's Guide is closed until it can be delivered", () =>
     expect(read("app/guide/page.tsx")).toContain("!PARENTS_GUIDE_DIGITAL_LIVE || loadingType !== null");
   });
 
-  it("the $10 Patrol bundle is untouched — its gift codes are real", () => {
+  it("the $10 Patrol bundle is untouched, its gift codes are real", () => {
     const page = read("app/guide/page.tsx");
     expect(page).toContain('handleCheckout("patrol")');
     expect(page).not.toContain('disabled={!PARENTS_GUIDE_DIGITAL_LIVE || loadingType !== null}\n                className="btn-secondary');

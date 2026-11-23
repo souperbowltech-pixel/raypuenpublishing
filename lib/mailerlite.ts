@@ -1,4 +1,5 @@
 import { isEmailAddress } from "@/lib/family";
+import { redactEmail } from "@/lib/redact";
 
 /**
  * MailerLite integration helper for Puen Publishing.
@@ -20,7 +21,7 @@ export async function addSubscriberToMailerLite(params: {
 
   const email = params.email.trim().toLowerCase();
   if (!isEmailAddress(email)) {
-    console.error("[MailerLite] Invalid email address, skipping sync:", params.email);
+    console.error("[MailerLite] Invalid email address, skipping sync:", redactEmail(params.email));
     return null;
   }
 
@@ -54,9 +55,8 @@ export async function addSubscriberToMailerLite(params: {
     // run (AUDIT BUG-04).
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), MAILERLITE_TIMEOUT_MS);
-    let res: Response;
     try {
-      res = await fetch("https://connect.mailerlite.com/api/subscribers", {
+      const res = await fetch("https://connect.mailerlite.com/api/subscribers", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -66,11 +66,16 @@ export async function addSubscriberToMailerLite(params: {
         body: JSON.stringify(payload),
         signal: controller.signal,
       });
+      const data = await res.json().catch((error: unknown) => {
+        // A timed-out body is a failed request, not a malformed JSON response
+        // that should be logged as a successful sync or retried on HTTP 422.
+        if (controller.signal.aborted) throw error;
+        return null;
+      });
+      return { res, data };
     } finally {
       clearTimeout(timer);
     }
-    const data = await res.json().catch(() => null);
-    return { res, data };
   }
 
   try {
@@ -79,14 +84,14 @@ export async function addSubscriberToMailerLite(params: {
     // 422 = MailerLite rejected an undeclared custom field. Retry once without
     // the custom fields so the subscribe still succeeds.
     if (res.status === 422 && hasFields) {
-      console.error("[MailerLite API Error]:", res.status, data, "— retrying without custom fields");
+      console.error("[MailerLite API Error]:", res.status, data, "(retrying without custom fields)");
       ({ res, data } = await post(false));
     }
 
     if (!res.ok) {
       console.error("[MailerLite API Error]:", res.status, data);
     } else {
-      console.log(`[MailerLite] Subscriber synced successfully: ${email} (ID: ${data?.data?.id})`);
+      console.log(`[MailerLite] Subscriber synced successfully: ${redactEmail(email)} (ID: ${data?.data?.id})`);
     }
     return data;
   } catch (error) {

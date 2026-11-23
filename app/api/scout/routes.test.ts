@@ -11,10 +11,14 @@ vi.mock("@/lib/scout-access", () => ({
   resolveScoutAccess: (...args: unknown[]) => resolveScoutAccessMock(...args),
 }));
 
-vi.mock("@/lib/scout-store", () => ({
+vi.mock("@/lib/supabase", () => ({ supabase: null, isProduction: false }));
+vi.mock("@/lib/scout-store", async importActual => ({
+  ...await importActual<typeof import("@/lib/scout-store")>(),
   getOrCreateScoutAsync: (...args: unknown[]) => getOrCreateScoutAsyncMock(...args),
   updateScoutAsync: (...args: unknown[]) => updateScoutAsyncMock(...args),
 }));
+
+const realStore = await vi.importActual<typeof import("@/lib/scout-store")>("@/lib/scout-store");
 
 let rateLimitOk = true;
 // Set to count for real with the in-memory limiter; otherwise rateLimitOk decides.
@@ -79,6 +83,34 @@ const mockScoutState = {
   readingTimeMinutes: 30,
 };
 
+// Include unrelated/future credentials so a blacklist or object spread cannot
+// silently turn a new internal field into a public API field.
+const privateScoutState = {
+  ...mockScoutState,
+  friendsCompleted: 0,
+  referralScore: 0,
+  book3Sponsored: false,
+  book3Unlocked: false,
+  updatedAt: "2026-11-23T00:00:00.000Z",
+  referredBy: "another_child_private_token",
+  approvalToken: "future_private_token",
+};
+const publicScoutState = {
+  scoutName: "Sarah",
+  completedPages: [1, 2],
+  quizScore: 400,
+  friendsCompleted: 0,
+  referralScore: 0,
+  totalScore: 400,
+  hasPassedQuiz: true,
+  hasRecruitedFriend: false,
+  book2Unlocked: true,
+  book3Sponsored: false,
+  book3Unlocked: false,
+  status: "Quest Captain",
+  updatedAt: "2026-11-23T00:00:00.000Z",
+};
+
 describe("Scout Progress API Routes (GET /api/scout/state, POST /api/scout/update)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -92,6 +124,42 @@ describe("Scout Progress API Routes (GET /api/scout/state, POST /api/scout/updat
   });
 
   describe("GET /api/scout/state", () => {
+    it("reads and updates real local progress without exposing or losing the referral relationship", async () => {
+      const initial = realStore.getOrCreateScoutLocal(mockFamilyAccess.scoutToken, "Sarah", "referrer_private_token");
+      expect(initial.referredBy).toBe("referrer_private_token");
+      resolveScoutAccessMock.mockResolvedValue(mockFamilyAccess);
+      getOrCreateScoutAsyncMock.mockImplementation(realStore.getOrCreateScoutAsync);
+      updateScoutAsyncMock.mockImplementation(realStore.updateScoutAsync);
+
+      const state = await (await handleGetState(buildGetRequest())).json();
+      expect(state.scout).toMatchObject({ scoutName: "Sarah", completedPages: [], quizScore: 0, shareCode: "GG-234567" });
+      expect(state.scout).not.toHaveProperty("token");
+      expect(state.scout).not.toHaveProperty("referredBy");
+      const updated = await (await handleUpdateScout(buildPostRequest({ completedPages: [2] }))).json();
+      expect(updated.saved).toBe(true);
+      expect(updated.scout.completedPages).toEqual([2]);
+      expect(updated.scout).not.toHaveProperty("token");
+      expect(updated.scout).not.toHaveProperty("referredBy");
+      expect(realStore.getOrCreateScoutLocal(mockFamilyAccess.scoutToken)).toMatchObject({
+        referredBy: "referrer_private_token", completedPages: [2],
+      });
+    });
+
+    it.each(["family", "demo"] as const)("returns only public fields for %s, including referred scouts", async kind => {
+      resolveScoutAccessMock.mockResolvedValueOnce(kind === "family" ? mockFamilyAccess : {
+        kind: "demo", scoutToken: DEMO_SCOUT_TOKEN,
+      });
+      getOrCreateScoutAsyncMock.mockResolvedValueOnce(privateScoutState);
+      const res = await handleGetState(buildGetRequest(kind === "demo" ? DEMO_SCOUT_TOKEN : undefined));
+      expect(res.status).toBe(200);
+      expect(res.headers.get("Cache-Control")).toBe("no-store");
+      expect(await res.json()).toEqual({
+        success: true, mode: kind,
+        scout: { ...publicScoutState, ...(kind === "family" ? { shareCode: "GG-234567" } : { token: DEMO_SCOUT_TOKEN }) },
+      });
+      expect(privateScoutState.referredBy).toBe("another_child_private_token");
+    });
+
     it("returns 429 when rate limited", async () => {
       rateLimitOk = false;
       const req = buildGetRequest();
@@ -153,6 +221,23 @@ describe("Scout Progress API Routes (GET /api/scout/state, POST /api/scout/updat
   });
 
   describe("POST /api/scout/update", () => {
+    it.each([
+      ["family", true], ["family", false], ["demo", true], ["demo", false],
+    ] as const)("keeps private fields out of %s responses with persisted=%s", async (kind, persisted) => {
+      resolveScoutAccessMock.mockResolvedValueOnce(kind === "family" ? mockFamilyAccess : {
+        kind: "demo", scoutToken: DEMO_SCOUT_TOKEN,
+      });
+      updateScoutAsyncMock.mockResolvedValueOnce({ state: privateScoutState, persisted });
+      const res = await handleUpdateScout(buildPostRequest({ completedPages: [1, 2] }));
+      expect(res.status).toBe(persisted ? 200 : 503);
+      const data = await res.json();
+      expect(data.success).toBe(persisted);
+      expect(data.saved).toBe(persisted);
+      expect(data.scout).toEqual({
+        ...publicScoutState, ...(kind === "family" ? { shareCode: "GG-234567" } : { token: DEMO_SCOUT_TOKEN }),
+      });
+    });
+
     it("returns 429 when rate limited", async () => {
       rateLimitOk = false;
       const req = buildPostRequest({ completedPages: [1] });

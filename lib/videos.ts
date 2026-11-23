@@ -4,15 +4,15 @@ import { alertFailure } from "@/lib/alerts";
 /**
  * The video addresses printed inside the colouring book.
  *
- * `puenpublishing.com/v1` ... `/v6` go on paper — a QR code plus a typed line at
- * the bottom of a book page — so the addresses can never change. v1 to v5 are the
+ * `puenpublishing.com/v1` ... `/v6` go on paper, a QR code plus a typed line at
+ * the bottom of a book page, so the addresses can never change. v1 to v5 are the
  * story videos; v6 is the welcome film, which sits at the foot of the opening page
  * rather than at a section end. What plays
  * behind each one is a row in `public.videos`, so swapping a video is one edit in
  * the Supabase table editor: no code change, no deploy, no reprint.
  *
  * The rule that shapes every decision below: a printed link must never be dead.
- * Every failure — no row, no table, no database, a bad id, a slow query —
+ * Every failure, no row, no table, no database, a bad id, a slow query,
  * resolves to the friendly "on its way" screen, never to a 404 or an error.
  */
 export const VIDEO_SLUGS = ["v1", "v2", "v3", "v4", "v5", "v6"] as const;
@@ -47,10 +47,10 @@ export interface VideoRow {
   status?: string | null;
 }
 
-/** Why a page is showing the waiting screen. Diagnostics only — never shown raw. */
+/** Why a page is showing the waiting screen. Diagnostics only, never shown raw. */
 export type PendingReason =
   | "no-row" // the table exists but this slug has no row yet
-  | "not-live" // the row is still status='pending' — the normal case before launch
+  | "not-live" // the row is still status='pending', the normal case before launch
   | "no-video-id" // marked live but no id was filled in
   | "bad-video-id" // the id does not match the provider's format
   | "unknown-provider" // a provider value this build cannot embed
@@ -117,7 +117,7 @@ function pending(slug: VideoKey, reason: PendingReason, title?: string | null): 
 }
 
 /**
- * Decide what a page shows from the row it was given. Pure — all the branching
+ * Decide what a page shows from the row it was given. Pure, all the branching
  * lives here so it can be tested without a database.
  */
 export function resolveVideo(slug: VideoKey, row: VideoRow | null | undefined): VideoView {

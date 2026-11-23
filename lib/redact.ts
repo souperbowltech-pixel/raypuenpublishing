@@ -3,7 +3,7 @@
  *
  * Logs and alerts leave the building: an alert is POSTed to a chat webhook and a
  * log line sits in Vercel's history. A customer's email address and a scout
- * token do not belong in either — the token in particular is a credential that
+ * token do not belong in either, the token in particular is a credential that
  * can change a child's progress, so one alert in a chat channel would hand it to
  * everyone in that channel (AUDIT SEC-05).
  *

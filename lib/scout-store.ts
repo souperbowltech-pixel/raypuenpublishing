@@ -14,7 +14,7 @@ export interface PersistentScoutState {
   scoutName: string;
   completedPages: number[];
   quizScore: number;
-  /** Number of invited friends (0–3) who logged in and coloured their Page 1. */
+  /** Number of invited friends (0 to 3) who logged in and coloured their Page 1. */
   friendsCompleted: number;
   /** Derived: 300 once `friendsCompleted` reaches the 2-friend requirement. */
   referralScore: number;
@@ -42,6 +42,25 @@ export interface ScoutInput {
   book3Sponsored: boolean;
   referredBy?: string;
   updatedAt: string;
+}
+
+/** Only public progress fields may cross the API boundary. Keep referral tokens internal. */
+export function toPublicScoutState(s: PersistentScoutState) {
+  return {
+    scoutName: s.scoutName,
+    completedPages: s.completedPages,
+    quizScore: s.quizScore,
+    friendsCompleted: s.friendsCompleted,
+    referralScore: s.referralScore,
+    totalScore: s.totalScore,
+    hasPassedQuiz: s.hasPassedQuiz,
+    hasRecruitedFriend: s.hasRecruitedFriend,
+    book2Unlocked: s.book2Unlocked,
+    book3Sponsored: s.book3Sponsored,
+    book3Unlocked: s.book3Unlocked,
+    status: s.status,
+    updatedAt: s.updatedAt,
+  };
 }
 
 /**
@@ -278,7 +297,7 @@ export interface ScoutWriteResult {
 /** Re-read, re-merge and retry this many times when a competing write lands first. */
 const MAX_WRITE_ATTEMPTS = 3;
 
-/** Postgres "undefined column" — the friends_completed/book3_sponsored migration is missing. */
+/** Postgres "undefined column", the friends_completed/book3_sponsored migration is missing. */
 const UNDEFINED_COLUMN = '42703';
 
 type WriteOutcome =
@@ -295,7 +314,7 @@ type WriteOutcome =
 
 /**
  * Merge a caller's partial onto a known state. Defense-in-depth: never let a
- * caller change the token or push out-of-range values — force the token,
+ * caller change the token or push out-of-range values, force the token,
  * sanitize pages, then recompute every derived field from the authoritative
  * inputs (deriveScoutFields also clamps).
  */

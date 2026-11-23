@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `${tier.name} — ${tier.booksSponsored} Books (Matched to ${tier.totalPrintedWithMatch})`,
+              name: `${tier.name}: ${tier.booksSponsored} Books (Matched to ${tier.totalPrintedWithMatch})`,
               description: tier.description,
             },
             unit_amount: Math.round(tier.flatPrice * 100),
@@ -106,16 +106,16 @@ export async function POST(req: NextRequest) {
       customer_email: email,
       metadata: sessionMetadata,
       // Schools, churches and non-profits need a proper itemised invoice to get
-      // reimbursed — a card receipt is not enough for their accounting. Stripe
+      // reimbursed, a card receipt is not enough for their accounting. Stripe
       // finalises and emails one automatically once payment succeeds.
       // NOTE: this relies on "Email finalized invoices" being enabled in the
       // Stripe dashboard (Settings → Billing → Invoices). If that is ever turned
       // off, the invoice is still created and reachable from the receipt, but it
-      // is not emailed — and the wording on /checkout/success would be wrong.
+      // is not emailed, and the wording on /checkout/success would be wrong.
       invoice_creation: {
         enabled: true,
         invoice_data: {
-          description: `${tier.name} — sponsorship of ${tier.booksSponsored} books (matched to ${tier.totalPrintedWithMatch} printed)`,
+          description: `${tier.name}: sponsorship of ${tier.booksSponsored} books (matched to ${tier.totalPrintedWithMatch} printed)`,
           footer: publisherBrand.fullCredit,
           metadata: sessionMetadata,
           // Stripe caps a custom field at 30 characters per side.

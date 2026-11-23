@@ -14,27 +14,38 @@ export const usingServiceRole = Boolean(serviceRoleKey);
 
 /**
  * Next.js patches global fetch and caches GET responses, and supabase-js runs on
- * that fetch — which silently served stale rows: a child's progress was written
+ * that fetch, which silently served stale rows: a child's progress was written
  * but read back from a cached snapshot. Every database call must bypass it.
  */
 /**
  * Every database call also gets a deadline. supabase-js has no timeout of its
  * own, so a stalled connection would hang a page render or a webhook until the
- * platform killed the function — with no error to act on (AUDIT BUG-04). An
+ * platform killed the function, with no error to act on (AUDIT BUG-04). An
  * aborted call surfaces as an ordinary error, which every caller already
  * handles, so this changes nothing except how long the worst case lasts.
  */
 const DB_TIMEOUT_MS = 8_000;
 
-export const noStoreFetch: typeof fetch = (input, init) => {
+export const noStoreFetch: typeof fetch = async (input, init) => {
   // Respect a caller's own signal if it set one; otherwise impose ours.
-  if (init?.signal) return fetch(input, { ...init, cache: 'no-store' });
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), DB_TIMEOUT_MS);
-  return fetch(input, { ...init, cache: 'no-store', signal: controller.signal }).finally(() =>
-    clearTimeout(timer)
-  );
+  const controller = init?.signal ? null : new AbortController();
+  const timer = controller ? setTimeout(() => controller.abort(), DB_TIMEOUT_MS) : undefined;
+  try {
+    const response = await fetch(input, {
+      ...init, cache: 'no-store', signal: init?.signal ?? controller!.signal,
+    });
+    // Supabase consumes the body after fetch resolves. Read it before clearing
+    // the deadline, then give the SDK a fresh, fully buffered response.
+    const body = await response.arrayBuffer();
+    const bodyless = [204, 205, 304].includes(response.status);
+    return new Response(bodyless ? null : body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 };
 
 export const supabase = supabaseUrl && supabaseKey
@@ -46,10 +57,8 @@ export const supabase = supabaseUrl && supabaseKey
 
 /**
  * Moving a whole book (10 to 15 MB) to or from storage needs a longer deadline
- * than a database call, and the deadline must cover reading the body too:
- * storage-js reads it after `fetch` resolves, where the database timeout no
- * longer applies, so a stalled download would hang until the platform killed
- * the function. Here the body is read inside the deadline and handed on whole.
+ * than a database call. As with database responses, the deadline covers reading
+ * the body too. Here the file is read inside the deadline and handed on whole.
  * storage-js never passes a signal of its own, so this one is always used.
  */
 const STORAGE_TIMEOUT_MS = 30_000;

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { nextFocusIndex } from "@/lib/focus-trap";
 
 /**
- * FE-06 — Lightbox modal focus trap.
+ * FE-06, Lightbox modal focus trap.
  *
  * In this repository's node test environment, there is no browser DOM. The pure
  * index-calculation function nextFocusIndex is the tested surface for keyboard

@@ -5,7 +5,7 @@ import { DEMO_SCOUT_TOKEN } from "@/lib/family";
 import { getSiteOrigin } from "@/lib/site";
 
 /**
- * AUDIT OPS-03 and FE-07 — two things that were fixed quietly and could come
+ * AUDIT OPS-03 and FE-07, two things that were fixed quietly and could come
  * back just as quietly.
  *
  * The demo token was re-typed as a literal in four files; rotating it would have

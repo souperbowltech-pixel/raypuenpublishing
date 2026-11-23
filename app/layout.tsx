@@ -20,7 +20,7 @@ const nunito = Nunito_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteOrigin()),
-  title: `${siteMeta.name} — Children's Coloring Books`,
+  title: `${siteMeta.name}: Children's Coloring Books`,
   description: siteMeta.description,
   openGraph: {
     type: "website",

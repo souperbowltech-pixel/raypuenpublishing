@@ -4,6 +4,68 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## Buyer log and scout response privacy (2026-11-23)
+
+- MailerLite success and invalid-input logs use the existing redactEmail helper. Scout state and update responses explicitly select public progress fields, excluding referral and future private tokens on family/demo and failed-save paths. Internal referral tracking remains intact.
+- Added 19 regression/integration cases for normalized, short and long emails, retries, invalid input, missing configuration, API/network failures, public response shapes and real local persistence. Original code failed 15 regression cases. Validation: npm run lint exit 0 (existing Lightbox image warning), npm run typecheck exit 0; npx vitest run --maxWorkers=2 exit 0: Test Files 110 passed (110), Tests 1284 passed (1284). Windows .cmd wrappers used.
+- Added the requested SECURITY INVOKER/service_role explanation as SQL comments only. The tracked migration already contained only b1; its existing non-comment content is unchanged, so function definitions and grants cannot be verified from this checkout.
+- Scale/security: constant-size response projection, no new queries, N+1 calls, indexes, dependencies, external calls, rate limits or concurrency changes at 100x usage. Existing authorization and demo behavior remain. No commit, push or branch change.
+- Independent qa-reviewer: APPROVE, no actionable findings. .claude/hooks/run-checks.sh exit 0: npm lint passed, npm typecheck passed, npm test passed. git diff --check passed.
+
+## Campaign vote retry after reload (2026-11-23)
+
+- Persist the validated vote attempt in tab-scoped sessionStorage before sending. Unchanged retries reuse its submission id across mounts; changed input starts a new attempt. Clear it only on a non-empty receipt. Storage access, read, write and removal failures warn without personal data and preserve in-memory retry behavior.
+- Reproduced the missing stored id before fixing. Campaign DOM coverage now has 33 passing tests, including saved vote/lost response/fresh mount replay, receipt cleanup, changed input, duplicate responses without receipts, invalid storage and storage failures. Server receipt authorization is unchanged; knowing an email alone grants no receipt.
+- Validation: `npm run lint` exit 0 (existing Lightbox image warning); `npm run typecheck` exit 0; `npx vitest run --maxWorkers=2` exit 0: `Test Files 109 passed (109)`, `Tests 1265 passed (1265)`. Windows `.cmd` wrappers used. Independent qa-reviewer: APPROVE; focused rerun: 33 tests passed.
+- Scale/security: one bounded attempt per tab; no new queries, N+1 loops, indexes, dependencies, external calls or rate-limit changes at 100x usage. Existing request guard prevents concurrent submissions in one mount. Stored attempt includes adult form values for exact payload matching and is cleared on receipt or tab closure; storage availability limits reload recovery. No commit, push or branch change.
+
+## External response body deadlines (2026-11-23)
+
+- Supabase now buffers database responses inside its existing deadline, preserving caller signals, status and headers. MailerLite keeps each 6-second attempt active through JSON consumption; body timeouts fail without a misleading success or 422 retry. Alert webhooks have a nonthrowing 3-second deadline covering headers and body, with delivery failures logged.
+- Added 22 behavioral tests using real response streams and a real Supabase query builder through HTTP fixtures. Covered stalled headers/bodies, caller cancellation, retry, malformed JSON, bodyless statuses, errors and timer cleanup. Original code failed 8 regression cases; all existing assertions remain intact.
+- Validation: `npm run lint` exit 0 (existing Lightbox image warning); `npm run typecheck` exit 0; `npx vitest run --maxWorkers=2` exit 0: `Test Files 108 passed (108)`, `Tests 1245 passed (1245)`. Windows `.cmd` wrappers used. Independent qa-reviewer: APPROVE; `.claude/hooks/run-checks.sh` exit 0, lint/types/tests passed.
+- Scale/security: one timer per outbound attempt, cleared on every exit; no new queries, N+1 loops, indexes, dependencies, permissions or shared state. Database buffering uses memory proportional to response size and concurrent calls; large file storage retains its separate 30-second deadline. Existing API rate-limit/error handling remains. No commit, push or branch change.
+
+## Expiring and revocable admin sessions (2026-11-23)
+
+- Cookies now carry `v1.expiry.randomId.HMAC`, signed with ADMIN_TOKEN for 12 hours. Every consumer checks signature, server expiry and an active `rate_limits` marker (`admin-session:<randomId>`, count 0, reset_at equal to expiry). Sign-out deletes only that session across instances, idempotently. Existing indexes, expiry cleanup and `rateLimitsTable` health check apply; no migration or dependency. Legacy cookies require sign-in again.
+- Service-role database operations abort after 2 seconds and fail closed. Failed login saves issue no cookie; failed sign-out returns 503 and preserves the cookie for retry. One indexed lookup per valid request, no N+1 queries or process-local fallback at 100x load. Expired markers await the existing probabilistic cleanup; signed expiry always closes access. Already authorized requests can finish after sign-out.
+- Reproduced legacy, expiry and sign-out failures before fixing. The 45 auth tests exercise real auth, routes, pages and Supabase query builders with local HTTP/data fixtures, including tampering, malformed values, key rotation, separate sessions, fresh instances and database failures/timeouts. Froze the expiry test clock and aligned two affected campaign mutation strings; both selected mutants fail, restored baseline passes all 14 tests. Validation: `npm run lint` exit 0 (existing Lightbox image warning); `npm run typecheck` exit 0; `npx vitest run --maxWorkers=2` exit 0: `Test Files 107 passed (107)`, `Tests 1223 passed (1223)`. Windows `.cmd` wrappers used. Independent qa-reviewer: APPROVE. No commit, push or branch change.
+
+## Source punctuation and manual shipping copy (2026-11-23)
+
+- Removed literal em and en dashes from all app, components and lib sources, including comments and tests. Kept numeric ranges readable and preserved the PDF font test's Unicode input using an escape. Replaced both shipping-time promises with "printed for you and sent to the address you gave".
+- Added recursive source guards and real filesystem fixtures for nested files, both characters, empty folders and missing-folder failure. Parsed production copy tests cover strings, templates, JSX, case, whitespace, escapes and split text. Render tests cover storefront shipping/returns, confirmed sponsorships, unpaid/unknown sessions and Stripe failure. The original source failed both guards and both affected render checks; no tests were weakened or skipped.
+- Validation: `npm run lint` passed (exit 0, existing Lightbox test image warning); `npm run typecheck` passed (exit 0); `npx vitest run --maxWorkers=2` passed (exit 0): `Test Files 107 passed (107)`, `Tests 1188 passed (1188)`. Used Windows `.cmd` wrappers. `git diff --check` passed; production syntax tree structure is unchanged.
+- Independent qa-reviewer: APPROVE after restoring the font fixture's original runtime input with an ASCII source escape. Focused font and source-guard rerun: `Test Files 2 passed (2)`, `Tests 56 passed (56)`.
+- Scale/security: source guards run only in tests and grow linearly with repository size; no runtime loops, queries, indexes, blocking work, external calls, rate-limit or concurrency changes. No new dependency, auth change or secret handling. No commit, push or branch change.
+
+## Campaign Starter Kit badge sheet (2026-11-23)
+
+- Added page 7 with the three canonical matching black-and-white badges in fixed cut-out slots, preserving aspect ratios and allowing replacement colour PNGs without layout changes. Reuses the Guide badge images. VF-ART-01: preserve the existing composition and coherent supplied artwork.
+- Regression reproduced as `expected 6 to be 7`. Real CLI tests now check seven Letter pages, three drawn badge images with canonical image pixels, cut-out sizes, spacing, aspect ratios, labels and page bounds; nested output paths, missing/corrupt final badges, preservation of existing output on failure and rejection of public output are covered. No mocks or skipped tests.
+- Rebuilt `data/campaign/starter-kit.pdf` (ignored private artifact, 2,813,635 bytes) using the reviewed high-resolution coloring sources. Rendered page 7 for visual review; all text fits and the first six pages render pixel-identically to the previous delivery PDF. Site storage target remains private `library/campaign/starter-kit.pdf`; hosted upload was not performed in this restricted workspace.
+- Validation: `npm run lint` passed (exit 0, existing Lightbox test image warning); `npm run typecheck` passed (exit 0); `npx vitest run --maxWorkers=2` passed (exit 0): `Test Files 106 passed (106)`, `Tests 1169 passed (1169)`. Windows `.cmd` wrappers were used because PowerShell blocks `.ps1` wrappers.
+- Independent qa-reviewer: APPROVE, no actionable findings; targeted rerun: `Test Files 1 passed (1)`, `Tests 5 passed (5)`. `git diff --check` passed.
+- Scale/security: fixed seven-page offline generation, three reused image objects, no network calls, new dependencies, database queries or shared request state. Private output guard retained; missing/corrupt art fails before writing. Current source badges remain low-resolution black-and-white art, pending final colour files. No commit, push or branch change.
+
+## Campaign shared event rate limits (2026-11-23)
+
+- Public vote, receipt, kit and reservation actions now allow 600 requests per IP per hour, plus 20 per submission or verified receipt vote ID per action per hour. Admin stays at 60. Shared counters still fail closed; receipt credentials never become limiter keys.
+- Added route regression tests using the real rateLimit and memoryLimit: 600 distinct families on one IP, request 601, repeated submissions across IPs, separate action budgets, exact window reset, UUID casing, reissued/forged/invalid receipts and shared-store failures. The original code failed at family 61 and allowed submission hammering.
+- Scale/security: one extra bounded shared counter check per valid public request, no per-family database lookup for limiting, migration or dependency. Existing atomic shared counters, HMAC keys, expiry cleanup and timeouts remain in use.
+- Validation: npm run lint and npm run typecheck passed (exit 0); lint retains the existing Lightbox test image warning. npx vitest run --maxWorkers=2 passed (exit 0): Test Files 106 passed (106), Tests 1166 passed (1166). Independent qa-reviewer: APPROVE, no actionable findings. No commit, push or branch change.
+
+## Patrol approval security fixes (2026-11-23)
+
+- Public Patrol state now explicitly returns only fields used by the dashboard. Approval credentials, shipping details, internal identifiers and unrelated family details stay server-side. The claim route already returns an explicit success/message response; regression tests cover first and repeated submissions.
+- Guide decisions now use one database update filtered by approval token and pending status, returning the affected id. Both database and local paths reject repeat or reversed decisions. Emailed confirmation links and admin form buttons keep working.
+- Failed approval emails alert with only the persisted claim id and fixed failure category. Approval tokens, names, addresses and email addresses are excluded. The insert returns its id in the same request.
+- Regression tests exercise real routes/store functions, local persistence and the real Supabase client with a stateful HTTP fixture. They cover public JSON, all decision combinations, competing decisions, unknown tokens, database failure and email failure categories. No live database or email service was contacted.
+- Scale/security review: no new dependency, migration, background task, rate-limit behavior or N+1 query. The existing unique approval-token index supports the conditional update, which removes the previous read-before-write race and one database round trip. Existing local file persistence remains intended for development/testing.
+- Validation: npm run lint and npm run typecheck passed (exit 0); lint retains the existing Lightbox test image warning. npx vitest run --maxWorkers=2 passed (exit 0): Test Files 105 passed (105), Tests 1146 passed (1146). Independent qa-reviewer found no actionable issue; git diff --check passed.
+- Git limitation: switching to main, staging and committing were denied because the sandbox cannot write .git/index.lock. Changes remain unstaged on feat/character-vote-campaign; unrelated untracked files are untouched. No push or deployment.
+
 ## Components
 
 | Component | Status | Notes |

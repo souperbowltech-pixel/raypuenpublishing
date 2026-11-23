@@ -5,7 +5,7 @@ import path from "node:path";
 import BookUnlockCard from "@/components/dashboard/BookUnlockCard";
 
 /**
- * FE-05 — the dashboard can claim a book was dispatched when nothing was sent.
+ * FE-05, the dashboard can claim a book was dispatched when nothing was sent.
  *
  * `lib/fulfillment.test.ts` proves dispatchPrintOrder's network and timeout logic.
  * It does not prove BookUnlockCard awaits it: the whole dispatch check could be
@@ -31,8 +31,8 @@ describe("BookUnlockCard initial static render", () => {
 /**
  * The tests below read the component's source. There is no DOM in this test
  * environment and none may be added, so submit events cannot be dispatched and
- * async form state cannot be driven. The source windows are kept narrow — the
- * body of handleConfirmShipping and the render conditional — so that reverting
+ * async form state cannot be driven. The source windows are kept narrow, the
+ * body of handleConfirmShipping and the render conditional, so that reverting
  * to a synchronous boolean or bypassing the server result fails the suite.
  */
 

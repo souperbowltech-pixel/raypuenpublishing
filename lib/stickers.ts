@@ -1,5 +1,5 @@
 /**
- * The 19 child-facing virtue pages of Book 1 — the single source of truth for
+ * The 19 child-facing virtue pages of Book 1, the single source of truth for
  * both the interactive dashboard grid (client) and the Master Sticker Sheet PDF
  * (server). Real full-colour merit-badge PNGs drop into public/stickers as
  * slot-01.png … slot-19.png; see `stickerBadgePath` in lib/gamification.
@@ -30,7 +30,7 @@ export const PAGE_STICKER_META: StickerSlotMeta[] = [
   { pageNumber: 15, virtue: "Fortitude", gradient: "from-rose-400 to-red-600" },
   { pageNumber: 16, virtue: "Adaptability", gradient: "from-sky-400 to-blue-600" },
   { pageNumber: 17, virtue: "Perseverance", gradient: "from-amber-300 to-yellow-600" },
-  // 2026-09-23: the illustrator's final artwork renamed these two — badge 18 now
+  // 2026-09-23: the illustrator's final artwork renamed these two, badge 18 now
   // reads GENEROSITY and badge 19 reads INTEGRITY, replacing Stewardship. The
   // wording here must match what is printed on the badge the child is looking at.
   { pageNumber: 18, virtue: "Generosity", gradient: "from-violet-400 to-purple-600" },

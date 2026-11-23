@@ -48,7 +48,7 @@ export default async function AdminPage({
     );
   }
 
-  if (!isAdminCookie(cookies().get(ADMIN_COOKIE)?.value)) {
+  if (!await isAdminCookie(cookies().get(ADMIN_COOKIE)?.value)) {
     return (
       <Shell>
         <h1 className="font-display text-2xl font-bold text-ink">Approvals</h1>
@@ -141,6 +141,8 @@ export default async function AdminPage({
       )}
 
       <SchoolRequestsList rows={requests} paged={parsePageCursor(before) !== null} />
+
+      <a href="/admin/campaign" className="btn-secondary mt-6 inline-flex min-h-11">Character Vote Campaign Results</a>
 
       <LibraryCodes
         books={libraryBookOptions()}

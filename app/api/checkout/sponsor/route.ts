@@ -11,7 +11,7 @@ import { getSiteOrigin } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 /**
- * Ray's directive #6 — the "Grandpa multiplier". A relative sponsors a child for
+ * Ray's directive #6, the "Grandpa multiplier". A relative sponsors a child for
  * a flat $40; on payment the Stripe webhook flips `book3_sponsored` for the scout
  * token in the metadata, which unlocks Book 3 independently of the peer track.
  */
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "Grandpa Multiplier — Sponsor Book 3",
+              name: "Grandpa Multiplier: Sponsor Book 3",
               description:
                 "A flat $40 sponsorship that unlocks Book 3 free for a young Scout, in parallel with their peer Book 2 track.",
             },

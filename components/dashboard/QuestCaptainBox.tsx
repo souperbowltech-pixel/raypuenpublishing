@@ -8,7 +8,7 @@ import {
 import { getSiteOrigin } from "@/lib/site";
 
 interface QuestCaptainBoxProps {
-  /** How many of the invited friends (0–3) have coloured their Page 1. */
+  /** How many of the invited friends (0 to 3) have coloured their Page 1. */
   friendsCompleted: number;
   /** Demo control: set the completed-friend count directly. */
   onSetFriends: (count: number) => void;
@@ -138,7 +138,7 @@ export default function QuestCaptainBox({
             })}
           </div>
 
-          {/* Demo controls (Simulate friend joins / reset) — demo profile only */}
+          {/* Demo controls (Simulate friend joins / reset), demo profile only */}
           {showDemoControls && (
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button

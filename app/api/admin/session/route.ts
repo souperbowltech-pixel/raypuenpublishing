@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE, ADMIN_COOKIE_MAX_AGE, adminCookieValue, isAdminKey } from "@/lib/admin-auth";
+import { ADMIN_COOKIE, ADMIN_COOKIE_MAX_AGE, adminCookieValue, isAdminKey, revokeAdminCookie } from "@/lib/admin-auth";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -14,14 +14,20 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   // Signing out, for a shared machine. A form can only POST, so it arrives here.
   if (new URL(req.url).searchParams.get("signout")) {
+    if (!await revokeAdminCookie(req.cookies.get(ADMIN_COOKIE)?.value)) {
+      return new NextResponse("Sign-out could not be saved. Please return to /admin and try again.", {
+        status: 503, headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
     const out = NextResponse.redirect(new URL("/admin", req.url), { status: 303 });
+    out.headers.set("Cache-Control", "no-store");
     out.cookies.set(ADMIN_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
     return out;
   }
 
   // Ten tries a minute makes guessing pointless without locking Ray out.
-  // Signing in needs no database, so a slow Supabase must not lock Ray out: if the
-  // shared count cannot be checked, this instance holds sign-in to 3 tries a minute.
+  // If the shared count cannot be checked, this instance holds sign-in to 3 tries
+  // a minute. Saving the revocable session below still requires the shared store.
   const limit = await rateLimit(`admin-session:${clientIp(req)}`, 10, 60_000, { whenUnavailable: 3 });
   if (!limit.ok) {
     return NextResponse.redirect(new URL("/admin?error=rate", req.url), { status: 303 });
@@ -32,8 +38,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(new URL("/admin?error=1", req.url), { status: 303 });
   }
 
+  let value: string;
+  try {
+    value = await adminCookieValue();
+  } catch {
+    return new NextResponse("Admin sessions are temporarily unavailable. Please return to /admin and try again.", {
+      status: 503, headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
   const response = NextResponse.redirect(new URL("/admin", req.url), { status: 303 });
-  response.cookies.set(ADMIN_COOKIE, adminCookieValue(), {
+  response.headers.set("Cache-Control", "no-store");
+  response.cookies.set(ADMIN_COOKIE, value, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

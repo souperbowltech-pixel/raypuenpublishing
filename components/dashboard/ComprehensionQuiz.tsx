@@ -51,7 +51,7 @@ export default function ComprehensionQuiz({
       setSaving(false);
     }
     // A score that never reached the database must not leave the quiz locked
-    // with the answers revealed — the child would be stuck on 0 points with no
+    // with the answers revealed, the child would be stuck on 0 points with no
     // way to try again.
     if (saved === false) {
       setSubmitted(false);
@@ -210,7 +210,7 @@ export default function ComprehensionQuiz({
                 </span>
               ) : isPerfect ? (
                 <span className={`text-spruce flex items-center gap-1.5 font-bold ${justSubmitted ? "animate-pop-in" : ""}`}>
-                  Fantastic job! All 4 answers correct — 400 Academic Points locked!
+                  Fantastic job! All 4 answers correct: 400 Academic Points locked!
                 </span>
               ) : (
                 <span className={`text-clay flex items-center gap-1.5 font-bold ${justSubmitted ? "animate-rise" : ""}`}>

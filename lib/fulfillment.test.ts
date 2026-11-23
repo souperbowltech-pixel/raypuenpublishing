@@ -7,11 +7,11 @@ import {
 } from "@/lib/fulfillment";
 
 /**
- * FE-05 — the dashboard can claim a book was dispatched when nothing was sent.
+ * FE-05, the dashboard can claim a book was dispatched when nothing was sent.
  *
  * The one rule: a book counts as dispatched only when the printer returns an
- * order reference. Every other outcome — closed, unconfigured, network down,
- * 500, timeout, or a 200 with an empty reference — must come back as
+ * order reference. Every other outcome, closed, unconfigured, network down,
+ * 500, timeout, or a 200 with an empty reference, must come back as
  * `dispatched: false` with a reason the caller can act on.
  */
 

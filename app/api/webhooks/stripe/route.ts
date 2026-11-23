@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  // Require a configured signing secret — never trust an unsigned event.
+  // Require a configured signing secret, never trust an unsigned event.
   if (!webhookSecret) {
     console.error("[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not configured.");
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
           const result = await updateScoutAsync(grandpaToken, { book3Sponsored: true });
           if (!result.persisted) {
             // The unlock did not reach the database. Never mark this order
-            // fulfilled — return non-2xx so Stripe retries (every step is
+            // fulfilled, return non-2xx so Stripe retries (every step is
             // idempotent) and leave the order visible as unfinished.
             retryNeeded = true;
             await markOrder(session.id, {
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
           await markOrder(session.id, { fulfillmentStatus: "fulfilled", lastError: null });
 
           // The buyer's copy. The checkout success page shows the same link, so
-          // a failure here costs them the email, not the Patrol — which is why
+          // a failure here costs them the email, not the Patrol, which is why
           // the order stays fulfilled either way.
           const receipt = await sendPatrolReceipt({
             to: customerEmail,

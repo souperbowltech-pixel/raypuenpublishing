@@ -5,7 +5,7 @@ import Image from "next/image";
 import { BOOK2_CONTINUATION_BANNER } from "@/lib/gamification";
 
 /**
- * Rule 2 — the Book 2 Continuation Hook. A persistent, encouraging banner shown
+ * Rule 2, the Book 2 Continuation Hook. A persistent, encouraging banner shown
  * at the very top of the dashboard when a Scout has advanced to Book 2 but no
  * adult relative has sponsored yet. It nudges (never blocks) the Grandpa path.
  *

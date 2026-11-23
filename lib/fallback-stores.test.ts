@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * PERF-01 — the fallback stores quietly disagree with each other, and one write
+ * PERF-01, the fallback stores quietly disagree with each other, and one write
  * is wasted.
  *
  * `updateScoutAsync` previously mirrored to the local JSON file even when the

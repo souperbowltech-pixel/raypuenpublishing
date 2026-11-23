@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
 
 /**
- * API-03 — a $200 or $400 order can be taken with nowhere to ship it.
+ * API-03, a $200 or $400 order can be taken with nowhere to ship it.
  *
  * WholesaleForm enforces "Tier 2 and 3 require a shipping address" in the browser,
  * but the server-side route must enforce it as well. Any direct API call, retry tool,

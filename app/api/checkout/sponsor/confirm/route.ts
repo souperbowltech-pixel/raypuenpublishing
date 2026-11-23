@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     const result = await updateScoutAsync(scoutToken, { book3Sponsored: true });
 
     if (!result.persisted) {
-      // The sponsor has already paid, so never tell them it failed — say the
+      // The sponsor has already paid, so never tell them it failed, say the
       // unlock is still finishing, and make sure a human is told about it.
       await markOrder(session.id, {
         fulfillmentStatus: "failed",

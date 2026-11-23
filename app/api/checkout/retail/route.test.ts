@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
 
 /**
- * SEC-04 regression tests — retail checkout quantity bounds and validation.
+ * SEC-04 regression tests, retail checkout quantity bounds and validation.
  *
  * Validates that retail quantity:
  * - Defaults to 1 when omitted.

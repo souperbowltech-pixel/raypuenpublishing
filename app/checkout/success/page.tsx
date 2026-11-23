@@ -25,7 +25,7 @@ export default async function CheckoutSuccessPage({
   // Ask Stripe what actually happened. Anyone can open this URL with any
   // session_id, so nothing on this page may be decided by the query string.
   // (The buyer's MailerLite sync belongs to the webhook, which runs once per
-  // paid event — doing it here too would re-fire on every page refresh.)
+  // paid event, doing it here too would re-fire on every page refresh.)
   if (sessionId) {
     try {
       const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -80,13 +80,13 @@ export default async function CheckoutSuccessPage({
               : isGuide
               ? PARENTS_GUIDE_DIGITAL_LIVE
                 ? "Your payment has been received. The Parent's Guide is on its way to the email address you used at checkout, as a download link."
-                : "Your payment has been received and recorded. The digital Guide is not being issued yet, so nothing will arrive by email today — we will contact you personally about it."
+                : "Your payment has been received and recorded. The digital Guide is not being issued yet, so nothing will arrive by email today; we will contact you personally about it."
               : book
               ? `Your payment has been received. Your copy of ${book.title} will be printed for you and sent to the address you gave at checkout.`
               : "Your payment has been received. Your order is recorded and we will be in touch about it."
             : confirmation === "unpaid"
-            ? "Stripe has not recorded a completed payment for this order yet. If you closed the payment page before finishing, you can pick up where you left off from the storefront — and if you believe you were charged, email us and we'll check it for you."
-            : "We couldn't check this order automatically. If you were charged, your receipt from Stripe is your confirmation and our team will follow up — nothing is lost."}
+            ? "Stripe has not recorded a completed payment for this order yet. If you closed the payment page before finishing, you can pick up where you left off from the storefront, and if you believe you were charged, email us and we'll check it for you."
+            : "We couldn't check this order automatically. If you were charged, your receipt from Stripe is your confirmation and our team will follow up; nothing is lost."}
         </p>
 
         {/* A Patrol is digital: its gift codes are issued at once and nothing is
@@ -96,7 +96,7 @@ export default async function CheckoutSuccessPage({
           <div className="my-6 rounded-xl border-2 border-crayon-gold bg-crayon-goldsoft/40 p-4 text-left text-sm">
             {patrolToken ? (
               <>
-                <p className="font-bold text-ink">Save this link — it is your Patrol.</p>
+                <p className="font-bold text-ink">Save this link: it is your Patrol.</p>
                 <Link
                   href={`/dashboard/patrol?token=${patrolToken}`}
                   className="mt-1 block min-h-11 break-all py-3 font-mono text-sm font-semibold text-spruce-dark underline"
@@ -115,7 +115,7 @@ export default async function CheckoutSuccessPage({
                 <p className="mt-2 text-ink-soft">
                   Your payment went through. Please refresh this page in a few seconds and the
                   link to your Patrol will appear here. If it does not, keep this page open and
-                  contact us — your payment is recorded and nothing is lost.
+                  contact us; your payment is recorded and nothing is lost.
                 </p>
               </>
             )}
@@ -128,7 +128,7 @@ export default async function CheckoutSuccessPage({
             <p className="font-bold">What happens next?</p>
             <ul className="list-disc list-inside space-y-1 text-ink-soft">
               <li>Printed on premium paper via our fulfillment facility</li>
-              <li>Dispatched directly to your address within 2–3 business days</li>
+              <li>Your copy will be printed for you and sent to the address you gave</li>
               <li>An itemised invoice is emailed to you for your records</li>
               <li>
                 Questions about your sponsorship? Email

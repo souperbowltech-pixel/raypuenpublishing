@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { NextRequest } from "next/server";
 
 /**
- * BUG-05 regression tests — sponsor-confirm fallback order recording & sync.
+ * BUG-05 regression tests, sponsor-confirm fallback order recording & sync.
  *
  * The Grandpa sponsorship confirm route (app/api/checkout/sponsor/confirm/route.ts)
  * is called when the sponsor returns to the dashboard to confirm Book 3 unlock.

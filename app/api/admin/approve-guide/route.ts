@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
  * Ray's one-click approval of a free printed Parent's Guide.
  *
  * **GET only asks; POST decides.** The approval used to happen on GET, which
- * meant anything that fetches a link without a human — a mail scanner, an
- * antivirus checker, a chat app drawing a preview — could approve a claim before
+ * meant anything that fetches a link without a human, a mail scanner, an
+ * antivirus checker, a chat app drawing a preview, could approve a claim before
  * Ray ever saw it. Those all issue GETs and never POST, so the decision now sits
  * behind a button.
  *

@@ -57,7 +57,7 @@ export function getUnlockedPanelCopy(name?: string): string {
 /**
  * The $40 "Grandpa multiplier" (Ray's directive #6): a relative or family friend
  * can sponsor a child for a flat $40, which leap-frogs the peer track and unlocks
- * Book 3 free — independently of the 700-point Book 2 path.
+ * Book 3 free, independently of the 700-point Book 2 path.
  */
 export const GRANDPA_SPONSOR_PRICE = 40.0;
 
