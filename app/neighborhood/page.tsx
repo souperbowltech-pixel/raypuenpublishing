@@ -122,8 +122,8 @@ export default function NeighborhoodPage() {
                     <Image
                       src={badgeImage(entry)}
                       alt={`Sticker ${entry.entry}: ${entry.badge}`}
-                      width={197}
-                      height={235}
+                      width={422}
+                      height={444}
                       className="h-20 w-auto shrink-0"
                     />
                     <div>

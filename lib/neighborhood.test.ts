@@ -58,4 +58,14 @@ describe("the Neighborhood Chronicles sample kit", () => {
     const all = JSON.stringify(SAMPLE_ENTRIES);
     expect(all).not.toMatch(/Illustrator|Blueprint|Draw /);
   });
+
+  it("uses Ray's colour badges, cut out so they sit on any background", () => {
+    for (const entry of SAMPLE_ENTRIES) {
+      const png = fs.readFileSync(path.join(publicDir, badgeImage(entry)));
+      // IHDR: width and height at bytes 16 and 20, colour type at byte 25 (6 = RGB with alpha).
+      expect(png.readUInt32BE(16)).toBeGreaterThanOrEqual(400);
+      expect(png.readUInt32BE(20)).toBeGreaterThanOrEqual(400);
+      expect(png[25]).toBe(6);
+    }
+  });
 });

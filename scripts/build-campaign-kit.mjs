@@ -83,7 +83,7 @@ for (const entry of entries) {
 const sheet = pdf.addPage([612, 792]);
 sheet.drawText("The Neighborhood Chronicles", { x: 40, y: 744, size: 24, font: bold });
 sheet.drawText("Three Matching Sticker Badges", { x: 40, y: 686, size: 18, font: bold });
-sheet.drawText("Black-and-white badge sheet for the Starter Kit", { x: 40, y: 638, size: 13, font: regular });
+sheet.drawText("Full-color badge sheet for the Starter Kit", { x: 40, y: 638, size: 13, font: regular });
 // Fixed cut-out slots also fit replacement colour artwork without moving the layout.
 const slot = { left: 40, step: 180, width: 164, bottom: 382, height: 180, artWidth: 108, artHeight: 150 };
 for (const [i, entry] of entries.entries()) {
