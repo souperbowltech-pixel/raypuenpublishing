@@ -4,13 +4,13 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
-## Admin pages made clear for Ray (2026-11-24)
-
-
-### Colour badges in the Starter Kit (2026-11-24)
+## Colour badges in the Starter Kit (2026-11-24)
 - Ray's colour badges 02 Oil Flask, 03 Beautiful Heart and 04 Golden Harp replace the black and white public/neighborhood/badge-2/3/4.png (white margin made transparent, about 422 x 444 px). The /neighborhood page and the kit badge sheet both use them; the sheet now says Full-color.
 - Test: lib/neighborhood.test.ts checks each badge is at least 400 px and has transparency. Full suite 1,302 passed, tsc 0, lint clean.
 - Rebuilt kit: Campaign_Kit_Colour_2026-11-24/starter-kit.pdf (7 pages) in the parent folder. Live kit changes only after it is uploaded to Supabase library/campaign/starter-kit.pdf.
+
+## Admin pages made clear for Ray (2026-11-24)
+
 
 - Shared `components/admin/AdminShell.tsx`: header with Overview and Campaign links, Back to the site, Sign out (same POST form); signed-out screens use one focused card (`AdminGate`).
 - `/admin`: sign-in titled "Admin sign-in", wrong-key and rate messages shown above the form with role="alert", button "Sign in". Signed in: Overview with summary cards (campaign link, Guides waiting in red when above 0, school requests count, review codes) linking to section anchors. Approve and decline forms, SchoolRequestsList and LibraryCodes unchanged; no new queries.
