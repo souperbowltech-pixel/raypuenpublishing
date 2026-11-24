@@ -11,6 +11,15 @@ export async function campaignAdminGate(req: NextRequest) {
   if (!await campaignAdminSignedIn(req.cookies.get(ADMIN_COOKIE)?.value)) return campaignJson({ error: "Please sign in to admin." }, 401);
   return campaignLimit(req, "admin");
 }
+/** Ray works in California, so admin times read in Pacific time, e.g. "Nov 24, 2026, 5:47 AM PT". */
+const PACIFIC = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Los_Angeles", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+});
+export function pacificTime(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "Unknown time" : `${PACIFIC.format(date)} PT`;
+}
+
 export function deliveryLabel(row: CampaignVote, kind: "welcome" | "reservation"): string {
   const job = row.deliveries.find((d) => d.kind === kind);
   if (!job) return "Not requested";

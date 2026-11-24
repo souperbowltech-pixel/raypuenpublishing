@@ -26,7 +26,7 @@ vi.mock("@/lib/school-request-store", async (importActual) => ({
 }));
 
 const { default: AdminPage } = await import("@/app/admin/page");
-const render = async (searchParams: { before?: string; lbefore?: string } = {}) => renderToStaticMarkup(await AdminPage({ searchParams }));
+const render = async (searchParams: { before?: string; lbefore?: string; error?: string } = {}) => renderToStaticMarkup(await AdminPage({ searchParams }));
 
 const row = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -104,5 +104,35 @@ describe("/admin", () => {
     const html = await render();
     expect(html).toContain("Back to the site");
     expect(html).toContain("Sign out");
+  });
+
+  it("shows a wrong key above the form as an alert, so it cannot be missed", async () => {
+    const html = await render({ error: "key" });
+    expect(html).toContain("Admin sign-in");
+    expect(html).toMatch(/role="alert"[^>]*>That key was not right\./);
+    expect(html.indexOf("That key was not right")).toBeLessThan(html.indexOf('action="/api/admin/session"'));
+    expect(html).toContain('name="key"');
+    expect(await render({ error: "rate" })).toContain("Too many attempts. Please wait a minute.");
+  });
+
+  it("opens on an overview that links to the campaign and to each section", async () => {
+    signedIn = true;
+    const html = await render();
+    expect(html).toContain('href="/admin/campaign"');
+    for (const id of ["guides", "school-requests", "library-codes"]) {
+      expect(html).toContain(`href="#${id}"`);
+      expect(html).toContain(`id="${id}"`);
+    }
+    expect(html).toContain('aria-current="page"');
+  });
+
+  it("counts school requests honestly: unknown, a full page, or an older page", async () => {
+    signedIn = true;
+    listSchoolRequests.mockResolvedValue(null);
+    expect(await render()).toMatch(/School requests<\/span><span[^>]*>\?</);
+    listSchoolRequests.mockResolvedValue(Array.from({ length: 50 }, (_, i) => ({ ...row, id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}` })));
+    expect(await render()).toContain("50+");
+    listSchoolRequests.mockResolvedValue([row]);
+    expect(await render({ before: "2026-11-18T14:05:00+00:00|00000000-0000-4000-8000-000000000001" })).toContain("Older page");
   });
 });

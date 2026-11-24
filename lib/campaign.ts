@@ -7,6 +7,13 @@ export const CHARACTER_NAMES: Record<Character, string> = {
 };
 export const SOURCES = ["direct", "fiesta", "church", "school", "melissa-data", "dm"] as const;
 export type CampaignSource = typeof SOURCES[number];
+/** How each source tag reads to Ray on the admin page and nowhere else. */
+export const SOURCE_LABELS: Record<CampaignSource, string> = {
+  direct: "Direct link", fiesta: "Fiesta", church: "Church", school: "School", "melissa-data": "Melissa Data", dm: "DM",
+};
+export function sourceLabel(source: string): string {
+  return (SOURCES as readonly string[]).includes(source) ? SOURCE_LABELS[source as CampaignSource] : source;
+}
 export const CONSENT_VERSION = "nc-starter-2026-11";
 export const CAMPAIGN_BODY_BYTES = 8192;
 export const RECEIPT_DAYS = 30;
