@@ -4,6 +4,15 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## Admin pages made clear for Ray (2026-11-24)
+
+- Shared `components/admin/AdminShell.tsx`: header with Overview and Campaign links, Back to the site, Sign out (same POST form); signed-out screens use one focused card (`AdminGate`).
+- `/admin`: sign-in titled "Admin sign-in", wrong-key and rate messages shown above the form with role="alert", button "Sign in". Signed in: Overview with summary cards (campaign link, Guides waiting in red when above 0, school requests count, review codes) linking to section anchors. Approve and decline forms, SchoolRequestsList and LibraryCodes unchanged; no new queries.
+- `/admin/campaign`: readable multi-line JSX; summary cards; votes by character as CSS bars with the source breakdown; source labels (`SOURCE_LABELS`, `sourceLabel` in lib/campaign.ts); times in Pacific (`pacificTime` in lib/campaign-admin.ts); records as cards with a definition list; sentence case buttons. CSV, paging, retry and permission checks unchanged.
+- Frameworks: VF-LOGIN-01 (focused sign-in hierarchy), VF-DESIGN-01 (hierarchy and states), VF-TYPE-01 (tabular figures, wrapping long emails).
+- Checked: 375 px has no horizontal scroll, buttons at least 44 px, no console errors. The signed-in views were checked by tests, not in a browser (needs the real admin key).
+- Tests: `npx vitest run` 1,299 passed; tsc clean; lint only the old img warning.
+
 ## Buyer log and scout response privacy (2026-11-23)
 
 - MailerLite success and invalid-input logs use the existing redactEmail helper. Scout state and update responses explicitly select public progress fields, excluding referral and future private tokens on family/demo and failed-save paths. Internal referral tracking remains intact.

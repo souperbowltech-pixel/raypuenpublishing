@@ -132,7 +132,7 @@ describe("controls in page files are at least 44 px", () => {
     ["app/dashboard/book2/page.tsx", "onClick={handleSignOut}"],
     ["app/dashboard/patrol/page.tsx", "← Back to Parent"],
     ["app/dashboard/patrol/page.tsx", "onClick={() => handleCopyLink("],
-    ["app/admin/page.tsx", "Sign out"],
+    ["components/admin/AdminShell.tsx", "Sign out"],
     ["app/start/StartForm.tsx", 'htmlFor="isParentOrGuardian"'],
     ["app/start/StartForm.tsx", "← Back to the store"],
     ["app/guide/page.tsx", "← Return to Book 1 Storefront"],
