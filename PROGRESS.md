@@ -4,6 +4,11 @@ _This file is maintained by the quality-kit rules in `CLAUDE.md` (section 9). Fo
 prioritized task list (P0-P3) and acceptance tests, see the live tracker linked from
 `NEXT_SESSION_HANDOFF.md` in the parent folder — update that tracker too, not just this file._
 
+## NC club page kit page count (2026-11-27)
+
+- `/nc/join` (the Family Registration QR in the NC book) said "free six-page Starter Kit"; the kit has been seven pages since the badge sheet was added. Text now says seven-page, with a regression test in `components/neighborhood/NcPortalPage.test.tsx`.
+- Checks: `npx vitest run` 111 files, 1,302 tests pass; `npx tsc --noEmit` clean; lint has no errors (one older warning in `components/ui/Lightbox.test.tsx`).
+
 ## Colour badges in the Starter Kit (2026-11-24)
 - Ray's colour badges 02 Oil Flask, 03 Beautiful Heart and 04 Golden Harp replace the black and white public/neighborhood/badge-2/3/4.png (white margin made transparent, about 422 x 444 px). The /neighborhood page and the kit badge sheet both use them; the sheet now says Full-color.
 - Test: lib/neighborhood.test.ts checks each badge is at least 400 px and has transparency. Full suite 1,302 passed, tsc 0, lint clean.

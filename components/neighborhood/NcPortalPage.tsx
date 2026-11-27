@@ -23,7 +23,7 @@ export function NcPortalPage({ portal }: { portal: NcPortal }) {
         <p className="mt-4 text-base leading-relaxed text-ink-soft">Watch the Welcome Video together, then explore the free coloring activities below.</p>
       </div> : <div className="mt-6 rounded-2xl border border-ink/15 bg-white p-6 sm:p-8">
         <h2 className="font-display text-2xl font-bold text-ink">Start your family&apos;s Neighborhood adventure</h2>
-        <p className="mt-4 text-lg leading-relaxed text-ink-soft">Parents and adult caregivers can meet the characters and request the free six-page Starter Kit.</p>
+        <p className="mt-4 text-lg leading-relaxed text-ink-soft">Parents and adult caregivers can meet the characters and request the free seven-page Starter Kit.</p>
         <p className="mt-4 text-base leading-relaxed text-ink-soft">Club registration and referral rewards are not open yet. Requesting the kit does not create a club account or unlock a free book.</p>
       </div>}
       <section className="mt-8 rounded-2xl border border-ink/15 bg-white p-6 sm:p-8" aria-labelledby="nc-kit-title">

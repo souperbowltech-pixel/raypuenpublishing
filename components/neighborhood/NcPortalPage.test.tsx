@@ -40,6 +40,9 @@ describe("NC printed destinations", () => {
     const html = renderToStaticMarkup(page.default({ params: { slug: "join" } }));
     expect(html).toContain("Club registration and referral rewards are not open yet");
     expect(html).toContain("does not create a club account or unlock a free book");
+    // The kit is seven pages: three activities, three Guide pages and the badge sheet.
+    expect(html).toContain("free seven-page Starter Kit");
+    expect(html).not.toContain("six-page");
     expect(html).toContain('href="/welcome#vote"');
     expect(html).not.toContain('href="/start"');
     expect(html).not.toContain("<iframe");
